@@ -5,5 +5,7 @@ target_sources(
     PRIVATE
         nes.hh
         nes.cc
+        cartridge.hh
+        cartridge.cc
         display.hh
         display.cc)

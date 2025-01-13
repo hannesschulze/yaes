@@ -70,20 +70,22 @@ namespace
     std::unique_ptr<nes::nes> nes_;
 }
 
-- (instancetype)init
+- (instancetype)initWithFilePath:(NSString*)filePath
 {
     self = [super initWithSize:CGSizeMake(nes::display::width, nes::display::height)];
     if (self)
     {
-        SKSpriteNode* node = [[SKSpriteNode alloc] init];
+        auto node = [[SKSpriteNode alloc] init];
         [node setAnchorPoint:CGPointZero];
         [node setSize:[self size]];
 
         [self setScaleMode:SKSceneScaleModeAspectFit];
         [self addChild:node];
 
+        auto cartridge = nes::cartridge::from_file([filePath UTF8String]);
+
         self->display_ = std::make_unique<display_impl>(node);
-        self->nes_ = std::make_unique<nes::nes>(*self->display_);
+        self->nes_ = std::make_unique<nes::nes>(std::move(cartridge), *self->display_);
     }
     return self;
 }
