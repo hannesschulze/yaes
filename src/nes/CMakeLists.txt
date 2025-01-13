@@ -8,4 +8,10 @@ target_sources(
         cartridge.hh
         cartridge.cc
         display.hh
-        display.cc)
+        display.cc
+        controller.hh
+        controller.cc
+        cpu.hh
+        cpu.cc
+        ppu.hh
+        ppu.cc)

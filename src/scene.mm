@@ -3,6 +3,7 @@
 #import "nes/display.hh"
 #import "nes/util/rgb.hh"
 #import <memory>
+#import <optional>
 
 namespace
 {
@@ -68,6 +69,7 @@ namespace
 {
     std::unique_ptr<display_impl> display_;
     std::unique_ptr<nes::nes> nes_;
+    std::optional<NSTimeInterval> last_time_;
 }
 
 - (instancetype)initWithFilePath:(NSString*)filePath
@@ -90,9 +92,84 @@ namespace
     return self;
 }
 
+- (void)keyDown:(NSEvent*)event
+{
+    auto& controller_1 = self->nes_->get_controller_1();
+
+    switch ([event keyCode])
+    {
+        case 0x7e: // up arrow
+            controller_1.get_pressed().add(nes::buttons::up);
+            break;
+        case 0x7d: // down arrow
+            controller_1.get_pressed().add(nes::buttons::down);
+            break;
+        case 0x7b: // left arrow
+            controller_1.get_pressed().add(nes::buttons::left);
+            break;
+        case 0x7c: // right arrow
+            controller_1.get_pressed().add(nes::buttons::right);
+            break;
+        case 0x6: // "Z"
+            controller_1.get_pressed().add(nes::buttons::a);
+            break;
+        case 0x7: // "X"
+            controller_1.get_pressed().add(nes::buttons::b);
+            break;
+        case 0x24: // return
+            controller_1.get_pressed().add(nes::buttons::start);
+            break;
+        case 0x31: // space
+            controller_1.get_pressed().add(nes::buttons::select);
+            break;
+        default:
+            [super keyDown:event];
+            break;
+    }
+}
+
+- (void)keyUp:(NSEvent*)event
+{
+    auto& controller_1 = self->nes_->get_controller_1();
+
+    switch ([event keyCode])
+    {
+        case 0x7e: // up arrow
+            controller_1.get_pressed().remove(nes::buttons::up);
+            break;
+        case 0x7d: // down arrow
+            controller_1.get_pressed().remove(nes::buttons::down);
+            break;
+        case 0x7b: // left arrow
+            controller_1.get_pressed().remove(nes::buttons::left);
+            break;
+        case 0x7c: // right arrow
+            controller_1.get_pressed().remove(nes::buttons::right);
+            break;
+        case 0x6: // "Z"
+            controller_1.get_pressed().remove(nes::buttons::a);
+            break;
+        case 0x7: // "X"
+            controller_1.get_pressed().remove(nes::buttons::b);
+            break;
+        case 0x24: // return
+            controller_1.get_pressed().remove(nes::buttons::start);
+            break;
+        case 0x31: // space
+            controller_1.get_pressed().remove(nes::buttons::select);
+            break;
+        default:
+            [super keyUp:event];
+            break;
+    }
+}
+
 - (void)update:(NSTimeInterval)currentTime
 {
-    [super update:currentTime];
+    auto const last_time = self->last_time_.value_or(currentTime);
+    last_time_ = currentTime;
+    auto const delta_ms = static_cast<std::uint64_t>((currentTime - last_time) * 1000.);
+    self->nes_->step(delta_ms);
 }
 
 @end

@@ -18,4 +18,9 @@ namespace nes
 		display.clear(rgb::from_hex(0xFF0000));
 		display.switch_buffers();
 	}
+
+	auto nes::step(std::uint64_t delta_ms) -> void
+	{
+		std::cout << "Step: " << delta_ms << "ms\n";
+	}
 } // namespace nes
