@@ -1,5 +1,10 @@
+add_subdirectory(nes)
+
 target_sources(
     nes
     PRIVATE
         main.mm
-        view-controller.mm)
+        scene.hh
+        scene.mm)
+
+target_include_directories(nes PRIVATE .)
