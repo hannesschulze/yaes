@@ -1,5 +1,7 @@
 #pragma once
 
+#include "nes/util/cycle_count.hh"
+
 namespace nes
 {
 	class ppu
@@ -11,5 +13,7 @@ namespace nes
 		ppu(ppu&&) = delete;
 		auto operator=(ppu const&) -> ppu& = delete;
 		auto operator=(ppu&&) -> ppu& = delete;
+
+		auto step_to(cycle_count) -> void;
 	};
 } // namespace nes

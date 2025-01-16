@@ -14,4 +14,6 @@ target_sources(
         cpu.hh
         cpu.cc
         ppu.hh
-        ppu.cc)
+        ppu.cc
+        mapper.hh
+        mapper.cc)

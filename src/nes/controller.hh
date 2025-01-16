@@ -19,5 +19,10 @@ namespace nes
 		auto get_pressed() const -> button_mask { return pressed_;}
 		auto get_pressed() -> button_mask& { return pressed_; }
 		auto set_pressed(button_mask const value) -> void { pressed_ = value; }
+
+		// IO register
+
+		auto read() -> std::uint8_t;
+		auto write(std::uint8_t) -> void;
 	};
 } // namespace nes

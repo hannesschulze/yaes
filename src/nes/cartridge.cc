@@ -1,15 +1,15 @@
 #include "nes/cartridge.hh"
 #include <fstream>
 
-namespace
-{
-	constexpr auto prg_rom_bank_size = std::size_t{ 16 * 1024 };
-	constexpr auto chr_rom_bank_size = std::size_t{ 8 * 1024 };
-	constexpr auto ram_bank_size = std::size_t{ 8 * 1024 };
-} // namespace
-
 namespace nes
 {
+	namespace
+	{
+		constexpr auto prg_rom_bank_size = std::size_t{ 16 * 1024 };
+		constexpr auto chr_rom_bank_size = std::size_t{ 8 * 1024 };
+		constexpr auto ram_bank_size = std::size_t{ 8 * 1024 };
+	} // namespace
+
 	auto cartridge::from_data(void const* data, std::size_t const length) -> cartridge
 	{
 		auto const bytes = static_cast<std::uint8_t const*>(data);
@@ -31,7 +31,7 @@ namespace nes
 			(control_2 & 0b11110000) >> 0;
 
 		// Load program data.
-		auto offset = 16;
+		auto offset = std::size_t{ 16 };
 		if (has_trainer) { offset += 512; }
 
 		auto const prg_rom_size = prg_rom_banks * prg_rom_bank_size;

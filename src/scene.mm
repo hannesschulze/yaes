@@ -168,8 +168,8 @@ namespace
 {
     auto const last_time = self->last_time_.value_or(currentTime);
     last_time_ = currentTime;
-    auto const delta_ms = static_cast<std::uint64_t>((currentTime - last_time) * 1000.);
-    self->nes_->step(delta_ms);
+    auto const delta_us = static_cast<std::uint64_t>((currentTime - last_time) * 1000. * 1000.);
+    self->nes_->step(std::chrono::microseconds{ delta_us });
 }
 
 @end

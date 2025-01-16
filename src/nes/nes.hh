@@ -1,9 +1,11 @@
 #pragma once
 
+#include "nes/util/cycle_count.hh"
 #include "nes/cartridge.hh"
 #include "nes/controller.hh"
 #include "nes/cpu.hh"
 #include "nes/ppu.hh"
+#include "nes/mapper.hh"
 
 namespace nes
 {
@@ -16,8 +18,11 @@ namespace nes
 		display& display_;
 		controller controller_1_;
 		controller controller_2_;
-		cpu cpu_;
+		mapper mapper_;
 		ppu ppu_;
+		cpu cpu_;
+		cycle_count current_cycles_;
+		std::uint8_t animation_progress_{ 255 };
 
 	public:
 		explicit nes(cartridge, display&);
@@ -32,6 +37,6 @@ namespace nes
 		auto get_controller_2() const -> controller const& { return controller_2_; }
 		auto get_controller_2() -> controller& { return controller_2_; }
 
-		auto step(std::uint64_t delta_ms) -> void;
+		auto step(std::chrono::microseconds delta) -> void;
 	};
 } // namespace nes

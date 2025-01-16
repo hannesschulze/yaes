@@ -3,4 +3,5 @@ target_sources(
     PRIVATE
         address.hh
         button-mask.hh
+        cycle_count.hh
         rgb.hh)
