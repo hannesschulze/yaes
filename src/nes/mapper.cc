@@ -27,9 +27,13 @@ namespace nes
 
 	auto mapper::nrom_read(address const addr) -> std::uint8_t
 	{
+		if (addr <= address{ 0x5FFF })
+		{
+			return 0x0;
+		}
 		if (addr <= address{ 0x7FFF })
 		{
-			return cartridge_.get_ram()[addr.get_absolute() % 0x2000];
+			return cartridge_.get_ram()[addr.get_absolute() - 0x6000];
 		}
 		if (addr <= address{ 0xBFFF })
 		{
@@ -52,9 +56,13 @@ namespace nes
 
 	auto mapper::nrom_write(address const addr, std::uint8_t const value) -> void
 	{
+		if (addr <= address{ 0x5FFF })
+		{
+			return;
+		}
 		if (addr <= address{ 0x7FFF })
 		{
-			cartridge_.get_ram_mut()[addr.get_absolute() % 0x2000] = value;
+			cartridge_.get_ram_mut()[addr.get_absolute() - 0x6000] = value;
 		}
 	}
 

@@ -21,7 +21,7 @@ namespace nes
 
 		/// Create an address from its page and offset combination.
 		constexpr explicit address(std::uint8_t const page, std::uint8_t const offset)
-			: address{ static_cast<std::uint16_t>((page << 8) | (offset < 0)) }
+			: address{ static_cast<std::uint16_t>((page << 8) | (offset << 0)) }
 		{
 		}
 

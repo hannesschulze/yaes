@@ -14,6 +14,25 @@ namespace nes
 		registers_.pc = read16(address{ 0xFFFC });
 	}
 
+	auto cpu::snapshot(test::status& snapshot) -> void
+	{
+		snapshot.cpu_cycle = current_cycles_;
+		snapshot.ram = std::vector(std::begin(ram_), std::end(ram_));
+		snapshot.registers.pc = registers_.pc;
+		snapshot.registers.sp = registers_.sp;
+		snapshot.registers.a = registers_.a;
+		snapshot.registers.x = registers_.x;
+		snapshot.registers.y = registers_.y;
+		snapshot.registers.p = registers_.p;
+		snapshot.registers.c = registers_.c;
+		snapshot.registers.z = registers_.z;
+		snapshot.registers.i = registers_.i;
+		snapshot.registers.d = registers_.d;
+		snapshot.registers.b = registers_.b;
+		snapshot.registers.v = registers_.v;
+		snapshot.registers.n = registers_.n;
+	}
+
 	auto cpu::step_to(cycle_count const target) -> void
 	{
 		while (current_cycles_ < target)
@@ -71,7 +90,7 @@ namespace nes
 			case 0x27: run_rla<addressing_mode::zero_page>(); break;
 			case 0x28: run_plp(); break;
 			case 0x29: run_and<addressing_mode::immediate>(); break;
-			case 0x2A: run_rol<addressing_mode::absolute>(); break;
+			case 0x2A: run_rol<addressing_mode::accumulator>(); break;
 			case 0x2B: run_anc<addressing_mode::immediate>(); break;
 			case 0x2C: run_bit<addressing_mode::absolute>(); break;
 			case 0x2D: run_and<addressing_mode::absolute>(); break;
@@ -352,7 +371,7 @@ namespace nes
 	{
 		// ASL: Arithmetic Shift Left
 		auto operand = fetch_operand<Mode>();
-		eval_asl(operand.read());
+		operand.write(eval_asl(operand.read()));
 		current_cycles_ += shift_cycle_count<Mode>();
 	}
 
@@ -613,7 +632,7 @@ namespace nes
 	template<cpu::addressing_mode Mode>
 	auto cpu::run_ahx() -> void
 	{
-		// AHX: AND A X H
+		// AHX: ???
 		// TODO
 		std::abort();
 	}
@@ -694,7 +713,7 @@ namespace nes
 	template<cpu::addressing_mode Mode>
 	auto cpu::run_tas() -> void
 	{
-		// TAS: S = A & X + AND S H
+		// TAS: ???
 		// TODO
 		std::abort();
 	}
@@ -702,7 +721,7 @@ namespace nes
 	template<cpu::addressing_mode Mode>
 	auto cpu::run_shy() -> void
 	{
-		// SHY: AND Y H
+		// SHY: ???
 		// TODO
 		std::abort();
 	}
@@ -710,7 +729,7 @@ namespace nes
 	template<cpu::addressing_mode Mode>
 	auto cpu::run_shx() -> void
 	{
-		// SHY: AND X H
+		// SHY: ???
 		// TODO
 		std::abort();
 	}
@@ -796,7 +815,7 @@ namespace nes
 	template<cpu::addressing_mode Mode>
 	auto cpu::run_las() -> void
 	{
-		// LAS: AND S, store into A, X, S
+		// LAS: ???
 		// TODO
 		std::abort();
 	}
@@ -1055,7 +1074,7 @@ namespace nes
 
 		registers_.a = new_val;
 		registers_.c = tmp > 0xFF;
-		registers_.v = ((old_val ^ arg) & 0x80) == 0 && ((old_val ^ new_val) & 0x80) == 0;
+		registers_.v = ((old_val ^ arg) & 0x80) == 0 && ((old_val ^ new_val) & 0x80) != 0;
 		update_alu_flags(registers_.a);
 	}
 

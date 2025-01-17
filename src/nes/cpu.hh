@@ -2,6 +2,7 @@
 
 #include "nes/util/cycle_count.hh"
 #include "nes/util/address.hh"
+#include "status.hh"
 
 namespace nes
 {
@@ -114,7 +115,7 @@ namespace nes
 					bool i : 1; // interrupt inhibit
 					bool d : 1; // decimal
 					bool b : 1; // break
-					bool _ : 1; // (unused, always true)
+					bool   : 1; // (unused, always true)
 					bool v : 1; // overflow
 					bool n : 1; // negative
 				};
@@ -129,6 +130,8 @@ namespace nes
 		cpu(cpu&&) = delete;
 		auto operator=(cpu const&) -> cpu& = delete;
 		auto operator=(cpu&&) -> cpu& = delete;
+
+		auto snapshot(test::status&) -> void;
 
 		auto step_to(cycle_count) -> void;
 
@@ -251,8 +254,8 @@ namespace nes
 	template<> auto name##_cycle_count<addressing_mode::mode>() -> cycle_count { return cycle_count::from_cpu(value); }
 
 		DEFINE_CYCLE_COUNT(jump)
-		DEFINE_CYCLE_COUNT_INSTANCE(jump, absolute, 2)
-		DEFINE_CYCLE_COUNT_INSTANCE(jump, indirect, 2)
+		DEFINE_CYCLE_COUNT_INSTANCE(jump, absolute, 3)
+		DEFINE_CYCLE_COUNT_INSTANCE(jump, indirect, 5)
 
 		DEFINE_CYCLE_COUNT(shift)
 		DEFINE_CYCLE_COUNT_INSTANCE(shift, accumulator, 2)

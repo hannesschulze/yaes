@@ -6,6 +6,7 @@
 #include "nes/cpu.hh"
 #include "nes/ppu.hh"
 #include "nes/mapper.hh"
+#include "status.hh"
 
 namespace nes
 {
@@ -38,5 +39,8 @@ namespace nes
 		auto get_controller_2() -> controller& { return controller_2_; }
 
 		auto step(std::chrono::microseconds delta) -> void;
+		auto step(cycle_count delta) -> void;
+
+		auto snapshot() -> test::status;
 	};
 } // namespace nes

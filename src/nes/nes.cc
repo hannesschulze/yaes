@@ -10,6 +10,7 @@ namespace nes
 		: cartridge_{ std::move(cartridge) }
 		, display_{ display }
 		, mapper_{ mapper::select(cartridge_) }
+		, ppu_{ cpu_, mapper_ }
 		, cpu_{ ppu_, mapper_, controller_1_, controller_2_ }
 	{
 		if (!cartridge_.is_valid())
@@ -24,12 +25,25 @@ namespace nes
 
 	auto nes::step(std::chrono::microseconds const delta) -> void
 	{
-		current_cycles_ += cycle_count::from_duration(delta);
+		step(cycle_count::from_duration(delta));
+	}
+
+	auto nes::step(cycle_count const delta) -> void
+	{
+		current_cycles_ += delta;
 		cpu_.step_to(current_cycles_);
 		ppu_.step_to(current_cycles_);
 
 		animation_progress_ -= 2;
 		display_.clear(rgb{ animation_progress_, animation_progress_, animation_progress_ });
 		display_.switch_buffers();
+	}
+
+	auto nes::snapshot() -> test::status
+	{
+		auto res = test::status{};
+		res.sram = std::vector(cartridge_.get_ram(), cartridge_.get_ram() + cartridge_.get_ram_length());
+		cpu_.snapshot(res);
+		return res;
 	}
 } // namespace nes

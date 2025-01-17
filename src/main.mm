@@ -13,7 +13,6 @@ int main(int argc, char** argv)
     }
 
     auto filePath = [NSString stringWithUTF8String:argv[1]];
-    //auto filePath = @"/Users/hannes/Documents/temp/nes-test-roms/nes_instr_test/rom_singles/01-implied.nes";
 
     auto app = [NSApplication sharedApplication];
     [app setActivationPolicy:NSApplicationActivationPolicyRegular];
