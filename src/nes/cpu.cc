@@ -1,7 +1,6 @@
 #include "nes/cpu.hh"
 #include "nes/controller.hh"
 #include "nes/mapper.hh"
-#include <iostream>
 
 namespace nes
 {
@@ -510,7 +509,7 @@ namespace nes
 		auto const new_val = static_cast<std::uint8_t>(old_val >> 1);
 		operand.write(new_val);
 		registers_.c = (old_val & 0x1) != 0;
-		update_alu_flags(new_val);
+		update_zn(new_val);
 		current_cycles_ += shift_cycle_count<Mode>();
 	}
 
@@ -602,7 +601,7 @@ namespace nes
 	{
 		// PLA: Pull Accumulator
 		registers_.a = pop_stack8();
-		update_alu_flags(registers_.a);
+		update_zn(registers_.a);
 		current_cycles_ += cycle_count::from_cpu(4);
 	}
 
@@ -669,7 +668,7 @@ namespace nes
 	{
 		// DEY: Decrement Y Register
 		registers_.y -= 1;
-		update_alu_flags(registers_.y);
+		update_zn(registers_.y);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -677,7 +676,7 @@ namespace nes
 	{
 		// TXA: Transfer X to Accumulator
 		registers_.a = registers_.x;
-		update_alu_flags(registers_.a);
+		update_zn(registers_.a);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -699,7 +698,7 @@ namespace nes
 	{
 		// TYA: Transfer Y to Accumulator
 		registers_.a = registers_.y;
-		update_alu_flags(registers_.a);
+		update_zn(registers_.a);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -740,7 +739,7 @@ namespace nes
 		// LDY: Load Y Register
 		auto operand = fetch_operand<Mode>();
 		registers_.y = operand.read();
-		update_alu_flags(registers_.y);
+		update_zn(registers_.y);
 		current_cycles_ += operand.get_cycles();
 	}
 
@@ -750,7 +749,7 @@ namespace nes
 		// LDA: Load Accumulator
 		auto operand = fetch_operand<Mode>();
 		registers_.a = operand.read();
-		update_alu_flags(registers_.a);
+		update_zn(registers_.a);
 		current_cycles_ += operand.get_cycles();
 	}
 
@@ -760,7 +759,7 @@ namespace nes
 		// LDX: Load X Register
 		auto operand = fetch_operand<Mode>();
 		registers_.x = operand.read();
-		update_alu_flags(registers_.x);
+		update_zn(registers_.x);
 		current_cycles_ += operand.get_cycles();
 	}
 
@@ -770,7 +769,7 @@ namespace nes
 		// LAX: LDA + TAX
 		auto operand = fetch_operand<Mode>();
 		registers_.x = registers_.a = operand.read();
-		update_alu_flags(registers_.a);
+		update_zn(registers_.a);
 		current_cycles_ += operand.get_cycles();
 	}
 
@@ -778,7 +777,7 @@ namespace nes
 	{
 		// TAY: Transfer Accumulator to Y
 		registers_.y = registers_.a;
-		update_alu_flags(registers_.y);
+		update_zn(registers_.y);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -786,7 +785,7 @@ namespace nes
 	{
 		// TAX: Transfer Accumulator to X
 		registers_.x = registers_.a;
-		update_alu_flags(registers_.x);
+		update_zn(registers_.x);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -808,7 +807,7 @@ namespace nes
 	{
 		// TSX: Transfer Stack Pointer to X
 		registers_.x = registers_.sp;
-		update_alu_flags(registers_.x);
+		update_zn(registers_.x);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -865,7 +864,7 @@ namespace nes
 		auto const old_val = read8(operand.get_address());
 		auto const new_val = static_cast<std::uint8_t>(old_val - 1);
 		write8(operand.get_address(), new_val);
-		update_alu_flags(new_val);
+		update_zn(new_val);
 		current_cycles_ += inc_dec_cycle_count<Mode>();
 	}
 
@@ -873,7 +872,7 @@ namespace nes
 	{
 		// INY: Increment Y
 		registers_.y += 1;
-		update_alu_flags(registers_.y);
+		update_zn(registers_.y);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -881,7 +880,7 @@ namespace nes
 	{
 		// DEX: Decrement X Register
 		registers_.x -= 1;
-		update_alu_flags(registers_.x);
+		update_zn(registers_.x);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -936,7 +935,7 @@ namespace nes
 		auto const old_val = read8(operand.get_address());
 		auto const new_val = static_cast<std::uint8_t>(old_val + 1);
 		write8(operand.get_address(), new_val);
-		update_alu_flags(new_val);
+		update_zn(new_val);
 		current_cycles_ += inc_dec_cycle_count<Mode>();
 	}
 
@@ -944,7 +943,7 @@ namespace nes
 	{
 		// INX: Increment X
 		registers_.x += 1;
-		update_alu_flags(registers_.x);
+		update_zn(registers_.x);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -963,12 +962,8 @@ namespace nes
 	}
 	
 	// -----------------------------------------------------------------------------------------------------------------
-	// Operands
+	// Helpers
 	// -----------------------------------------------------------------------------------------------------------------
-
-	//
-	// See: https://www.nesdev.org/wiki/CPU_addressing_modes
-	//
 
 	auto cpu::advance_pc8() -> std::uint8_t
 	{
@@ -1011,7 +1006,7 @@ namespace nes
 		return static_cast<std::uint16_t>((high << 8) | (low << 0));
 	}
 
-	auto cpu::update_alu_flags(std::uint8_t const value) -> void
+	auto cpu::update_zn(std::uint8_t const value) -> void
 	{
 		registers_.z = value == 0;
 		registers_.n = (value & 0x80) != 0;
@@ -1038,7 +1033,7 @@ namespace nes
 	{
 		auto const res = static_cast<std::uint8_t>((registers_.c << 7) | (arg >> 1));
 		registers_.c = (arg & 0x1) != 0;
-		update_alu_flags(res);
+		update_zn(res);
 		return res;
 	}
 
@@ -1046,7 +1041,7 @@ namespace nes
 	{
 		auto const res = static_cast<std::uint8_t>((arg << 1) | (registers_.c ? 1 : 0));
 		registers_.c = (arg & 0x80) != 0;
-		update_alu_flags(res);
+		update_zn(res);
 		return res;
 	}
 
@@ -1054,7 +1049,7 @@ namespace nes
 	{
 		auto const new_val = static_cast<std::uint8_t>(arg << 1);
 		registers_.c = (arg & 0x80) != 0;
-		update_alu_flags(new_val);
+		update_zn(new_val);
 		return new_val;
 	}
 
@@ -1062,7 +1057,7 @@ namespace nes
 	{
 		auto const new_val = static_cast<std::uint8_t>(arg >> 1);
 		registers_.c = (arg & 0x01) != 0;
-		update_alu_flags(new_val);
+		update_zn(new_val);
 		return new_val;
 	}
 
@@ -1075,30 +1070,30 @@ namespace nes
 		registers_.a = new_val;
 		registers_.c = tmp > 0xFF;
 		registers_.v = ((old_val ^ arg) & 0x80) == 0 && ((old_val ^ new_val) & 0x80) != 0;
-		update_alu_flags(registers_.a);
+		update_zn(registers_.a);
 	}
 
 	auto cpu::eval_and(std::uint8_t const arg) -> void
 	{
 		registers_.a &= arg;
-		update_alu_flags(registers_.a);
+		update_zn(registers_.a);
 	}
 
 	auto cpu::eval_ora(std::uint8_t const arg) -> void
 	{
 		registers_.a |= arg;
-		update_alu_flags(registers_.a);
+		update_zn(registers_.a);
 	}
 
 	auto cpu::eval_eor(std::uint8_t const arg) -> void
 	{
 		registers_.a ^= arg;
-		update_alu_flags(registers_.a);
+		update_zn(registers_.a);
 	}
 
 	auto cpu::eval_cmp(std::uint8_t const a, std::uint8_t const b) -> void
 	{
-		update_alu_flags(a - b);
+		update_zn(a - b);
 		registers_.c = a >= b;
 	}
 
@@ -1109,6 +1104,15 @@ namespace nes
 			(pop_stack8() & 0b11001111) |
 			(registers_.p & 0b00110000);
 	}
+
+
+	// -----------------------------------------------------------------------------------------------------------------
+	// Operands
+	// -----------------------------------------------------------------------------------------------------------------
+
+	//
+	// See: https://www.nesdev.org/wiki/CPU_addressing_modes
+	//
 
 	template<cpu::addressing_mode Mode>
 	auto cpu::fetch_operand(force_page_crossing const force_page_crossing) -> operand<Mode>
@@ -1135,7 +1139,8 @@ namespace nes
 				auto const offset = static_cast<std::int8_t>(advance_pc8());
 				auto const base = address{ registers_.pc };
 				addr = address{ static_cast<std::uint16_t>(registers_.pc + offset) };
-				auto const page_crossing = base.get_page() != addr.get_page() || force_page_crossing == force_page_crossing::yes;
+				auto const page_crossing =
+					base.get_page() != addr.get_page() || force_page_crossing == force_page_crossing::yes;
 				cycles = cycle_count::from_cpu(page_crossing ? 4 : 3);
 				break;
 			}
@@ -1168,7 +1173,8 @@ namespace nes
 				// PEEK(arg + X)
 				auto const arg = address{ advance_pc16() };
 				addr = arg + registers_.x;
-				auto const page_crossing = addr.get_page() != arg.get_page() || force_page_crossing == force_page_crossing::yes;
+				auto const page_crossing =
+					addr.get_page() != arg.get_page() || force_page_crossing == force_page_crossing::yes;
 				cycles = cycle_count::from_cpu(page_crossing ? 5 : 4);
 				break;
 			}
@@ -1177,7 +1183,8 @@ namespace nes
 				// PEEK(arg + Y)
 				auto const arg = address{ advance_pc16() };
 				addr = arg + registers_.y;
-				auto const page_crossing = addr.get_page() != arg.get_page() || force_page_crossing == force_page_crossing::yes;
+				auto const page_crossing =
+					addr.get_page() != arg.get_page() || force_page_crossing == force_page_crossing::yes;
 				cycles = cycle_count::from_cpu(page_crossing ? 5 : 4);
 				break;
 			}
@@ -1199,7 +1206,8 @@ namespace nes
 				auto const offset = read8(address{ 0x00, static_cast<std::uint8_t>(arg) });
 				auto const base = address{ page, offset };
 				addr = base + registers_.y;
-				auto const page_crossing = addr.get_page() != base.get_page() || force_page_crossing == force_page_crossing::yes;
+				auto const page_crossing =
+					addr.get_page() != base.get_page() || force_page_crossing == force_page_crossing::yes;
 				cycles = cycle_count::from_cpu(page_crossing ? 6 : 5);
 				break;
 			}
@@ -1209,13 +1217,15 @@ namespace nes
 	}
 
 	template<>
-	auto cpu::fetch_operand<cpu::addressing_mode::accumulator>(force_page_crossing) -> operand<addressing_mode::accumulator>
+	auto cpu::fetch_operand<cpu::addressing_mode::accumulator>(force_page_crossing)
+		-> operand<addressing_mode::accumulator>
 	{
 		return operand<addressing_mode::accumulator>{ *this };
 	}
 
 	template<>
-	auto cpu::fetch_operand<cpu::addressing_mode::immediate>(force_page_crossing) -> operand<addressing_mode::immediate>
+	auto cpu::fetch_operand<cpu::addressing_mode::immediate>(force_page_crossing)
+		-> operand<addressing_mode::immediate>
 	{
 		return operand<addressing_mode::immediate>{ *this, advance_pc8() };
 	}

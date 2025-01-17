@@ -15,6 +15,38 @@ namespace nes
 		static constexpr auto ram_size = std::size_t{ 0x800 };
 		static constexpr auto stack_offset = address{ 0x100 };
 
+		cycle_count current_cycles_;
+		ppu& ppu_;
+		mapper& mapper_;
+		controller& controller_1_;
+		controller& controller_2_;
+		std::uint8_t ram_[ram_size]{};
+
+		// Registers
+		struct
+		{
+			std::uint16_t pc{ 0 };
+			std::uint8_t sp{ 0xFD };
+			std::uint8_t a{ 0 };
+			std::uint8_t x{ 0 };
+			std::uint8_t y{ 0 };
+			union
+			{
+				struct
+				{
+					bool c : 1; // carry
+					bool z : 1; // zero
+					bool i : 1; // interrupt inhibit
+					bool d : 1; // decimal
+					bool b : 1; // break
+					bool   : 1; // (unused, always true)
+					bool v : 1; // overflow
+					bool n : 1; // negative
+				};
+				std::uint8_t p{ 0b00100100 }; // initially, set i = true
+			};
+		} registers_{};
+
 		enum class addressing_mode
 		{
 			accumulator,          // A
@@ -47,8 +79,8 @@ namespace nes
 		public:
 			explicit operand(cpu& cpu, address const address, cycle_count const cycles)
 				: cpu_{ cpu }
-				, address_{ address }
-				, cycles_{ cycles }
+			, address_{ address }
+			, cycles_{ cycles }
 			{
 			}
 
@@ -83,45 +115,13 @@ namespace nes
 		public:
 			explicit operand(cpu& cpu, std::uint8_t const value)
 				: cpu_{ cpu }
-				, value_{ value }
+			, value_{ value }
 			{
 			}
 
 			auto read() -> std::uint8_t { return value_; }
 			auto get_cycles() -> cycle_count { return cycle_count::from_cpu(2); }
 		};
-
-		cycle_count current_cycles_;
-		ppu& ppu_;
-		mapper& mapper_;
-		controller& controller_1_;
-		controller& controller_2_;
-		std::uint8_t ram_[ram_size]{};
-
-		// Registers
-		struct
-		{
-			std::uint16_t pc{ 0 };
-			std::uint8_t sp{ 0xFD };
-			std::uint8_t a{ 0 };
-			std::uint8_t x{ 0 };
-			std::uint8_t y{ 0 };
-			union
-			{
-				struct
-				{
-					bool c : 1; // carry
-					bool z : 1; // zero
-					bool i : 1; // interrupt inhibit
-					bool d : 1; // decimal
-					bool b : 1; // break
-					bool   : 1; // (unused, always true)
-					bool v : 1; // overflow
-					bool n : 1; // negative
-				};
-				std::uint8_t p{ 0b00100100 }; // initially, set i = true
-			};
-		} registers_{};
 
 	public:
 		explicit cpu(ppu& ppu, mapper& mapper, controller& controller_1, controller& controller_2);
@@ -225,7 +225,7 @@ namespace nes
 #undef DEFINE_SIMPLE_INSTRUCTION
 #undef DEFINE_OPERAND_INSTRUCTION
 
-		// Operands
+		// Helpers
 
 		auto advance_pc8() -> std::uint8_t;
 		auto advance_pc16() -> std::uint16_t;
@@ -233,7 +233,7 @@ namespace nes
 		auto push_stack16(std::uint16_t) -> void;
 		auto pop_stack8() -> std::uint8_t;
 		auto pop_stack16() -> std::uint16_t;
-		auto update_alu_flags(std::uint8_t value) -> void;
+		auto update_zn(std::uint8_t value) -> void;
 		template<addressing_mode Mode>
 		auto branch(bool condition) -> void;
 
@@ -247,6 +247,8 @@ namespace nes
 		auto eval_eor(std::uint8_t arg) -> void;
 		auto eval_cmp(std::uint8_t a, std::uint8_t b) -> void;
 		auto eval_plp() -> void;
+
+		// Operands
 
 #define DEFINE_CYCLE_COUNT(name) \
 	template<addressing_mode Mode> static auto name##_cycle_count() -> cycle_count;
