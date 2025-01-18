@@ -7,6 +7,7 @@ namespace nes
 	class address;
 	class cpu;
 	class mapper;
+	class display;
 	class rgb;
 
 	class ppu
@@ -56,9 +57,18 @@ namespace nes
 			}
 		};
 
+		struct sprite
+		{
+			std::uint32_t pattern{ 0 };
+			std::uint8_t position{ 0 };
+			bool is_in_front{ false };
+			bool is_sprite_zero{ false };
+		};
+
 		cycle_count current_cycles_;
 		cpu& cpu_;
 		mapper& mapper_;
+		display& display_;
 		std::uint8_t vram_[vram_size]{};
 		std::uint8_t oam_[oam_size]{};
 		color palette_buffer_[palette_buffer_size]
@@ -127,9 +137,21 @@ namespace nes
 		} internal_{};
 		std::uint8_t oamaddr_{}; // Address accessed by IO registers
 		std::uint8_t ppudata_read_buffer_{}; // Delays PPUDATA reads by one.
+		unsigned scanline_{ 0 };
+		unsigned scanline_cycle_{ 0 };
+		bool even_frame_{ true };
+		std::uint64_t tile_data_{ 0 }; // Data for the current tile (higher 32 bits) and the next tile (lower 32 bits).
+		std::uint8_t name_table_byte_{ 0 };
+		std::uint8_t attribute_table_byte_{ 0 };
+		std::uint8_t low_tile_byte_{ 0 };
+		std::uint8_t high_tile_byte_{ 0 };
+		sprite sprites_[8]{}; // Evaluated sprites.
+		unsigned sprite_count_{ 0 }; // Number of evaluated sprites in sprites_.
+		unsigned nmi_delay_{ 0 }; // Delay until an NMI is requested if conditions still met.
+		bool nmi_requested_{ false };
 
 	public:
-		explicit ppu(cpu& cpu, mapper& mapper);
+		explicit ppu(cpu&, mapper&, display&);
 
 		ppu(ppu const&) = delete;
 		ppu(ppu&&) = delete;
@@ -162,9 +184,23 @@ namespace nes
 
 	private:
 		auto step() -> void;
+		auto render_pixel() -> void;
+		auto fetch_name_table_byte() -> void;
+		auto fetch_attribute_table_byte() -> void;
+		auto fetch_low_tile_byte() -> void;
+		auto fetch_high_tile_byte() -> void;
+		auto store_tile_data() -> void;
+		auto increment_x() -> void;
+		auto increment_y() -> void;
+		auto copy_x() -> void;
+		auto copy_y() -> void;
+		auto evaluate_sprites() -> void;
+		auto fetch_sprite_pattern(unsigned i, unsigned row) -> std::uint32_t;
 
 		// Helpers
 
+		auto nmi_change() -> void;
+		auto sprite_height() -> unsigned;
 		auto increment_vram() -> void;
 		auto get_color(color_index) -> color&;
 		auto resolve_color(color) -> rgb;

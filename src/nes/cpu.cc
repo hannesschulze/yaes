@@ -38,6 +38,11 @@ namespace nes
 		current_cycles_ += count;
 	}
 
+	auto cpu::trigger_nmi() -> void
+	{
+		nmi_pending_ = true;
+	}
+
 	auto cpu::step_to(cycle_count const target) -> void
 	{
 		while (current_cycles_ < target)
@@ -49,6 +54,12 @@ namespace nes
 	auto cpu::step() -> void
 	{
 		// See https://www.nesdev.org/wiki/CPU_unofficial_opcodes
+
+		if (nmi_pending_)
+		{
+			execute_interrupt(address{ 0xFFFA });
+			nmi_pending_ = false;
+		}
 
 		auto const opcode = advance_pc8();
 		switch (opcode)
@@ -1034,6 +1045,16 @@ namespace nes
 			current_cycles_ += cycle_count::from_cpu(2);
 		}
 	}
+
+	auto cpu::execute_interrupt(address vector) -> void
+	{
+		push_stack16(registers_.pc);
+		run_php();
+		registers_.pc = read16(vector);
+		registers_.i = true;
+		current_cycles_ += cycle_count::from_cpu(7);
+	}
+
 
 	auto cpu::eval_ror(std::uint8_t const arg) -> std::uint8_t
 	{

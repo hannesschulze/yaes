@@ -7,6 +7,8 @@ namespace nes
 	class controller
 	{
 		button_mask pressed_;
+		unsigned index_{ 0 };
+		bool strobing_{ false };
 
 	public:
 		explicit controller() = default;

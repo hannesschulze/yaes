@@ -23,7 +23,6 @@ namespace nes
 		ppu ppu_;
 		cpu cpu_;
 		cycle_count current_cycles_;
-		std::uint8_t animation_progress_{ 255 };
 
 	public:
 		explicit nes(cartridge, display&);

@@ -21,6 +21,7 @@ namespace nes
 		controller& controller_1_;
 		controller& controller_2_;
 		std::uint8_t ram_[ram_size]{};
+		bool nmi_pending_{ false };
 
 		// Registers
 		struct
@@ -124,7 +125,7 @@ namespace nes
 		};
 
 	public:
-		explicit cpu(ppu& ppu, mapper& mapper, controller& controller_1, controller& controller_2);
+		explicit cpu(ppu&, mapper&, controller& controller_1, controller& controller_2);
 
 		cpu(cpu const&) = delete;
 		cpu(cpu&&) = delete;
@@ -134,6 +135,7 @@ namespace nes
 		auto snapshot(test::status&) -> void;
 
 		auto stall_cycles(cycle_count) -> void;
+		auto trigger_nmi() -> void;
 		auto step_to(cycle_count) -> void;
 
 		// Memory access
@@ -244,6 +246,7 @@ namespace nes
 		auto update_zn(std::uint8_t value) -> void;
 		template<addressing_mode Mode>
 		auto branch(bool condition) -> void;
+		auto execute_interrupt(address) -> void;
 
 		auto eval_ror(std::uint8_t arg) -> std::uint8_t;
 		auto eval_rol(std::uint8_t arg) -> std::uint8_t;

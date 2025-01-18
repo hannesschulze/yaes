@@ -1,4 +1,5 @@
 #include "nes/ppu.hh"
+#include "nes/display.hh"
 #include "nes/cpu.hh"
 #include "nes/mapper.hh"
 #include "nes/util/address.hh"
@@ -6,9 +7,10 @@
 
 namespace nes
 {
-	ppu::ppu(cpu& cpu, mapper& mapper)
+	ppu::ppu(cpu& cpu, mapper& mapper, display& display)
 		: cpu_{ cpu }
 		, mapper_{ mapper }
+		, display_{ display }
 	{
 	}
 
@@ -16,14 +18,380 @@ namespace nes
 	{
 		while (current_cycles_ < cycle)
 		{
-			current_cycles_ += cycle_count::from_ppu(1);
 			step();
 		}
 	}
 
 	auto ppu::step() -> void
 	{
-		// TODO
+		// See https://www.nesdev.org/wiki/PPU_rendering
+		// Based on: https://github.com/fogleman/nes/blob/master/nes/ppu.go
+
+		if (nmi_delay_ > 0)
+		{
+			nmi_delay_ -= 1;
+			if (nmi_delay_ == 0 && control_.vblank_nmi && status_.vblank)
+			{
+				cpu_.trigger_nmi();
+			}
+		}
+
+		auto const enable_rendering = mask_.enable_background || mask_.enable_sprites;
+
+		current_cycles_ += cycle_count::from_ppu(1);
+		scanline_cycle_ += 1;
+		if (enable_rendering && !even_frame_ && scanline_ == 261 && scanline_cycle_ == 340)
+		{
+			current_cycles_ += cycle_count::from_ppu(1);
+			scanline_cycle_ += 1;
+		}
+		if (scanline_cycle_ == 341)
+		{
+			scanline_cycle_ = 0;
+			scanline_ += 1;
+
+			if (scanline_ == 261)
+			{
+				scanline_ = 0;
+				even_frame_ = !even_frame_;
+
+				display_.switch_buffers();
+			}
+		}
+
+		auto const pre_line = scanline_ == 261;
+		auto const visible_line = scanline_ < 240;
+		auto const render_line = pre_line || visible_line;
+		auto const pre_fetch_cycle = scanline_cycle_ >= 321 && scanline_cycle_ <= 336;
+		auto const visible_cycle = scanline_cycle_ >= 1 && scanline_cycle_ <= 256;
+		auto const fetch_cycle = pre_fetch_cycle || visible_cycle;
+
+		// Background Logic
+		if (enable_rendering)
+		{
+			if (visible_line && visible_cycle)
+			{
+				render_pixel();
+			}
+
+			if (render_line && fetch_cycle)
+			{
+				switch (scanline_cycle_ % 8)
+				{
+					case 1:
+						fetch_name_table_byte();
+						break;
+					case 3:
+						fetch_attribute_table_byte();
+						break;
+					case 5:
+						fetch_low_tile_byte();
+						break;
+					case 7:
+						fetch_high_tile_byte();
+						break;
+					case 0:
+						store_tile_data();
+						break;
+					default:
+						break;
+				}
+			}
+
+			if (pre_line && scanline_cycle_ >= 280 && scanline_cycle_ <= 304)
+			{
+				copy_y();
+			}
+
+			if (render_line)
+			{
+				if (fetch_cycle && scanline_cycle_ % 8 == 0)
+				{
+					increment_x();
+				}
+				if (scanline_cycle_ == 256)
+				{
+					increment_y();
+				}
+				if (scanline_cycle_ == 257)
+				{
+					copy_x();
+				}
+			}
+		}
+
+		// Sprite Logic
+		if (enable_rendering)
+		{
+			if (scanline_cycle_ == 257)
+			{
+				if (visible_line)
+				{
+					evaluate_sprites();
+				}
+				else
+				{
+					sprite_count_ = 0;
+				}
+			}
+		}
+
+		// Vblank Logic
+		if (scanline_ == 241 && scanline_cycle_ == 1)
+		{
+			status_.vblank = true;
+			nmi_change();
+		}
+		if (pre_line && scanline_cycle_ == 1)
+		{
+			status_.vblank = false;
+			nmi_change();
+			status_.sprite_0_hit = false;
+			status_.sprite_overflow = false;
+		}
+	}
+
+	auto ppu::render_pixel() -> void
+	{
+		auto const x = scanline_cycle_ - 1;
+		auto const y = scanline_;
+
+		auto background_color = color_index{ 0 };
+		if (mask_.enable_background)
+		{
+			auto const tile_data = static_cast<std::uint32_t>(tile_data_ >> 32);
+			background_color = color_index{ (tile_data >> ((7 - internal_.x) * 4)) & 0xF };
+			background_color.role = role::background;
+		}
+
+		auto foreground = sprite{};
+		auto foreground_color = color_index{ 0 };
+		for (auto i = unsigned{ 0 }; i < sprite_count_; ++i)
+		{
+			auto const s = sprites_[i];
+			auto const offset = static_cast<int>(x) - static_cast<int>(s.position);
+			if (offset < 0 || offset > 7) { continue; }
+			auto const color = color_index{ (s.pattern >> ((7 - offset) * 4)) & 0xF };
+			if (color.color == 0) { continue; }
+
+			foreground = s;
+			foreground_color = color;
+			foreground_color.role = role::sprite;
+			break;
+		}
+
+		if (x < 8 && !mask_.show_background_start) { background_color = color_index{ 0 }; }
+		if (x < 8 && !mask_.show_sprites_start) { foreground_color = color_index{ 0 }; }
+
+		auto const has_background = background_color.color != 0;
+		auto const has_foreground = foreground_color.color != 0;
+		auto color = color_index{ 0 };
+		if (!has_background && has_foreground)
+		{
+			color = foreground_color;
+		}
+		if (has_background && !has_foreground)
+		{
+			color = background_color;
+		}
+		if (has_background && has_foreground)
+		{
+			if (foreground.is_sprite_zero && x < 255)
+			{
+				status_.sprite_0_hit = true;
+			}
+
+			color = foreground.is_in_front ? foreground_color : background_color;
+		}
+
+		display_.set(x, y, resolve_color(get_color(color)));
+	}
+
+	auto ppu::fetch_name_table_byte() -> void
+	{
+		auto const addr = static_cast<std::uint16_t>(0x2000 | (internal_.v & 0x0FFF));
+		name_table_byte_ = read8(address{ addr });
+	}
+
+	auto ppu::fetch_attribute_table_byte() -> void
+	{
+		auto const v = internal_.v;
+		auto const addr = static_cast<std::uint16_t>(0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07));
+		auto const shift = ((v >> 4) & 4) | (v & 2);
+		attribute_table_byte_ = static_cast<std::uint8_t>(((read8(address{ addr }) >> shift) & 3) << 2);
+	}
+
+	auto ppu::fetch_low_tile_byte() -> void
+	{
+		auto const fine_y = (internal_.v >> 12) & 7;
+		auto const table = control_.background_pattern_table;
+		auto const tile = name_table_byte_;
+		auto const addr = static_cast<std::uint16_t>(0x1000 * table + 16 * tile + fine_y);
+		low_tile_byte_ = read8(address{ addr });
+	}
+
+	auto ppu::fetch_high_tile_byte() -> void
+	{
+		auto const fine_y = (internal_.v >> 12) & 7;
+		auto const table = control_.background_pattern_table;
+		auto const tile = name_table_byte_;
+		auto const addr = static_cast<std::uint16_t>(0x1000 * table + 16 * tile + fine_y);
+		low_tile_byte_ = read8(address{ addr } + 8);
+	}
+
+	auto ppu::store_tile_data() -> void
+	{
+		auto data = std::uint32_t{ 0 };
+		for (auto i = unsigned{ 0 }; i < 8; ++i)
+		{
+			auto const p1 = (low_tile_byte_ & 0x80) >> 7;
+			auto const p2 = (high_tile_byte_ & 0x80) >> 6;
+			low_tile_byte_ <<= 1;
+			high_tile_byte_ <<= 1;
+			data <<= 4;
+			data |= attribute_table_byte_ | p1 | p2;
+		}
+		tile_data_ <<= 32;
+		tile_data_ |= data;
+	}
+
+	auto ppu::increment_x() -> void
+	{
+		// If coarse X == 31
+		if ((internal_.v & 0x1F) == 0x1F)
+		{
+			// Coarse X = 0
+			internal_.v &= ~0x1F;
+			// Switch horizontal nametable
+			internal_.v ^= 0x400;
+		}
+		else
+		{
+			// Increment coarse X
+			internal_.v += 1;
+		}
+	}
+
+	auto ppu::increment_y() -> void
+	{
+		// If fine Y == 7
+		if ((internal_.v & 0x7000) == 0x7000)
+		{
+			// Fine Y = 0
+			internal_.v &= 0x8FFF;
+			// Let y = coarse Y
+			auto y = (internal_.v & 0x03E0) >> 5;
+			if (y == 29)
+			{
+				// Coarse Y = 0
+				y = 0;
+				// Switch vertical nametable
+				internal_.v ^= 0x0800;
+			}
+			else if (y == 31)
+			{
+				// Coarse Y = 0, nametable not switched
+				y = 0;
+			}
+			else
+			{
+				// Increment coarse Y
+				y += 1;
+			}
+			// Put coarse Y back into v
+			internal_.v &= ~0x03E0;
+			internal_.v |= y << 5;
+		}
+		else
+		{
+			// Increment fine Y
+			internal_.v += 0x1000;
+		}
+	}
+
+	auto ppu::copy_x() -> void
+	{
+		internal_.v = (internal_.v & 0xFBE0) | (internal_.t & 0x041F);
+	}
+
+	auto ppu::copy_y() -> void
+	{
+		internal_.v = (internal_.v & 0x841F) | (internal_.t & 0x7BE0);
+	}
+
+	auto ppu::evaluate_sprites() -> void
+	{
+		auto const height = sprite_height();
+		sprite_count_ = 0;
+		for (auto i = unsigned{ 0 }; i < 64; ++i)
+		{
+			auto const y = oam_[i * 4 + 0];
+			auto const a = oam_[i * 4 + 2];
+			auto const x = oam_[i * 4 + 3];
+			auto const row = static_cast<int>(scanline_) - static_cast<int>(y);
+			if (row < 0 || row >= height) { continue; }
+
+			if (sprite_count_ < 8)
+			{
+				sprites_[sprite_count_].pattern = fetch_sprite_pattern(i, row);
+				sprites_[sprite_count_].position = x;
+				sprites_[sprite_count_].is_in_front = a & 0b00100000;
+				sprites_[sprite_count_].is_sprite_zero = i == 0;
+				sprite_count_ += 1;
+			}
+			else
+			{
+				status_.sprite_overflow = true;
+				break;
+			}
+		}
+	}
+
+	auto ppu::fetch_sprite_pattern(unsigned const i, unsigned row) -> std::uint32_t
+	{
+		auto tile = oam_[i * 4 + 1];
+		auto const attributes = oam_[i * 4 + 2];
+		auto const flip_vertical = (attributes & 0x80) == 0x80;
+		if (flip_vertical) { row = sprite_height() - 1 - row; }
+		auto addr = address{};
+		switch (control_.sprite_size)
+		{
+			case sprite_size::_8x8:
+			{
+				auto const table = control_.sprite_pattern_table;
+				addr = address{ static_cast<std::uint16_t>(0x1000 * table + 16 * tile + row) };
+				break;
+			}
+			case sprite_size::_8x16:
+			{
+				auto const table = tile & 1;
+				tile &= 0xFE;
+				if (row > 7)
+				{
+					tile += 1;
+					row -= 8;
+				}
+				addr = address{ static_cast<std::uint16_t>(0x1000 * table + 16 * tile + row) };
+				break;
+			}
+		}
+
+		auto const a = (attributes & 3) << 2;
+		auto low_tile_byte = read8(addr);
+		auto high_tile_byte = read8(addr + 8);
+		auto data = std::uint32_t{ 0 };
+		for (auto j = unsigned{ 0 }; j < 8; ++j)
+		{
+			auto const flip_horizontal = (attributes & 0x40) == 0x40;
+			auto const p1 = flip_horizontal ? (low_tile_byte & 1) << 0 : (low_tile_byte & 0x80) >> 7;
+			auto const p2 = flip_horizontal ? (high_tile_byte & 1) << 1 : (high_tile_byte & 0x80) >> 6;
+			low_tile_byte <<= 1;
+			high_tile_byte <<= 1;
+			data <<= 4;
+			data |= a | p1 | p2;
+		}
+
+		return data;
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -84,6 +452,7 @@ namespace nes
 
 		status_.vblank = false;
 		internal_.w = false;
+		nmi_change();
 
 		write_latch(res);
 		return res;
@@ -127,6 +496,7 @@ namespace nes
 		if (current_cycles_ > boot_up_cycles)
 		{
 			control_.value = value;
+			nmi_change();
 		}
 	}
 
@@ -219,6 +589,30 @@ namespace nes
 	// Helpers
 	// -----------------------------------------------------------------------------------------------------------------
 
+	auto ppu::nmi_change() -> void
+	{
+		auto const should_trigger = control_.vblank_nmi && status_.vblank;
+		if (!nmi_requested_ && should_trigger)
+		{
+			// TODO: HACK
+			nmi_delay_ = 15;
+		}
+		nmi_requested_ = should_trigger;
+	}
+
+	auto ppu::sprite_height() -> unsigned
+	{
+		switch (control_.sprite_size)
+		{
+			case sprite_size::_8x8:
+				return 8;
+			case sprite_size::_8x16:
+				return 16;
+		}
+
+		return 8;
+	}
+
 	auto ppu::increment_vram() -> void
 	{
 		switch (control_.vram_increment)
@@ -244,7 +638,7 @@ namespace nes
 		return palette_buffer_[index.value];
 	}
 
-	auto ppu::resolve_color(color color) -> rgb
+	auto ppu::resolve_color(color const color) -> rgb
 	{
 		auto const index = static_cast<std::uint8_t>(color);
 		switch (index & 0x3F)

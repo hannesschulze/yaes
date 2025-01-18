@@ -10,7 +10,7 @@ namespace nes
 		: cartridge_{ std::move(cartridge) }
 		, display_{ display }
 		, mapper_{ mapper::select(cartridge_) }
-		, ppu_{ cpu_, mapper_ }
+		, ppu_{ cpu_, mapper_, display_ }
 		, cpu_{ ppu_, mapper_, controller_1_, controller_2_ }
 	{
 		if (!cartridge_.is_valid())
@@ -19,8 +19,9 @@ namespace nes
 			std::abort();
 		}
 
-		display_.clear(rgb{ animation_progress_, animation_progress_, animation_progress_ });
+		display_.clear(rgb{});
 		display_.switch_buffers();
+		display_.clear(rgb{});
 	}
 
 	auto nes::step(std::chrono::microseconds const delta) -> void
@@ -33,10 +34,6 @@ namespace nes
 		current_cycles_ += delta;
 		cpu_.step_to(current_cycles_);
 		ppu_.step_to(current_cycles_);
-
-		animation_progress_ -= 2;
-		display_.clear(rgb{ animation_progress_, animation_progress_, animation_progress_ });
-		display_.switch_buffers();
 	}
 
 	auto nes::snapshot() -> test::status

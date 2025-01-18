@@ -31,7 +31,10 @@ namespace
             buffer_back_ = buffer_front_;
             buffer_front_ = tmp;
             bytes_back_ = static_cast<std::uint8_t*>([buffer_back_ mutableBytes]);
+        }
 
+        auto actually_switch_buffers() -> void
+        {
             auto texture = [SKTexture textureWithData:buffer_front_ size:CGSizeMake(width, height)];
             [texture setFilteringMode:SKTextureFilteringNearest];
             [node_ setTexture:texture];
@@ -170,6 +173,7 @@ namespace
     last_time_ = currentTime;
     auto const delta_us = static_cast<std::uint64_t>((currentTime - last_time) * 1000. * 1000.);
     self->nes_->step(std::chrono::microseconds{ delta_us });
+    self->display_->actually_switch_buffers();
 }
 
 @end

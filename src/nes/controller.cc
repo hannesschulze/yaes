@@ -4,12 +4,15 @@ namespace nes
 {
 	auto controller::read() -> std::uint8_t
 	{
-		// TODO
-		return 0x0;
+		auto const res = index_ < 8 ? (pressed_.get_raw_value() >> index_) & 1 : 0;
+		index_ += 1;
+		if (strobing_) { index_ = 0; }
+		return res;
 	}
 
-	auto controller::write(std::uint8_t) -> void
+	auto controller::write(std::uint8_t const value) -> void
 	{
-		// TODO
+		strobing_ = value & 1;
+		if (strobing_) { index_ = 0; }
 	}
 } // namespace nes
