@@ -6,6 +6,12 @@
 
 namespace nes
 {
+	enum class name_table_arrangement
+	{
+		horizontal,
+		vertical,
+	};
+
 	class cartridge
 	{
 		bool is_valid_{ false };
@@ -13,6 +19,7 @@ namespace nes
 		std::vector<std::uint8_t> chr_rom_;
 		std::vector<std::uint8_t> ram_;
 		std::uint8_t mapper_number_{ 0 };
+		name_table_arrangement name_table_arrangement_{};
 
 	public:
 		explicit cartridge() = default;
@@ -29,5 +36,6 @@ namespace nes
 		auto get_ram_mut() -> std::uint8_t* { return ram_.data(); }
 		auto get_ram_length() const -> std::size_t { return ram_.size(); }
 		auto get_mapper_number() const -> std::uint8_t { return mapper_number_; }
+		auto get_name_table_arrangement() const -> name_table_arrangement { return name_table_arrangement_; }
 	};
 } // namespace nes

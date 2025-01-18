@@ -12,6 +12,8 @@ namespace nes
 
 	auto cartridge::from_data(void const* data, std::size_t const length) -> cartridge
 	{
+		// See: https://www.nesdev.org/wiki/INES
+
 		auto const bytes = static_cast<std::uint8_t const*>(data);
 		auto res = cartridge{};
 		res.is_valid_ = true;
@@ -29,6 +31,9 @@ namespace nes
 		res.mapper_number_ =
 			(control_1 & 0b11110000) >> 4 |
 			(control_2 & 0b11110000) >> 0;
+		res.name_table_arrangement_ = (control_1 & 0b00000001) != 0
+			? name_table_arrangement::vertical
+			: name_table_arrangement::horizontal;
 
 		// Load program data.
 		auto offset = std::size_t{ 16 };

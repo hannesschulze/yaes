@@ -133,7 +133,15 @@ namespace nes
 
 		auto snapshot(test::status&) -> void;
 
+		auto stall_cycles(cycle_count) -> void;
 		auto step_to(cycle_count) -> void;
+
+		// Memory access
+
+		auto read8(address) -> std::uint8_t;
+		auto read16(address) -> std::uint16_t;
+		auto write8(address, std::uint8_t) -> void;
+		auto write16(address, std::uint16_t) -> void;
 
 	private:
 		auto step() -> void;
@@ -281,12 +289,5 @@ namespace nes
 		auto fetch_operand<addressing_mode::accumulator>(force_page_crossing) -> operand<addressing_mode::accumulator>;
 		template<>
 		auto fetch_operand<addressing_mode::immediate>(force_page_crossing) -> operand<addressing_mode::immediate>;
-
-		// Memory access
-
-		auto read8(address) -> std::uint8_t;
-		auto read16(address) -> std::uint16_t;
-		auto write8(address, std::uint8_t) -> void;
-		auto write16(address, std::uint16_t) -> void;
 	};
 } // namespace nes

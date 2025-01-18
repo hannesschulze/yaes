@@ -1,4 +1,5 @@
 #include "nes/cpu.hh"
+#include "nes/ppu.hh"
 #include "nes/controller.hh"
 #include "nes/mapper.hh"
 
@@ -30,6 +31,11 @@ namespace nes
 		snapshot.registers.b = registers_.b;
 		snapshot.registers.v = registers_.v;
 		snapshot.registers.n = registers_.n;
+	}
+
+	auto cpu::stall_cycles(cycle_count const count) -> void
+	{
+		current_cycles_ += count;
 	}
 
 	auto cpu::step_to(cycle_count const target) -> void
@@ -1122,6 +1128,8 @@ namespace nes
 
 		switch (Mode)
 		{
+			case addressing_mode::immediate: static_assert(Mode != addressing_mode::immediate);
+			case addressing_mode::accumulator: static_assert(Mode != addressing_mode::accumulator);
 			case addressing_mode::zero_page:
 			{
 				addr = address{ advance_pc8() };
@@ -1241,14 +1249,28 @@ namespace nes
 	auto cpu::read8(address const addr) -> std::uint8_t
 	{
 		if (addr <= address{ 0x1FFF }) { return ram_[addr.get_absolute() % ram_size]; }
-		if (addr <= address{ 0x3FFF }) { return 0x0; } // TODO: PPU registers
+		if (addr <= address{ 0x3FFF })
+		{
+			switch (addr.get_absolute() % 8)
+			{
+				case 0: return ppu_.read_latch();
+				case 1: return ppu_.read_latch();
+				case 2: return ppu_.read_ppustatus();
+				case 3: return ppu_.read_latch();
+				case 4: return ppu_.read_oamdata();
+				case 5: return ppu_.read_latch();
+				case 6: return ppu_.read_latch();
+				case 7: return ppu_.read_ppudata();
+				default: return 0x0;
+			}
+		}
 		if (addr <= address{ 0x4013 }) { return 0x0; } // TODO: APU registers
-		if (addr == address{ 0x4014 }) { return 0x0; } // TODO: PPU registers
+		if (addr == address{ 0x4014 }) { return ppu_.read_latch(); }
 		if (addr == address{ 0x4015 }) { return 0x0; } // TODO: APU registers
 		if (addr == address{ 0x4016 }) { return controller_1_.read(); }
 		if (addr == address{ 0x4017 }) { return controller_2_.read(); }
 		if (addr <= address{ 0x401F }) { return 0x0; }
-		return mapper_.read(addr);
+		return mapper_.read_cpu(addr);
 	}
 
 	auto cpu::read16(address const addr) -> std::uint16_t
@@ -1261,14 +1283,28 @@ namespace nes
 	auto cpu::write8(address const addr, std::uint8_t const value) -> void
 	{
 		if (addr <= address{ 0x1FFF }) { ram_[addr.get_absolute() % ram_size] = value; return; }
-		if (addr <= address{ 0x3FFF }) { return; } // TODO: PPU registers
+		if (addr <= address{ 0x3FFF })
+		{
+			switch (addr.get_absolute() % 8)
+			{
+				case 0: ppu_.write_ppuctrl(value); return;
+				case 1: ppu_.write_ppumask(value); return;
+				case 2: ppu_.write_latch(value); return;
+				case 3: ppu_.write_oamaddr(value); return;
+				case 4: ppu_.write_oamdata(value); return;
+				case 5: ppu_.write_ppuscroll(value); return;
+				case 6: ppu_.write_ppuaddr(value); return;
+				case 7: ppu_.write_ppudata(value); return;
+				default: return;
+			}
+		}
 		if (addr <= address{ 0x4013 }) { return; } // TODO: APU registers
-		if (addr == address{ 0x4014 }) { return; } // TODO: PPU registers
+		if (addr == address{ 0x4014 }) { ppu_.write_oamdma(value); return; }
 		if (addr == address{ 0x4015 }) { return; } // TODO: APU registers
 		if (addr == address{ 0x4016 }) { controller_1_.write(value); return; }
 		if (addr == address{ 0x4017 }) { controller_2_.write(value); return; }
 		if (addr <= address{ 0x401F }) { return; }
-		mapper_.write(addr, value);
+		mapper_.write_cpu(addr, value);
 	}
 
 	auto cpu::write16(address const addr, std::uint16_t const value) -> void
@@ -1278,5 +1314,4 @@ namespace nes
 		write8(addr + 0, low);
 		write8(addr + 1, high);
 	}
-
 } // namespace nes
