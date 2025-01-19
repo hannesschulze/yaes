@@ -35,7 +35,7 @@ namespace
 
         auto actually_switch_buffers() -> void
         {
-            auto texture = [SKTexture textureWithData:buffer_front_ size:CGSizeMake(width, height)];
+            auto texture = [SKTexture textureWithData:buffer_front_ size:CGSizeMake(width, height) flipped:YES];
             [texture setFilteringMode:SKTextureFilteringNearest];
             [node_ setTexture:texture];
         }

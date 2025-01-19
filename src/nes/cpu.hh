@@ -155,7 +155,7 @@ namespace nes
 #define DEFINE_OPERAND_INSTRUCTION(name) \
 	template<addressing_mode Mode> auto run_##name() -> void;
 
-		DEFINE_SIMPLE_INSTRUCTION(brk)
+		DEFINE_OPERAND_INSTRUCTION(brk)
 		DEFINE_OPERAND_INSTRUCTION(ora)
 		DEFINE_SIMPLE_INSTRUCTION(stp)
 		DEFINE_OPERAND_INSTRUCTION(slo)
@@ -258,6 +258,7 @@ namespace nes
 		auto eval_eor(std::uint8_t arg) -> void;
 		auto eval_cmp(std::uint8_t a, std::uint8_t b) -> void;
 		auto eval_plp() -> void;
+		auto eval_php() -> void;
 
 		// Operands
 

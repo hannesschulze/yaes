@@ -3,6 +3,8 @@
 #include "nes/controller.hh"
 #include "nes/mapper.hh"
 
+#define ENABLE_PPU
+
 namespace nes
 {
 	cpu::cpu(ppu& ppu, mapper& mapper, controller& controller_1, controller& controller_2)
@@ -57,14 +59,16 @@ namespace nes
 
 		if (nmi_pending_)
 		{
+#ifdef ENABLE_PPU
 			execute_interrupt(address{ 0xFFFA });
+#endif
 			nmi_pending_ = false;
 		}
 
 		auto const opcode = advance_pc8();
 		switch (opcode)
 		{
-			case 0x00: run_brk(); break;
+			case 0x00: run_brk<addressing_mode::immediate>(); break;
 			case 0x01: run_ora<addressing_mode::indexed_indirect>(); break;
 			case 0x02: run_stp(); break;
 			case 0x03: run_slo<addressing_mode::indexed_indirect>(); break;
@@ -102,7 +106,7 @@ namespace nes
 			case 0x23: run_rla<addressing_mode::indexed_indirect>(); break;
 			case 0x24: run_bit<addressing_mode::zero_page>(); break;
 			case 0x25: run_and<addressing_mode::zero_page>(); break;
-			case 0x26: run_rol<addressing_mode::accumulator>(); break;
+			case 0x26: run_rol<addressing_mode::zero_page>(); break;
 			case 0x27: run_rla<addressing_mode::zero_page>(); break;
 			case 0x28: run_plp(); break;
 			case 0x29: run_and<addressing_mode::immediate>(); break;
@@ -328,10 +332,12 @@ namespace nes
 	// Instructions
 	// -----------------------------------------------------------------------------------------------------------------
 
+	template<cpu::addressing_mode Mode>
 	auto cpu::run_brk() -> void
 	{
-		// TODO: Proper BRK handling
-		std::abort();
+		// BRK: Break
+		fetch_operand<Mode>();
+		execute_interrupt(address{ 0xFFFE });
 	}
 
 	template<cpu::addressing_mode Mode>
@@ -377,8 +383,7 @@ namespace nes
 	auto cpu::run_php() -> void
 	{
 		// PHP: Push Processor Status
-		// Always set bits 4 and 5.
-		push_stack8(registers_.p | 0b00110000);
+		eval_php();
 		current_cycles_ += cycle_count::from_cpu(3);
 	}
 
@@ -453,7 +458,7 @@ namespace nes
 		auto operand = fetch_operand<Mode>();
 		auto const arg = operand.read();
 		auto const res = (registers_.a & arg) != 0;
-		registers_.z = !res;
+		registers_.z = res == 0;
 		registers_.v = (arg & 0x40) != 0;
 		registers_.n = (arg & 0x80) != 0;
 		current_cycles_ += operand.get_cycles();
@@ -701,7 +706,7 @@ namespace nes
 	auto cpu::run_xaa() -> void
 	{
 		// XAA: Depends on analog behavior.
-		run_brk();
+		run_stp();
 	}
 
 	template<cpu::addressing_mode Mode>
@@ -1046,15 +1051,14 @@ namespace nes
 		}
 	}
 
-	auto cpu::execute_interrupt(address vector) -> void
+	auto cpu::execute_interrupt(address const vector) -> void
 	{
 		push_stack16(registers_.pc);
-		run_php();
+		eval_php();
 		registers_.pc = read16(vector);
 		registers_.i = true;
 		current_cycles_ += cycle_count::from_cpu(7);
 	}
-
 
 	auto cpu::eval_ror(std::uint8_t const arg) -> std::uint8_t
 	{
@@ -1132,6 +1136,11 @@ namespace nes
 			(registers_.p & 0b00110000);
 	}
 
+	auto cpu::eval_php() -> void
+	{
+		// Always set bits 4 and 5.
+		push_stack8(registers_.p | 0b00110000);
+	}
 
 	// -----------------------------------------------------------------------------------------------------------------
 	// Operands
@@ -1272,6 +1281,7 @@ namespace nes
 		if (addr <= address{ 0x1FFF }) { return ram_[addr.get_absolute() % ram_size]; }
 		if (addr <= address{ 0x3FFF })
 		{
+#ifdef ENABLE_PPU
 			switch (addr.get_absolute() % 8)
 			{
 				case 0: return ppu_.read_latch();
@@ -1284,9 +1294,16 @@ namespace nes
 				case 7: return ppu_.read_ppudata();
 				default: return 0x0;
 			}
+#else
+			return 0x0;
+#endif
 		}
 		if (addr <= address{ 0x4013 }) { return 0x0; } // TODO: APU registers
+#ifdef ENABLE_PPU
 		if (addr == address{ 0x4014 }) { return ppu_.read_latch(); }
+#else
+		if (addr == address{ 0x4014 }) { return 0x0; }
+#endif
 		if (addr == address{ 0x4015 }) { return 0x0; } // TODO: APU registers
 		if (addr == address{ 0x4016 }) { return controller_1_.read(); }
 		if (addr == address{ 0x4017 }) { return controller_2_.read(); }
@@ -1306,6 +1323,7 @@ namespace nes
 		if (addr <= address{ 0x1FFF }) { ram_[addr.get_absolute() % ram_size] = value; return; }
 		if (addr <= address{ 0x3FFF })
 		{
+#ifdef ENABLE_PPU
 			switch (addr.get_absolute() % 8)
 			{
 				case 0: ppu_.write_ppuctrl(value); return;
@@ -1318,9 +1336,16 @@ namespace nes
 				case 7: ppu_.write_ppudata(value); return;
 				default: return;
 			}
+#else
+			return;
+#endif
 		}
 		if (addr <= address{ 0x4013 }) { return; } // TODO: APU registers
+#ifdef ENABLE_PPU
 		if (addr == address{ 0x4014 }) { ppu_.write_oamdma(value); return; }
+#else
+		if (addr == address{ 0x4014 }) { return; }
+#endif
 		if (addr == address{ 0x4015 }) { return; } // TODO: APU registers
 		if (addr == address{ 0x4016 }) { controller_1_.write(value); return; }
 		if (addr == address{ 0x4017 }) { controller_2_.write(value); return; }

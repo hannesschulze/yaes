@@ -109,8 +109,7 @@ namespace nes
 
 	auto mapper::nrom_mirrored_vram_address(address const addr) const -> unsigned
 	{
-		auto rel = addr.get_absolute();
-		if (rel >= 0x3000) { rel -= 0x1000; }
+		auto const rel = addr.get_absolute() % 0x1000;
 
 		switch (cartridge_.get_name_table_arrangement())
 		{

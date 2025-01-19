@@ -50,12 +50,10 @@ namespace nes
 			scanline_cycle_ = 0;
 			scanline_ += 1;
 
-			if (scanline_ == 261)
+			if (scanline_ == 262)
 			{
 				scanline_ = 0;
 				even_frame_ = !even_frame_;
-
-				display_.switch_buffers();
 			}
 		}
 
@@ -76,6 +74,7 @@ namespace nes
 
 			if (render_line && fetch_cycle)
 			{
+				tile_data_ <<= 4;
 				switch (scanline_cycle_ % 8)
 				{
 					case 1:
@@ -139,6 +138,7 @@ namespace nes
 		// Vblank Logic
 		if (scanline_ == 241 && scanline_cycle_ == 1)
 		{
+			display_.switch_buffers();
 			status_.vblank = true;
 			nmi_change();
 		}
@@ -146,7 +146,7 @@ namespace nes
 		{
 			status_.vblank = false;
 			nmi_change();
-			status_.sprite_0_hit = false;
+			status_.sprite_zero_hit = false;
 			status_.sprite_overflow = false;
 		}
 	}
@@ -180,11 +180,12 @@ namespace nes
 			break;
 		}
 
-		if (x < 8 && !mask_.show_background_start) { background_color = color_index{ 0 }; }
-		if (x < 8 && !mask_.show_sprites_start) { foreground_color = color_index{ 0 }; }
+		auto has_background = background_color.color != 0;
+		auto has_foreground = foreground_color.color != 0;
 
-		auto const has_background = background_color.color != 0;
-		auto const has_foreground = foreground_color.color != 0;
+		if (x < 8 && !mask_.show_background_start) { has_background = false; }
+		if (x < 8 && !mask_.show_sprites_start) { has_foreground = false; }
+
 		auto color = color_index{ 0 };
 		if (!has_background && has_foreground)
 		{
@@ -198,7 +199,7 @@ namespace nes
 		{
 			if (foreground.is_sprite_zero && x < 255)
 			{
-				status_.sprite_0_hit = true;
+				status_.sprite_zero_hit = true;
 			}
 
 			color = foreground.is_in_front ? foreground_color : background_color;
@@ -236,7 +237,7 @@ namespace nes
 		auto const table = control_.background_pattern_table;
 		auto const tile = name_table_byte_;
 		auto const addr = static_cast<std::uint16_t>(0x1000 * table + 16 * tile + fine_y);
-		low_tile_byte_ = read8(address{ addr } + 8);
+		high_tile_byte_ = read8(address{ addr } + 8);
 	}
 
 	auto ppu::store_tile_data() -> void
@@ -251,7 +252,6 @@ namespace nes
 			data <<= 4;
 			data |= attribute_table_byte_ | p1 | p2;
 		}
-		tile_data_ <<= 32;
 		tile_data_ |= data;
 	}
 
@@ -261,7 +261,9 @@ namespace nes
 		if ((internal_.v & 0x1F) == 0x1F)
 		{
 			// Coarse X = 0
-			internal_.v &= ~0x1F;
+			// TODO: Check
+			// internal_.v &= ~0x1F;
+			   internal_.v &= 0xFFE0;
 			// Switch horizontal nametable
 			internal_.v ^= 0x400;
 		}
@@ -299,7 +301,9 @@ namespace nes
 				y += 1;
 			}
 			// Put coarse Y back into v
-			internal_.v &= ~0x03E0;
+			// TODO: Check
+			// internal_.v &= ~0x03E0;
+			   internal_.v &= 0xFC1F;
 			internal_.v |= y << 5;
 		}
 		else
@@ -335,7 +339,9 @@ namespace nes
 			{
 				sprites_[sprite_count_].pattern = fetch_sprite_pattern(i, row);
 				sprites_[sprite_count_].position = x;
-				sprites_[sprite_count_].is_in_front = a & 0b00100000;
+				// TODO: Check
+				// sprites_[sprite_count_].is_in_front = a & 0b00100000;
+				   sprites_[sprite_count_].is_in_front = (a >> 5) & 1;
 				sprites_[sprite_count_].is_sprite_zero = i == 0;
 				sprite_count_ += 1;
 			}
@@ -383,10 +389,21 @@ namespace nes
 		for (auto j = unsigned{ 0 }; j < 8; ++j)
 		{
 			auto const flip_horizontal = (attributes & 0x40) == 0x40;
-			auto const p1 = flip_horizontal ? (low_tile_byte & 1) << 0 : (low_tile_byte & 0x80) >> 7;
-			auto const p2 = flip_horizontal ? (high_tile_byte & 1) << 1 : (high_tile_byte & 0x80) >> 6;
-			low_tile_byte <<= 1;
-			high_tile_byte <<= 1;
+			std::uint8_t p1, p2;
+			if (flip_horizontal)
+			{
+				p1 = (low_tile_byte & 1) << 0;
+				p2 = (high_tile_byte & 1) << 1;
+				low_tile_byte >>= 1;
+				high_tile_byte >>= 1;
+			}
+			else
+			{
+				p1 = (low_tile_byte & 0x80) >> 7;
+				p2 = (high_tile_byte & 0x80) >> 6;
+				low_tile_byte <<= 1;
+				high_tile_byte <<= 1;
+			}
 			data <<= 4;
 			data |= a | p1 | p2;
 		}
@@ -454,13 +471,17 @@ namespace nes
 		internal_.w = false;
 		nmi_change();
 
-		write_latch(res);
+		//write_latch(res);
 		return res;
 	}
 
 	auto ppu::read_oamdata() -> std::uint8_t
 	{
-		auto const res = oam_[oamaddr_];
+		auto res = oam_[oamaddr_];
+		if ((oamaddr_ & 0x3) == 0x2)
+		{
+			res &= 0xE3;
+		}
 		write_latch(res);
 		return res;
 	}
@@ -470,7 +491,7 @@ namespace nes
 		auto const addr = address{ internal_.v };
 		auto res = read8(addr);
 
-		if (addr <= address{ 0x3F00 })
+		if (addr % 0x4000 <= address{ 0x3F00 })
 		{
 			std::swap(res, ppudata_read_buffer_);
 		}
@@ -496,6 +517,7 @@ namespace nes
 		if (current_cycles_ > boot_up_cycles)
 		{
 			control_.value = value;
+			internal_.t = (internal_.t & 0xF3FF) | ((value & 0x03) << 10);
 			nmi_change();
 		}
 	}
@@ -539,7 +561,7 @@ namespace nes
 			if (!internal_.w)
 			{
 				// First write.
-				internal_.t = (internal_.t & 0b0000000011111111) | ((value & 0b00111111) << 8);
+				internal_.t = (internal_.t & 0b1000000011111111) | ((value & 0b00111111) << 8);
 			}
 			else
 			{

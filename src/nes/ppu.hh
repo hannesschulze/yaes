@@ -43,7 +43,7 @@ namespace nes
 
 		union color_index
 		{
-			struct
+			struct __attribute__((packed))
 			{
 				unsigned color   : 2;
 				unsigned palette : 2;
@@ -85,7 +85,7 @@ namespace nes
 		std::uint8_t latch_{}; // The last read/written IO register value, returned when reading write-only registers.
 		union
 		{
-			struct
+			struct __attribute__((packed))
 			{
 				bool                 : 1;
 				bool                 : 1;
@@ -93,14 +93,14 @@ namespace nes
 				bool                 : 1;
 				bool                 : 1;
 				bool sprite_overflow : 1;
-				bool sprite_0_hit    : 1;
+				bool sprite_zero_hit : 1;
 				bool vblank          : 1;
 			};
 			std::uint8_t value{ 0b00000000 };
 		} status_{};
 		union
 		{
-			struct
+			struct __attribute__((packed))
 			{
 				std::uint8_t   base_name_table          : 2; // Base nametable address.
 				vram_increment vram_increment           : 1; // VRAM increment per CPU read/write of PPUDATA.
@@ -114,7 +114,7 @@ namespace nes
 		} control_{};
 		union
 		{
-			struct
+			struct __attribute__((packed))
 			{
 				bool grayscale             : 1; // Enable/disable grayscale.
 				bool show_background_start : 1; // Show background in leftmost 8 pixels of screen.
@@ -137,8 +137,8 @@ namespace nes
 		} internal_{};
 		std::uint8_t oamaddr_{}; // Address accessed by IO registers
 		std::uint8_t ppudata_read_buffer_{}; // Delays PPUDATA reads by one.
-		unsigned scanline_{ 0 };
-		unsigned scanline_cycle_{ 0 };
+		unsigned scanline_{ 240 };
+		unsigned scanline_cycle_{ 340 };
 		bool even_frame_{ true };
 		std::uint64_t tile_data_{ 0 }; // Data for the current tile (higher 32 bits) and the next tile (lower 32 bits).
 		std::uint8_t name_table_byte_{ 0 };
