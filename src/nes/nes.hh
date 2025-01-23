@@ -36,9 +36,11 @@ namespace nes
 		auto get_controller_1() -> controller& { return controller_1_; }
 		auto get_controller_2() const -> controller const& { return controller_2_; }
 		auto get_controller_2() -> controller& { return controller_2_; }
+		auto ref_operations() -> std::vector<test::memory_operation>& { return ppu_.memory_operations; }
 
 		auto step(std::chrono::microseconds delta) -> void;
 		auto step(cycle_count delta) -> void;
+		auto step_to_nmi() -> void; // XXX: Debugging
 
 		auto snapshot() -> test::status;
 	};

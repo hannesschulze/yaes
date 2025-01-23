@@ -45,14 +45,6 @@ namespace nes
 		nmi_pending_ = true;
 	}
 
-	auto cpu::step_to(cycle_count const target) -> void
-	{
-		while (current_cycles_ < target)
-		{
-			step();
-		}
-	}
-
 	auto cpu::step() -> void
 	{
 		// See https://www.nesdev.org/wiki/CPU_unofficial_opcodes
@@ -400,8 +392,10 @@ namespace nes
 	auto cpu::run_anc() -> void
 	{
 		// ANC: AND #i + copy N to C
-		// TODO
-		std::abort();
+		auto operand = fetch_operand<Mode>();
+		eval_and(operand.read());
+		registers_.c = registers_.n;
+		current_cycles_ += operand.get_cycles();
 	}
 
 	template<cpu::addressing_mode Mode>
@@ -539,8 +533,10 @@ namespace nes
 	auto cpu::run_alr() -> void
 	{
 		// ALR: AND #i + LSR A
-		// TODO
-		std::abort();
+		auto operand = fetch_operand<Mode>();
+		eval_and(operand.read());
+		registers_.a = eval_lsr(registers_.a);
+		current_cycles_ += operand.get_cycles();
 	}
 
 	auto cpu::run_pha() -> void

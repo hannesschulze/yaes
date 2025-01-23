@@ -32,8 +32,34 @@ namespace nes
 	auto nes::step(cycle_count const delta) -> void
 	{
 		current_cycles_ += delta;
-		cpu_.step_to(current_cycles_);
-		ppu_.step_to(current_cycles_);
+		while (cpu_.get_cycles() < current_cycles_)
+		{
+			cpu_.step();
+			while (ppu_.get_cycles() < cpu_.get_cycles())
+			{
+				ppu_.step();
+			}
+		}
+	}
+
+	auto nes::step_to_nmi() -> void
+	{
+		while (cpu_.is_nmi_pending())
+		{
+			cpu_.step();
+			while (ppu_.get_cycles() < cpu_.get_cycles())
+			{
+				ppu_.step();
+			}
+		}
+		while (!cpu_.is_nmi_pending())
+		{
+			cpu_.step();
+			while (ppu_.get_cycles() < cpu_.get_cycles())
+			{
+				ppu_.step();
+			}
+		}
 	}
 
 	auto nes::snapshot() -> test::status
@@ -41,6 +67,8 @@ namespace nes
 		auto res = test::status{};
 		res.sram = std::vector(cartridge_.get_ram(), cartridge_.get_ram() + cartridge_.get_ram_length());
 		cpu_.snapshot(res);
+		ppu_.snapshot(res);
+		mapper_.snapshot(res);
 		return res;
 	}
 } // namespace nes

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nes/util/cycle_count.hh"
+#include "status.hh"
 
 namespace nes
 {
@@ -19,19 +20,19 @@ namespace nes
 		// Writes to some registers are ignored until this clock cycle.
 		static constexpr auto boot_up_cycles = cycle_count::from_ppu(29658);
 
-		enum class vram_increment
+		enum class vram_increment : unsigned
 		{
 			add_1_across = 0,
 			add_32_down = 1,
 		};
 
-		enum class sprite_size
+		enum class sprite_size : unsigned
 		{
 			_8x8 = 0,
 			_8x16 = 1,
 		};
 
-		enum class role
+		enum class role : unsigned
 		{
 			background = 0,
 			sprite = 1,
@@ -49,9 +50,9 @@ namespace nes
 				unsigned palette : 2;
 				role     role    : 1;
 			};
-			unsigned value;
+			std::uint8_t value;
 
-			explicit color_index(unsigned const value)
+			explicit color_index(std::uint8_t const value)
 				: value{ value }
 			{
 			}
@@ -147,7 +148,6 @@ namespace nes
 		std::uint8_t high_tile_byte_{ 0 };
 		sprite sprites_[8]{}; // Evaluated sprites.
 		unsigned sprite_count_{ 0 }; // Number of evaluated sprites in sprites_.
-		unsigned nmi_delay_{ 0 }; // Delay until an NMI is requested if conditions still met.
 		bool nmi_requested_{ false };
 
 	public:
@@ -158,7 +158,11 @@ namespace nes
 		auto operator=(ppu const&) -> ppu& = delete;
 		auto operator=(ppu&&) -> ppu& = delete;
 
-		auto step_to(cycle_count) -> void;
+		std::vector<test::memory_operation> memory_operations;
+
+		auto get_cycles() const -> cycle_count { return current_cycles_; }
+		auto snapshot(test::status&) -> void;
+		auto step() -> void;
 
 		// Memory access
 
@@ -183,7 +187,6 @@ namespace nes
 		auto write_oamdma(std::uint8_t) -> void;
 
 	private:
-		auto step() -> void;
 		auto render_pixel() -> void;
 		auto fetch_name_table_byte() -> void;
 		auto fetch_attribute_table_byte() -> void;

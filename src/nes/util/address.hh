@@ -66,7 +66,7 @@ namespace nes
 		return address{ static_cast<std::uint16_t>(a.get_absolute() - b) };
 	}
 
-	constexpr auto operator%(address const a, std::uint16_t b) -> address
+	constexpr auto operator%(address const a, std::uint16_t const b) -> address
 	{
 		return address{ static_cast<std::uint16_t>(a.get_absolute() % b) };
 	}

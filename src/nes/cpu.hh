@@ -134,9 +134,11 @@ namespace nes
 
 		auto snapshot(test::status&) -> void;
 
+		auto get_cycles() const -> cycle_count { return current_cycles_; }
 		auto stall_cycles(cycle_count) -> void;
 		auto trigger_nmi() -> void;
-		auto step_to(cycle_count) -> void;
+		auto step() -> void;
+		auto is_nmi_pending() const -> bool { return nmi_pending_; } // XXX: Debugging
 
 		// Memory access
 
@@ -146,8 +148,6 @@ namespace nes
 		auto write16(address, std::uint16_t) -> void;
 
 	private:
-		auto step() -> void;
-
 		// Instructions
 
 #define DEFINE_SIMPLE_INSTRUCTION(name) \

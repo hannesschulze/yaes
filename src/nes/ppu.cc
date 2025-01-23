@@ -4,6 +4,9 @@
 #include "nes/mapper.hh"
 #include "nes/util/address.hh"
 #include "nes/util/rgb.hh"
+#include <iostream>
+
+// #define ENABLE_TRACES
 
 namespace nes
 {
@@ -14,27 +17,16 @@ namespace nes
 	{
 	}
 
-	auto ppu::step_to(cycle_count const cycle) -> void
+	auto ppu::snapshot(test::status& snapshot) -> void
 	{
-		while (current_cycles_ < cycle)
-		{
-			step();
-		}
+		snapshot.vram = std::vector(std::begin(vram_), std::end(vram_));
+		snapshot.oam = std::vector(std::begin(oam_), std::end(oam_));
 	}
 
 	auto ppu::step() -> void
 	{
 		// See https://www.nesdev.org/wiki/PPU_rendering
 		// Based on: https://github.com/fogleman/nes/blob/master/nes/ppu.go
-
-		if (nmi_delay_ > 0)
-		{
-			nmi_delay_ -= 1;
-			if (nmi_delay_ == 0 && control_.vblank_nmi && status_.vblank)
-			{
-				cpu_.trigger_nmi();
-			}
-		}
 
 		auto const enable_rendering = mask_.enable_background || mask_.enable_sprites;
 
@@ -160,24 +152,27 @@ namespace nes
 		if (mask_.enable_background)
 		{
 			auto const tile_data = static_cast<std::uint32_t>(tile_data_ >> 32);
-			background_color = color_index{ (tile_data >> ((7 - internal_.x) * 4)) & 0xF };
+			background_color = color_index{ static_cast<std::uint8_t>((tile_data >> ((7 - internal_.x) * 4)) & 0xF) };
 			background_color.role = role::background;
 		}
 
 		auto foreground = sprite{};
 		auto foreground_color = color_index{ 0 };
-		for (auto i = unsigned{ 0 }; i < sprite_count_; ++i)
+		if (mask_.enable_sprites)
 		{
-			auto const s = sprites_[i];
-			auto const offset = static_cast<int>(x) - static_cast<int>(s.position);
-			if (offset < 0 || offset > 7) { continue; }
-			auto const color = color_index{ (s.pattern >> ((7 - offset) * 4)) & 0xF };
-			if (color.color == 0) { continue; }
+			for (auto i = unsigned{ 0 }; i < sprite_count_; ++i)
+			{
+				auto const s = sprites_[i];
+				auto const offset = static_cast<int>(x) - static_cast<int>(s.position);
+				if (offset < 0 || offset > 7) { continue; }
+				auto const color = color_index{ static_cast<std::uint8_t>((s.pattern >> ((7 - offset) * 4)) & 0xF) };
+				if (color.color == 0) { continue; }
 
-			foreground = s;
-			foreground_color = color;
-			foreground_color.role = role::sprite;
-			break;
+				foreground = s;
+				foreground_color = color;
+				foreground_color.role = role::sprite;
+				break;
+			}
 		}
 
 		auto has_background = background_color.color != 0;
@@ -341,7 +336,7 @@ namespace nes
 				sprites_[sprite_count_].position = x;
 				// TODO: Check
 				// sprites_[sprite_count_].is_in_front = a & 0b00100000;
-				   sprites_[sprite_count_].is_in_front = (a >> 5) & 1;
+				   sprites_[sprite_count_].is_in_front = ((a >> 5) & 1) == 0;
 				sprites_[sprite_count_].is_sprite_zero = i == 0;
 				sprite_count_ += 1;
 			}
@@ -425,7 +420,7 @@ namespace nes
 		if (addr <= address{ 0x3EFF }) { return mapper_.read_ppu(addr, vram_); }
 		if (addr <= address{ 0x3FFF })
 		{
-			auto const index = color_index{ addr.get_absolute() };
+			auto const index = color_index{ static_cast<std::uint8_t>(addr.get_absolute() % 0x20) };
 			auto const color = get_color(index);
 			return static_cast<std::uint8_t>(color);
 		}
@@ -443,7 +438,7 @@ namespace nes
 		}
 		if (addr <= address{ 0x3FFF })
 		{
-			auto const index = color_index{ addr.get_absolute() };
+			auto const index = color_index{ static_cast<std::uint8_t>(addr.get_absolute() % 0x20) };
 			get_color(index) = color{ value };
 			return;
 		}
@@ -466,12 +461,15 @@ namespace nes
 	{
 		auto const base = latch_ & ~status_mask;
 		auto const res = base | (status_.value & status_mask);
+#ifdef ENABLE_TRACES
+		memory_operations.emplace_back(test::memory_operation::type::read_ppustatus, res, current_cycles_);
+#endif
 
 		status_.vblank = false;
 		internal_.w = false;
 		nmi_change();
 
-		//write_latch(res);
+		write_latch(res);
 		return res;
 	}
 
@@ -482,6 +480,9 @@ namespace nes
 		{
 			res &= 0xE3;
 		}
+#ifdef ENABLE_TRACES
+		memory_operations.emplace_back(test::memory_operation::type::read_oamdata, res, current_cycles_);
+#endif
 		write_latch(res);
 		return res;
 	}
@@ -490,8 +491,9 @@ namespace nes
 	{
 		auto const addr = address{ internal_.v };
 		auto res = read8(addr);
+		write_latch(ppudata_read_buffer_);
 
-		if (addr % 0x4000 <= address{ 0x3F00 })
+		if (addr % 0x4000 <= address{ 0x3EFF })
 		{
 			std::swap(res, ppudata_read_buffer_);
 		}
@@ -501,7 +503,9 @@ namespace nes
 			ppudata_read_buffer_ = read8(addr - 0x1000);
 		}
 
-		write_latch(res);
+#ifdef ENABLE_TRACES
+		memory_operations.emplace_back(test::memory_operation::type::read_ppudata, res, current_cycles_);
+#endif
 		increment_vram();
 		return res;
 	}
@@ -513,20 +517,26 @@ namespace nes
 
 	auto ppu::write_ppuctrl(std::uint8_t const value) -> void
 	{
-		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
 		{
+			write_latch(value);
 			control_.value = value;
 			internal_.t = (internal_.t & 0xF3FF) | ((value & 0x03) << 10);
+#ifdef ENABLE_TRACES
+			memory_operations.emplace_back(test::memory_operation::type::write_ppuctrl, value, current_cycles_);
+#endif
 			nmi_change();
 		}
 	}
 
 	auto ppu::write_ppuscroll(std::uint8_t const value) -> void
 	{
-		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
 		{
+			write_latch(value);
+#ifdef ENABLE_TRACES
+			memory_operations.emplace_back(test::memory_operation::type::write_ppuscroll, value, current_cycles_);
+#endif
 			if (!internal_.w)
 			{
 				// First write -> x value.
@@ -546,18 +556,24 @@ namespace nes
 
 	auto ppu::write_ppumask(std::uint8_t const value) -> void
 	{
-		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
 		{
+			write_latch(value);
+#ifdef ENABLE_TRACES
+			memory_operations.emplace_back(test::memory_operation::type::write_ppumask, value, current_cycles_);
+#endif
 			mask_.value = value;
 		}
 	}
 
 	auto ppu::write_ppuaddr(std::uint8_t const value) -> void
 	{
-		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
 		{
+			write_latch(value);
+#ifdef ENABLE_TRACES
+			memory_operations.emplace_back(test::memory_operation::type::write_ppuaddr, value, current_cycles_);
+#endif
 			if (!internal_.w)
 			{
 				// First write.
@@ -576,6 +592,9 @@ namespace nes
 
 	auto ppu::write_ppudata(std::uint8_t const value) -> void
 	{
+#ifdef ENABLE_TRACES
+		memory_operations.emplace_back(test::memory_operation::type::write_ppudata, value, current_cycles_);
+#endif
 		write_latch(value);
 		write8(address{ internal_.v }, value);
 		increment_vram();
@@ -583,12 +602,18 @@ namespace nes
 
 	auto ppu::write_oamaddr(std::uint8_t const value) -> void
 	{
+#ifdef ENABLE_TRACES
+		memory_operations.emplace_back(test::memory_operation::type::write_oamaddr, value, current_cycles_);
+#endif
 		write_latch(value);
 		oamaddr_ = value;
 	}
 
 	auto ppu::write_oamdata(std::uint8_t const value) -> void
 	{
+#ifdef ENABLE_TRACES
+		memory_operations.emplace_back(test::memory_operation::type::write_oamdata, value, current_cycles_);
+#endif
 		write_latch(value);
 		oam_[oamaddr_] = value;
 		oamaddr_ += 1;
@@ -597,13 +622,18 @@ namespace nes
 	auto ppu::write_oamdma(std::uint8_t const value) -> void
 	{
 		// TODO: Do this in CPU::step instead in case there's an NMI?
-		for (auto i = std::uint8_t{ 0x00 }; i < 0xff; ++i)
+#ifdef ENABLE_TRACES
+		memory_operations.emplace_back(test::memory_operation::type::write_oamdma, value, current_cycles_);
+#endif
+		auto addr = address{ value, 0x00 };
+		for (auto i = unsigned{ 0 }; i < 256; ++i)
 		{
-			oam_[oamaddr_] = cpu_.read8(address{ value, i });
+			oam_[oamaddr_] = cpu_.read8(addr);
 			oamaddr_ += 1;
+			addr = addr + 1;
 		}
 
-		auto const stalled_cycles = cycle_count::from_cpu((current_cycles_.to_ppu() % 2 == 0) ? 513 : 514);
+		auto const stalled_cycles = cycle_count::from_cpu((cpu_.get_cycles().to_cpu() % 2 == 0) ? 513 : 514);
 		cpu_.stall_cycles(stalled_cycles);
 	}
 
@@ -614,12 +644,10 @@ namespace nes
 	auto ppu::nmi_change() -> void
 	{
 		auto const should_trigger = control_.vblank_nmi && status_.vblank;
-		if (!nmi_requested_ && should_trigger)
+		if (should_trigger)
 		{
-			// TODO: HACK
-			nmi_delay_ = 15;
+			cpu_.trigger_nmi();
 		}
-		nmi_requested_ = should_trigger;
 	}
 
 	auto ppu::sprite_height() -> unsigned
@@ -666,66 +694,66 @@ namespace nes
 		switch (index & 0x3F)
 		{
 			case 0x00: return rgb::from_hex(0x666666);
-			case 0x01: return rgb::from_hex(0x882A00);
-			case 0x02: return rgb::from_hex(0xA71214);
-			case 0x03: return rgb::from_hex(0xA4003B);
-			case 0x04: return rgb::from_hex(0x7E005C);
-			case 0x05: return rgb::from_hex(0x40006E);
-			case 0x06: return rgb::from_hex(0x00066C);
-			case 0x07: return rgb::from_hex(0x001D56);
-			case 0x08: return rgb::from_hex(0x003533);
-			case 0x09: return rgb::from_hex(0x00480B);
+			case 0x01: return rgb::from_hex(0x002A88);
+			case 0x02: return rgb::from_hex(0x1412A7);
+			case 0x03: return rgb::from_hex(0x3B00A4);
+			case 0x04: return rgb::from_hex(0x5C007E);
+			case 0x05: return rgb::from_hex(0x6E0040);
+			case 0x06: return rgb::from_hex(0x6C0600);
+			case 0x07: return rgb::from_hex(0x561D00);
+			case 0x08: return rgb::from_hex(0x333500);
+			case 0x09: return rgb::from_hex(0x0B4800);
 			case 0x0A: return rgb::from_hex(0x005200);
-			case 0x0B: return rgb::from_hex(0x084F00);
-			case 0x0C: return rgb::from_hex(0x4D4000);
+			case 0x0B: return rgb::from_hex(0x004F08);
+			case 0x0C: return rgb::from_hex(0x00404D);
 			case 0x0D: return rgb::from_hex(0x000000);
 			case 0x0E: return rgb::from_hex(0x000000);
 			case 0x0F: return rgb::from_hex(0x000000);
 			case 0x10: return rgb::from_hex(0xADADAD);
-			case 0x11: return rgb::from_hex(0xD95F15);
-			case 0x12: return rgb::from_hex(0xFF4042);
-			case 0x13: return rgb::from_hex(0xFE2775);
-			case 0x14: return rgb::from_hex(0xCC1AA0);
-			case 0x15: return rgb::from_hex(0x7B1EB7);
-			case 0x16: return rgb::from_hex(0x2031B5);
-			case 0x17: return rgb::from_hex(0x004E99);
-			case 0x18: return rgb::from_hex(0x006D6B);
-			case 0x19: return rgb::from_hex(0x008738);
-			case 0x1A: return rgb::from_hex(0x00930C);
-			case 0x1B: return rgb::from_hex(0x328F00);
-			case 0x1C: return rgb::from_hex(0x8D7C00);
+			case 0x11: return rgb::from_hex(0x155FD9);
+			case 0x12: return rgb::from_hex(0x4240FF);
+			case 0x13: return rgb::from_hex(0x7527FE);
+			case 0x14: return rgb::from_hex(0xA01ACC);
+			case 0x15: return rgb::from_hex(0xB71E7B);
+			case 0x16: return rgb::from_hex(0xB53120);
+			case 0x17: return rgb::from_hex(0x994E00);
+			case 0x18: return rgb::from_hex(0x6B6D00);
+			case 0x19: return rgb::from_hex(0x388700);
+			case 0x1A: return rgb::from_hex(0x0C9300);
+			case 0x1B: return rgb::from_hex(0x008F32);
+			case 0x1C: return rgb::from_hex(0x007C8D);
 			case 0x1D: return rgb::from_hex(0x000000);
 			case 0x1E: return rgb::from_hex(0x000000);
 			case 0x1F: return rgb::from_hex(0x000000);
 			case 0x20: return rgb::from_hex(0xFFFEFF);
-			case 0x21: return rgb::from_hex(0xFFB064);
-			case 0x22: return rgb::from_hex(0xFF9092);
-			case 0x23: return rgb::from_hex(0xFF76C6);
-			case 0x24: return rgb::from_hex(0xFF6AF3);
-			case 0x25: return rgb::from_hex(0xCC6EFE);
-			case 0x26: return rgb::from_hex(0x7081FE);
-			case 0x27: return rgb::from_hex(0x229EEA);
-			case 0x28: return rgb::from_hex(0x00BEBC);
-			case 0x29: return rgb::from_hex(0x00D888);
-			case 0x2A: return rgb::from_hex(0x30E45C);
-			case 0x2B: return rgb::from_hex(0x82E045);
-			case 0x2C: return rgb::from_hex(0xDECD48);
+			case 0x21: return rgb::from_hex(0x64B0FF);
+			case 0x22: return rgb::from_hex(0x9290FF);
+			case 0x23: return rgb::from_hex(0xC676FF);
+			case 0x24: return rgb::from_hex(0xF36AFF);
+			case 0x25: return rgb::from_hex(0xFE6ECC);
+			case 0x26: return rgb::from_hex(0xFE8170);
+			case 0x27: return rgb::from_hex(0xEA9E22);
+			case 0x28: return rgb::from_hex(0xBCBE00);
+			case 0x29: return rgb::from_hex(0x88D800);
+			case 0x2A: return rgb::from_hex(0x5CE430);
+			case 0x2B: return rgb::from_hex(0x45E082);
+			case 0x2C: return rgb::from_hex(0x48CDDE);
 			case 0x2D: return rgb::from_hex(0x4F4F4F);
 			case 0x2E: return rgb::from_hex(0x000000);
 			case 0x2F: return rgb::from_hex(0x000000);
 			case 0x30: return rgb::from_hex(0xFFFEFF);
-			case 0x31: return rgb::from_hex(0xFFDFC0);
-			case 0x32: return rgb::from_hex(0xFFD2D3);
-			case 0x33: return rgb::from_hex(0xFFC8E8);
-			case 0x34: return rgb::from_hex(0xFFC2FB);
-			case 0x35: return rgb::from_hex(0xEAC4FE);
-			case 0x36: return rgb::from_hex(0xC5CCFE);
-			case 0x37: return rgb::from_hex(0xA5D8F7);
-			case 0x38: return rgb::from_hex(0x94E5E4);
-			case 0x39: return rgb::from_hex(0x96EFCF);
-			case 0x3A: return rgb::from_hex(0xABF4BD);
-			case 0x3B: return rgb::from_hex(0xCCF3B3);
-			case 0x3C: return rgb::from_hex(0xF2EBB5);
+			case 0x31: return rgb::from_hex(0xC0DFFF);
+			case 0x32: return rgb::from_hex(0xD3D2FF);
+			case 0x33: return rgb::from_hex(0xE8C8FF);
+			case 0x34: return rgb::from_hex(0xFBC2FF);
+			case 0x35: return rgb::from_hex(0xFEC4EA);
+			case 0x36: return rgb::from_hex(0xFECCC5);
+			case 0x37: return rgb::from_hex(0xF7D8A5);
+			case 0x38: return rgb::from_hex(0xE4E594);
+			case 0x39: return rgb::from_hex(0xCFEF96);
+			case 0x3A: return rgb::from_hex(0xBDF4AB);
+			case 0x3B: return rgb::from_hex(0xB3F3CC);
+			case 0x3C: return rgb::from_hex(0xB5EBF2);
 			case 0x3D: return rgb::from_hex(0xB8B8B8);
 			case 0x3E: return rgb::from_hex(0x000000);
 			case 0x3F: return rgb::from_hex(0x000000);

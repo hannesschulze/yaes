@@ -16,6 +16,11 @@ namespace nes
 	{
 	}
 
+	auto mapper::snapshot(test::status& snapshot) const -> void
+	{
+		snapshot.chrrom = std::vector(cartridge_.get_chr_rom(), cartridge_.get_chr_rom() + cartridge_.get_chr_rom_length());
+	}
+
 	auto mapper::select(cartridge& cartridge) -> mapper
 	{
 		switch (cartridge.get_mapper_number())
@@ -115,17 +120,17 @@ namespace nes
 		{
 			case name_table_arrangement::horizontal:
 				// $2000 = $2400, $2800 = $2c00
-				if (rel <= 0x23FF) { return 0x000 + (rel % 0x400); }
-				if (rel <= 0x27FF) { return 0x000 + (rel % 0x400); }
-				if (rel <= 0x2BFF) { return 0x400 + (rel % 0x400); }
-				if (rel <= 0x2FFF) { return 0x400 + (rel % 0x400); }
+				if (rel <= 0x3FF) { return 0x000 + (rel % 0x400); }
+				if (rel <= 0x7FF) { return 0x000 + (rel % 0x400); }
+				if (rel <= 0xBFF) { return 0x400 + (rel % 0x400); }
+				if (rel <= 0xFFF) { return 0x400 + (rel % 0x400); }
 				break;
 			case name_table_arrangement::vertical:
 				// $2000 = $2800, $2400 = $2c00
-				if (rel <= 0x23FF) { return 0x000 + (rel % 0x400); }
-				if (rel <= 0x27FF) { return 0x400 + (rel % 0x400); }
-				if (rel <= 0x2BFF) { return 0x000 + (rel % 0x400); }
-				if (rel <= 0x2FFF) { return 0x400 + (rel % 0x400); }
+				if (rel <= 0x3FF) { return 0x000 + (rel % 0x400); }
+				if (rel <= 0x7FF) { return 0x400 + (rel % 0x400); }
+				if (rel <= 0xBFF) { return 0x000 + (rel % 0x400); }
+				if (rel <= 0xFFF) { return 0x400 + (rel % 0x400); }
 				break;
 		}
 
