@@ -47,14 +47,14 @@ namespace nes
 		}
 		if (addr <= address{ 0xBFFF })
 		{
-			auto const rel = addr.get_absolute() - 0x8000;
+			auto const rel = addr.get_absolute() - 0x8000u;
 			if (rel >= cartridge_.get_prg_rom_length()) { return 0x0; }
 
 			return cartridge_.get_prg_rom()[rel];
 		}
 		if (addr <= address{ 0xFFFF })
 		{
-			auto rel = addr.get_absolute() - 0xC000;
+			auto rel = addr.get_absolute() - 0xC000u;
 			if (cartridge_.get_prg_rom_length() > 0x4000) { rel += 0x4000; }
 			if (rel >= cartridge_.get_prg_rom_length()) { return 0x0; }
 
@@ -109,23 +109,23 @@ namespace nes
 
 	auto mapper::nrom_mirrored_vram_address(address const addr) const -> unsigned
 	{
-		auto const rel = addr.get_absolute() % 0x1000;
+		auto const rel = addr.get_absolute() % 0x1000u;
 
 		switch (cartridge_.get_name_table_arrangement())
 		{
 			case name_table_arrangement::horizontal:
 				// $2000 = $2400, $2800 = $2c00
-				if (rel <= 0x3FF) { return 0x000 + (rel % 0x400); }
-				if (rel <= 0x7FF) { return 0x000 + (rel % 0x400); }
-				if (rel <= 0xBFF) { return 0x400 + (rel % 0x400); }
-				if (rel <= 0xFFF) { return 0x400 + (rel % 0x400); }
+				if (rel <= 0x3FF) { return 0x000u + (rel % 0x400u); }
+				if (rel <= 0x7FF) { return 0x000u + (rel % 0x400u); }
+				if (rel <= 0xBFF) { return 0x400u + (rel % 0x400u); }
+				if (rel <= 0xFFF) { return 0x400u + (rel % 0x400u); }
 				break;
 			case name_table_arrangement::vertical:
 				// $2000 = $2800, $2400 = $2c00
-				if (rel <= 0x3FF) { return 0x000 + (rel % 0x400); }
-				if (rel <= 0x7FF) { return 0x400 + (rel % 0x400); }
-				if (rel <= 0xBFF) { return 0x000 + (rel % 0x400); }
-				if (rel <= 0xFFF) { return 0x400 + (rel % 0x400); }
+				if (rel <= 0x3FF) { return 0x000u + (rel % 0x400u); }
+				if (rel <= 0x7FF) { return 0x400u + (rel % 0x400u); }
+				if (rel <= 0xBFF) { return 0x000u + (rel % 0x400u); }
+				if (rel <= 0xFFF) { return 0x400u + (rel % 0x400u); }
 				break;
 		}
 

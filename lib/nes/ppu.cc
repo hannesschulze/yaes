@@ -238,8 +238,8 @@ namespace nes
 		auto data = std::uint32_t{ 0 };
 		for (auto i = unsigned{ 0 }; i < 8; ++i)
 		{
-			auto const p1 = (low_tile_byte_ & 0x80) >> 7;
-			auto const p2 = (high_tile_byte_ & 0x80) >> 6;
+			auto const p1 = (low_tile_byte_ & 0x80u) >> 7;
+			auto const p2 = (high_tile_byte_ & 0x80u) >> 6;
 			low_tile_byte_ <<= 1;
 			high_tile_byte_ <<= 1;
 			data <<= 4;
@@ -326,11 +326,11 @@ namespace nes
 			auto const a = oam_[i * 4 + 2];
 			auto const x = oam_[i * 4 + 3];
 			auto const row = static_cast<int>(scanline_) - static_cast<int>(y);
-			if (row < 0 || row >= height) { continue; }
+			if (row < 0 || static_cast<unsigned>(row) >= height) { continue; }
 
 			if (sprite_count_ < 8)
 			{
-				sprites_[sprite_count_].pattern = fetch_sprite_pattern(i, row);
+				sprites_[sprite_count_].pattern = fetch_sprite_pattern(i, static_cast<unsigned>(row));
 				sprites_[sprite_count_].position = x;
 				// TODO: Check
 				// sprites_[sprite_count_].is_in_front = a & 0b00100000;
@@ -358,24 +358,24 @@ namespace nes
 			case sprite_size::_8x8:
 			{
 				auto const table = control_.sprite_pattern_table;
-				addr = address{ static_cast<std::uint16_t>(0x1000 * table + 16 * tile + row) };
+				addr = address{ static_cast<std::uint16_t>(0x1000u * table + 16u * tile + row) };
 				break;
 			}
 			case sprite_size::_8x16:
 			{
-				auto const table = tile & 1;
+				auto const table = tile & 1u;
 				tile &= 0xFE;
 				if (row > 7)
 				{
 					tile += 1;
 					row -= 8;
 				}
-				addr = address{ static_cast<std::uint16_t>(0x1000 * table + 16 * tile + row) };
+				addr = address{ static_cast<std::uint16_t>(0x1000u * table + 16u * tile + row) };
 				break;
 			}
 		}
 
-		auto const a = (attributes & 3) << 2;
+		auto const a = (attributes & 3u) << 2;
 		auto low_tile_byte = read8(addr);
 		auto high_tile_byte = read8(addr + 8);
 		auto data = std::uint32_t{ 0 };
@@ -385,15 +385,15 @@ namespace nes
 			std::uint8_t p1, p2;
 			if (flip_horizontal)
 			{
-				p1 = (low_tile_byte & 1) << 0;
-				p2 = (high_tile_byte & 1) << 1;
+				p1 = static_cast<std::uint8_t>((low_tile_byte & 1) << 0);
+				p2 = static_cast<std::uint8_t>((high_tile_byte & 1) << 1);
 				low_tile_byte >>= 1;
 				high_tile_byte >>= 1;
 			}
 			else
 			{
-				p1 = (low_tile_byte & 0x80) >> 7;
-				p2 = (high_tile_byte & 0x80) >> 6;
+				p1 = static_cast<std::uint8_t>((low_tile_byte & 0x80) >> 7);
+				p2 = static_cast<std::uint8_t>((high_tile_byte & 0x80) >> 6);
 				low_tile_byte <<= 1;
 				high_tile_byte <<= 1;
 			}
@@ -458,7 +458,7 @@ namespace nes
 	auto ppu::read_ppustatus() -> std::uint8_t
 	{
 		auto const base = latch_ & ~status_mask;
-		auto const res = base | (status_.value & status_mask);
+		auto const res = static_cast<std::uint8_t>(base | (status_.value & status_mask));
 		NES_DEBUG_LOG(ppu, "PPUSTATUS -> {:#2x}", res);
 
 		status_.vblank = false;
@@ -496,7 +496,7 @@ namespace nes
 			ppudata_read_buffer_ = read8(addr - 0x1000);
 		}
 
-		NES_DEBUG_LOG(ppu, "PPUDATA -> {:#2x}", res);
+		NES_DEBUG_LOG(ppu, "PPUDATA -> {:#2x} (address: {:#4x})", res, internal_.v);
 		increment_vram();
 		return res;
 	}
@@ -513,7 +513,7 @@ namespace nes
 		{
 			NES_DEBUG_LOG(ppu, "PPUCTRL <- {:#2x}", value);
 			control_.value = value;
-			internal_.t = (internal_.t & 0xF3FF) | ((value & 0x03) << 10);
+			internal_.t = static_cast<std::uint16_t>((internal_.t & 0xF3FF) | ((value & 0x03) << 10));
 			nmi_change();
 		}
 	}
@@ -527,14 +527,14 @@ namespace nes
 			if (!internal_.w)
 			{
 				// First write -> x value.
-				internal_.t = (internal_.t & 0b1111111111100000) | (value >> 3);
+				internal_.t = static_cast<std::uint16_t>((internal_.t & 0b1111111111100000) | (value >> 3));
 				internal_.x = value & 0b00000111;
 			}
 			else
 			{
 				// Second write -> y value.
-				internal_.t = (internal_.t & 0b1000111111111111) | ((value & 0b00000111) << 12);
-				internal_.t = (internal_.t & 0b1111110000011111) | ((value & 0b11111000) << 2);
+				internal_.t = static_cast<std::uint16_t>((internal_.t & 0b1000111111111111) | ((value & 0b00000111) << 12));
+				internal_.t = static_cast<std::uint16_t>((internal_.t & 0b1111110000011111) | ((value & 0b11111000) << 2));
 			}
 
 			internal_.w = !internal_.w;
@@ -560,12 +560,12 @@ namespace nes
 			if (!internal_.w)
 			{
 				// First write.
-				internal_.t = (internal_.t & 0b1000000011111111) | ((value & 0b00111111) << 8);
+				internal_.t = static_cast<std::uint16_t>((internal_.t & 0b1000000011111111) | ((value & 0b00111111) << 8));
 			}
 			else
 			{
 				// Second write.
-				internal_.t = (internal_.t & 0b1111111100000000) | ((value & 0b11111111) << 0);
+				internal_.t = static_cast<std::uint16_t>((internal_.t & 0b1111111100000000) | ((value & 0b11111111) << 0));
 				internal_.v = internal_.t;
 			}
 

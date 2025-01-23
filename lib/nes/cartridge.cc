@@ -25,7 +25,7 @@ namespace nes
 		auto const chr_rom_banks = bytes[5];
 		auto const control_1 = bytes[6];
 		auto const control_2 = bytes[7];
-		auto const ram_banks = (bytes[8] != 0) ? bytes[8] : 1;
+		auto const ram_banks = (bytes[8] != 0) ? bytes[8] : 1u;
 		auto const has_trainer = (control_1 & 0b00000100) != 0;
 
 		res.mapper_number_ =
@@ -62,8 +62,8 @@ namespace nes
 		stream.seekg(0, std::ios::end);
 		auto const length = stream.tellg();
 		stream.seekg(0, std::ios::beg);
-		auto data = std::vector<std::uint8_t>(length);
-		stream.read(reinterpret_cast<char*>(data.data()), data.size());
+		auto data = std::vector<std::uint8_t>(static_cast<std::size_t>(length));
+		stream.read(reinterpret_cast<char*>(data.data()), length);
 
 		return from_data(data.data(), data.size());
 	}

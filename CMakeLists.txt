@@ -26,6 +26,8 @@ target_compile_options(nes_options
         -Wdouble-promotion
         -Wformat=2
         -Wswitch-enum
+        # extensions used
+        -Wno-nested-anon-types
         -Wno-gnu-anonymous-struct)
 if(APPLE)
     # Use automatic reference counting for Objective-C code.
