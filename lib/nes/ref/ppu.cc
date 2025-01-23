@@ -1,13 +1,13 @@
-#include "nes/ppu.hh"
-#include "nes/cpu.hh"
-#include "nes/mapper.hh"
+#include "nes/ref/ppu.hh"
+#include "nes/ref/cpu.hh"
+#include "nes/ref/mapper.hh"
 #include "nes/util/address.hh"
 #include "nes/util/display.hh"
 #include "nes/util/rgb.hh"
 #include "nes/util/snapshot.hh"
 #include "nes/util/debug.hh"
 
-namespace nes
+namespace nes::ref
 {
 	ppu::ppu(cpu& cpu, mapper& mapper, display& display)
 		: cpu_{ cpu }
@@ -734,4 +734,4 @@ namespace nes
 			default: return rgb::from_hex(0x000000);
 		}
 	}
-} // namespace nes
+} // namespace nes::ref

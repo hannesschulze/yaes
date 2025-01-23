@@ -5,5 +5,6 @@ target_sources(
         button-mask.hh
         cycle-count.hh
 		debug.hh
+		display.hh
         rgb.hh
 		snapshot.hh)

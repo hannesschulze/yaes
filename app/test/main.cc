@@ -1,7 +1,8 @@
-#include "nes/display.hh"
-#include "nes/nes.hh"
+#include "nes/util/display.hh"
 #include "nes/util/rgb.hh"
 #include "nes/util/snapshot.hh"
+#include "nes/nes.hh"
+#include "nes/ref/nes.hh"
 #include <iostream>
 
 namespace
@@ -41,20 +42,25 @@ int main()
 {
 	auto const path = "/Users/hannes/Documents/temp/supermario.nes";
 
-	auto cartridge = nes::cartridge::from_file(path);
-	if (!cartridge.is_valid())
+	// Initialize the system to be tested.
+	auto cartridge_a = nes::cartridge::from_file(path);
+	if (!cartridge_a.is_valid())
 	{
 		std::cerr << "Could not load cartridge!" << std::endl;
 		std::abort();
 	}
-
-	// Initialize the system to be tested.
 	auto display_a = std::make_unique<dummy_display>();
-	auto sys_a = nes::nes{ cartridge, *display_a };
+	auto sys_a = nes::nes{ std::move(cartridge_a), *display_a };
 
 	// Initialize the (assumed to be working) reference implementation.
+	auto cartridge_b = nes::ref::cartridge::from_file(path);
+	if (!cartridge_b.is_valid())
+	{
+		std::cerr << "Could not load cartridge!" << std::endl;
+		std::abort();
+	}
 	auto display_b = std::make_unique<dummy_display>();
-	auto sys_b = nes::nes{ cartridge, *display_b };
+	auto sys_b = nes::ref::nes{ std::move(cartridge_b), *display_b };
 
 	// Run.
 	while (true)

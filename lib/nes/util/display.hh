@@ -1,5 +1,7 @@
 #pragma once
 
+#include "nes/util/rgb.hh"
+
 namespace nes
 {
 	class rgb;
@@ -25,7 +27,16 @@ namespace nes
 		/// Load the pixel value at the given position in the back buffer.
 		virtual auto get(unsigned x, unsigned y) const -> rgb = 0;
 		/// Clear the entire back buffer with a color.
-		virtual auto clear(rgb color) -> void;
+		virtual auto clear(rgb const color) -> void
+		{
+			for (auto y = unsigned{ 0 }; y < height; ++y)
+			{
+				for (auto x = unsigned{ 0 }; x < width; ++x)
+				{
+					set(x, y, color);
+				}
+			}
+		}
 
 	protected:
 		explicit display() = default;

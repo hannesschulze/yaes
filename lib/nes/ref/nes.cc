@@ -1,11 +1,11 @@
-#include "nes/nes.hh"
-#include "nes/mapper.hh"
+#include "nes/ref/nes.hh"
+#include "nes/ref/mapper.hh"
 #include "nes/util/display.hh"
 #include "nes/util/rgb.hh"
 #include "nes/util/snapshot.hh"
 #include <iostream>
 
-namespace nes
+namespace nes::ref
 {
 	nes::nes(cartridge cartridge, display& display)
 		: cartridge_{ std::move(cartridge) }
@@ -71,4 +71,4 @@ namespace nes
 		ppu_.build_snapshot(res);
 		return res;
 	}
-} // namespace nes
+} // namespace nes::ref

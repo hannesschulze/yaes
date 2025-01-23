@@ -5,8 +5,6 @@ target_sources(
 		nes.cc
 		cartridge.hh
 		cartridge.cc
-		display.hh
-		display.cc
 		controller.hh
 		controller.cc
 		cpu.hh
