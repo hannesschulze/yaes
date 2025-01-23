@@ -1,14 +1,14 @@
 #pragma once
 
-#include "nes/util/cycle_count.hh"
+#include "nes/util/cycle-count.hh"
 #include "nes/util/address.hh"
-#include "status.hh"
 
 namespace nes
 {
 	class ppu;
 	class controller;
 	class mapper;
+	struct snapshot;
 
 	class cpu
 	{
@@ -110,13 +110,11 @@ namespace nes
 		template<>
 		class operand<addressing_mode::immediate>
 		{
-			cpu& cpu_;
 			std::uint8_t value_{ 0 };
 
 		public:
-			explicit operand(cpu& cpu, std::uint8_t const value)
-				: cpu_{ cpu }
-			, value_{ value }
+			explicit operand(std::uint8_t const value)
+				: value_{ value }
 			{
 			}
 
@@ -132,9 +130,8 @@ namespace nes
 		auto operator=(cpu const&) -> cpu& = delete;
 		auto operator=(cpu&&) -> cpu& = delete;
 
-		auto snapshot(test::status&) -> void;
-
 		auto get_cycles() const -> cycle_count { return current_cycles_; }
+		auto build_snapshot(snapshot&) -> void;
 		auto stall_cycles(cycle_count) -> void;
 		auto trigger_nmi() -> void;
 		auto step() -> void;

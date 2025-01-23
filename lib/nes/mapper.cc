@@ -16,11 +16,6 @@ namespace nes
 	{
 	}
 
-	auto mapper::snapshot(test::status& snapshot) const -> void
-	{
-		snapshot.chrrom = std::vector(cartridge_.get_chr_rom(), cartridge_.get_chr_rom() + cartridge_.get_chr_rom_length());
-	}
-
 	auto mapper::select(cartridge& cartridge) -> mapper
 	{
 		switch (cartridge.get_mapper_number())

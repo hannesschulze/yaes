@@ -1,7 +1,6 @@
 #pragma once
 
 #include "nes/util/address.hh"
-#include "status.hh"
 
 namespace nes
 {
@@ -27,8 +26,6 @@ namespace nes
 		mapper(mapper&&) = delete;
 		auto operator=(mapper const&) -> mapper& = delete;
 		auto operator=(mapper&&) -> mapper& = delete;
-
-		auto snapshot(test::status&) const -> void;
 
 		auto read_cpu(address const addr) -> std::uint8_t
 		{

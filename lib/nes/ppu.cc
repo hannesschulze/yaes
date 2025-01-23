@@ -4,9 +4,8 @@
 #include "nes/mapper.hh"
 #include "nes/util/address.hh"
 #include "nes/util/rgb.hh"
-#include <iostream>
-
-// #define ENABLE_TRACES
+#include "nes/util/snapshot.hh"
+#include "nes/util/debug.hh"
 
 namespace nes
 {
@@ -17,7 +16,7 @@ namespace nes
 	{
 	}
 
-	auto ppu::snapshot(test::status& snapshot) -> void
+	auto ppu::build_snapshot(snapshot& snapshot) -> void
 	{
 		snapshot.vram = std::vector(std::begin(vram_), std::end(vram_));
 		snapshot.oam = std::vector(std::begin(oam_), std::end(oam_));
@@ -137,7 +136,6 @@ namespace nes
 		if (pre_line && scanline_cycle_ == 1)
 		{
 			status_.vblank = false;
-			nmi_change();
 			status_.sprite_zero_hit = false;
 			status_.sprite_overflow = false;
 		}
@@ -461,13 +459,10 @@ namespace nes
 	{
 		auto const base = latch_ & ~status_mask;
 		auto const res = base | (status_.value & status_mask);
-#ifdef ENABLE_TRACES
-		memory_operations.emplace_back(test::memory_operation::type::read_ppustatus, res, current_cycles_);
-#endif
+		NES_DEBUG_LOG(ppu, "PPUSTATUS -> {:#2x}", res);
 
 		status_.vblank = false;
 		internal_.w = false;
-		nmi_change();
 
 		write_latch(res);
 		return res;
@@ -480,9 +475,7 @@ namespace nes
 		{
 			res &= 0xE3;
 		}
-#ifdef ENABLE_TRACES
-		memory_operations.emplace_back(test::memory_operation::type::read_oamdata, res, current_cycles_);
-#endif
+		NES_DEBUG_LOG(ppu, "OAMDATA -> {:#2x}", res);
 		write_latch(res);
 		return res;
 	}
@@ -503,9 +496,7 @@ namespace nes
 			ppudata_read_buffer_ = read8(addr - 0x1000);
 		}
 
-#ifdef ENABLE_TRACES
-		memory_operations.emplace_back(test::memory_operation::type::read_ppudata, res, current_cycles_);
-#endif
+		NES_DEBUG_LOG(ppu, "PPUDATA -> {:#2x}", res);
 		increment_vram();
 		return res;
 	}
@@ -517,26 +508,22 @@ namespace nes
 
 	auto ppu::write_ppuctrl(std::uint8_t const value) -> void
 	{
+		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
 		{
-			write_latch(value);
+			NES_DEBUG_LOG(ppu, "PPUCTRL <- {:#2x}", value);
 			control_.value = value;
 			internal_.t = (internal_.t & 0xF3FF) | ((value & 0x03) << 10);
-#ifdef ENABLE_TRACES
-			memory_operations.emplace_back(test::memory_operation::type::write_ppuctrl, value, current_cycles_);
-#endif
 			nmi_change();
 		}
 	}
 
 	auto ppu::write_ppuscroll(std::uint8_t const value) -> void
 	{
+		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
 		{
-			write_latch(value);
-#ifdef ENABLE_TRACES
-			memory_operations.emplace_back(test::memory_operation::type::write_ppuscroll, value, current_cycles_);
-#endif
+			NES_DEBUG_LOG(ppu, "PPUSCROLL <- {:#2x}", value);
 			if (!internal_.w)
 			{
 				// First write -> x value.
@@ -556,24 +543,20 @@ namespace nes
 
 	auto ppu::write_ppumask(std::uint8_t const value) -> void
 	{
+		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
 		{
-			write_latch(value);
-#ifdef ENABLE_TRACES
-			memory_operations.emplace_back(test::memory_operation::type::write_ppumask, value, current_cycles_);
-#endif
+			NES_DEBUG_LOG(ppu, "PPUMASK <- {:#2x}", value);
 			mask_.value = value;
 		}
 	}
 
 	auto ppu::write_ppuaddr(std::uint8_t const value) -> void
 	{
+		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
 		{
-			write_latch(value);
-#ifdef ENABLE_TRACES
-			memory_operations.emplace_back(test::memory_operation::type::write_ppuaddr, value, current_cycles_);
-#endif
+			NES_DEBUG_LOG(ppu, "PPUADDR <- {:#2x}", value);
 			if (!internal_.w)
 			{
 				// First write.
@@ -592,9 +575,7 @@ namespace nes
 
 	auto ppu::write_ppudata(std::uint8_t const value) -> void
 	{
-#ifdef ENABLE_TRACES
-		memory_operations.emplace_back(test::memory_operation::type::write_ppudata, value, current_cycles_);
-#endif
+		NES_DEBUG_LOG(ppu, "PPUDATA <- {:#2x} (address: {:#4x})", value, internal_.v);
 		write_latch(value);
 		write8(address{ internal_.v }, value);
 		increment_vram();
@@ -602,18 +583,14 @@ namespace nes
 
 	auto ppu::write_oamaddr(std::uint8_t const value) -> void
 	{
-#ifdef ENABLE_TRACES
-		memory_operations.emplace_back(test::memory_operation::type::write_oamaddr, value, current_cycles_);
-#endif
+		NES_DEBUG_LOG(ppu, "OAMADDR <- {:#2x}", value);
 		write_latch(value);
 		oamaddr_ = value;
 	}
 
 	auto ppu::write_oamdata(std::uint8_t const value) -> void
 	{
-#ifdef ENABLE_TRACES
-		memory_operations.emplace_back(test::memory_operation::type::write_oamdata, value, current_cycles_);
-#endif
+		NES_DEBUG_LOG(ppu, "OAMDATA <- {:#2x}", value);
 		write_latch(value);
 		oam_[oamaddr_] = value;
 		oamaddr_ += 1;
@@ -622,9 +599,7 @@ namespace nes
 	auto ppu::write_oamdma(std::uint8_t const value) -> void
 	{
 		// TODO: Do this in CPU::step instead in case there's an NMI?
-#ifdef ENABLE_TRACES
-		memory_operations.emplace_back(test::memory_operation::type::write_oamdma, value, current_cycles_);
-#endif
+		NES_DEBUG_LOG(ppu, "OAMDMA <- {:#2x}", value);
 		auto addr = address{ value, 0x00 };
 		for (auto i = unsigned{ 0 }; i < 256; ++i)
 		{
@@ -643,8 +618,7 @@ namespace nes
 
 	auto ppu::nmi_change() -> void
 	{
-		auto const should_trigger = control_.vblank_nmi && status_.vblank;
-		if (should_trigger)
+		if (control_.vblank_nmi && status_.vblank)
 		{
 			cpu_.trigger_nmi();
 		}

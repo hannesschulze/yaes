@@ -35,7 +35,7 @@ namespace nes
 
 		static constexpr auto from_duration(std::chrono::microseconds const duration) -> cycle_count
 		{
-			return from_units(duration.count() * second().get_units() / (1000 * 1000));
+			return from_units(static_cast<std::uint64_t>(duration.count()) * second().get_units() / (1000 * 1000));
 		}
 
 		static constexpr auto from_cpu(std::uint64_t const cpu_cycles) -> cycle_count

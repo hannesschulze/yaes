@@ -1,7 +1,6 @@
 #pragma once
 
-#include "nes/util/cycle_count.hh"
-#include "status.hh"
+#include "nes/util/cycle-count.hh"
 
 namespace nes
 {
@@ -10,6 +9,7 @@ namespace nes
 	class mapper;
 	class display;
 	class rgb;
+	struct snapshot;
 
 	class ppu
 	{
@@ -148,7 +148,6 @@ namespace nes
 		std::uint8_t high_tile_byte_{ 0 };
 		sprite sprites_[8]{}; // Evaluated sprites.
 		unsigned sprite_count_{ 0 }; // Number of evaluated sprites in sprites_.
-		bool nmi_requested_{ false };
 
 	public:
 		explicit ppu(cpu&, mapper&, display&);
@@ -158,10 +157,8 @@ namespace nes
 		auto operator=(ppu const&) -> ppu& = delete;
 		auto operator=(ppu&&) -> ppu& = delete;
 
-		std::vector<test::memory_operation> memory_operations;
-
 		auto get_cycles() const -> cycle_count { return current_cycles_; }
-		auto snapshot(test::status&) -> void;
+		auto build_snapshot(snapshot&) -> void;
 		auto step() -> void;
 
 		// Memory access

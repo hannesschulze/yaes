@@ -2,6 +2,7 @@
 #include "nes/mapper.hh"
 #include "nes/display.hh"
 #include "nes/util/rgb.hh"
+#include "nes/util/snapshot.hh"
 #include <iostream>
 
 namespace nes
@@ -62,13 +63,12 @@ namespace nes
 		}
 	}
 
-	auto nes::snapshot() -> test::status
+	auto nes::get_snapshot() -> snapshot
 	{
-		auto res = test::status{};
+		auto res = snapshot{};
 		res.sram = std::vector(cartridge_.get_ram(), cartridge_.get_ram() + cartridge_.get_ram_length());
-		cpu_.snapshot(res);
-		ppu_.snapshot(res);
-		mapper_.snapshot(res);
+		cpu_.build_snapshot(res);
+		ppu_.build_snapshot(res);
 		return res;
 	}
 } // namespace nes
