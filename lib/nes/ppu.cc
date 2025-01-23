@@ -131,7 +131,7 @@ namespace nes
 		{
 			display_.switch_buffers();
 			status_.vblank = true;
-			nmi_change();
+			if (control_.vblank_nmi) { cpu_.trigger_nmi(); }
 		}
 		if (pre_line && scanline_cycle_ == 1)
 		{
@@ -514,7 +514,7 @@ namespace nes
 			NES_DEBUG_LOG(ppu, "PPUCTRL <- {:#2x}", value);
 			control_.value = value;
 			internal_.t = static_cast<std::uint16_t>((internal_.t & 0xF3FF) | ((value & 0x03) << 10));
-			nmi_change();
+			if (control_.vblank_nmi && status_.vblank) { cpu_.trigger_nmi(); }
 		}
 	}
 
@@ -598,7 +598,6 @@ namespace nes
 
 	auto ppu::write_oamdma(std::uint8_t const value) -> void
 	{
-		// TODO: Do this in CPU::step instead in case there's an NMI?
 		NES_DEBUG_LOG(ppu, "OAMDMA <- {:#2x}", value);
 		auto addr = address{ value, 0x00 };
 		for (auto i = unsigned{ 0 }; i < 256; ++i)
@@ -615,14 +614,6 @@ namespace nes
 	// -----------------------------------------------------------------------------------------------------------------
 	// Helpers
 	// -----------------------------------------------------------------------------------------------------------------
-
-	auto ppu::nmi_change() -> void
-	{
-		if (control_.vblank_nmi && status_.vblank)
-		{
-			cpu_.trigger_nmi();
-		}
-	}
 
 	auto ppu::sprite_height() -> unsigned
 	{

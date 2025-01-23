@@ -199,7 +199,6 @@ namespace nes
 
 		// Helpers
 
-		auto nmi_change() -> void;
 		auto sprite_height() -> unsigned;
 		auto increment_vram() -> void;
 		auto get_color(color_index) -> color&;

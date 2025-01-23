@@ -30,16 +30,21 @@ namespace nes
 		step(cycle_count::from_duration(delta));
 	}
 
+	auto nes::step() -> void
+	{
+		cpu_.step();
+		while (ppu_.get_cycles() < cpu_.get_cycles())
+		{
+			ppu_.step();
+		}
+	}
+
 	auto nes::step(cycle_count const delta) -> void
 	{
 		current_cycles_ += delta;
 		while (cpu_.get_cycles() < current_cycles_)
 		{
-			cpu_.step();
-			while (ppu_.get_cycles() < cpu_.get_cycles())
-			{
-				ppu_.step();
-			}
+			step();
 		}
 	}
 
@@ -47,19 +52,11 @@ namespace nes
 	{
 		while (cpu_.is_nmi_pending())
 		{
-			cpu_.step();
-			while (ppu_.get_cycles() < cpu_.get_cycles())
-			{
-				ppu_.step();
-			}
+			step();
 		}
 		while (!cpu_.is_nmi_pending())
 		{
-			cpu_.step();
-			while (ppu_.get_cycles() < cpu_.get_cycles())
-			{
-				ppu_.step();
-			}
+			step();
 		}
 	}
 

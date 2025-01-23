@@ -37,9 +37,10 @@ namespace nes
 		auto get_controller_2() const -> controller const& { return controller_2_; }
 		auto get_controller_2() -> controller& { return controller_2_; }
 
+		auto step() -> void;
 		auto step(std::chrono::microseconds delta) -> void;
 		auto step(cycle_count delta) -> void;
-		auto step_to_nmi() -> void; // XXX: Debugging
+		auto step_to_nmi() -> void;
 
 		auto get_snapshot() -> snapshot;
 	};

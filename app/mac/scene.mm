@@ -171,7 +171,8 @@ namespace
 {
     auto const last_time = self->last_time_.value_or(currentTime);
     last_time_ = currentTime;
-    auto const delta_us = static_cast<std::uint64_t>((currentTime - last_time) * 1000. * 1000.);
+    auto delta_us = static_cast<std::uint64_t>((currentTime - last_time) * 1000. * 1000.);
+    delta_us = std::min(delta_us, std::uint64_t{ 50000 });
     self->nes_->step(std::chrono::microseconds{ delta_us });
     self->display_->actually_switch_buffers();
 }

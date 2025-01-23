@@ -80,8 +80,8 @@ namespace nes
 		public:
 			explicit operand(cpu& cpu, address const address, cycle_count const cycles)
 				: cpu_{ cpu }
-			, address_{ address }
-			, cycles_{ cycles }
+				, address_{ address }
+				, cycles_{ cycles }
 			{
 			}
 
