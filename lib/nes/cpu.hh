@@ -31,21 +31,26 @@ namespace nes
 			std::uint8_t a{ 0 };
 			std::uint8_t x{ 0 };
 			std::uint8_t y{ 0 };
-			union
+			struct
 			{
-				struct
-				{
-					bool c : 1; // carry
-					bool z : 1; // zero
-					bool i : 1; // interrupt inhibit
-					bool d : 1; // decimal
-					bool b : 1; // break
-					bool   : 1; // (unused, always true)
-					bool v : 1; // overflow
-					bool n : 1; // negative
-				};
-				std::uint8_t p{ 0b00100100 }; // initially, set i = true
-			};
+				auto get_c() const -> bool { return value & 0b00000001; } // carry
+				auto get_z() const -> bool { return value & 0b00000010; } // zero
+				auto get_i() const -> bool { return value & 0b00000100; } // interrupt inhibit
+				auto get_d() const -> bool { return value & 0b00001000; } // decimal
+				auto get_b() const -> bool { return value & 0b00010000; } // break
+				auto get_v() const -> bool { return value & 0b01000000; } // overflow
+				auto get_n() const -> bool { return value & 0b10000000; } // negative
+
+				auto set_c(bool const v) -> void { value = (value & ~0b00000001) | (v ? 0b00000001 : 0); }
+				auto set_z(bool const v) -> void { value = (value & ~0b00000010) | (v ? 0b00000010 : 0); }
+				auto set_i(bool const v) -> void { value = (value & ~0b00000100) | (v ? 0b00000100 : 0); }
+				auto set_d(bool const v) -> void { value = (value & ~0b00001000) | (v ? 0b00001000 : 0); }
+				auto set_b(bool const v) -> void { value = (value & ~0b00010000) | (v ? 0b00010000 : 0); }
+				auto set_v(bool const v) -> void { value = (value & ~0b01000000) | (v ? 0b01000000 : 0); }
+				auto set_n(bool const v) -> void { value = (value & ~0b10000000) | (v ? 0b10000000 : 0); }
+
+				std::uint8_t value{ 0b00100100 };
+			} p{};
 		} registers_{};
 
 		enum class addressing_mode

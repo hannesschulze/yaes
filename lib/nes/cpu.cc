@@ -24,14 +24,14 @@ namespace nes
 		snapshot.registers.a = registers_.a;
 		snapshot.registers.x = registers_.x;
 		snapshot.registers.y = registers_.y;
-		snapshot.registers.p = registers_.p;
-		snapshot.registers.c = registers_.c;
-		snapshot.registers.z = registers_.z;
-		snapshot.registers.i = registers_.i;
-		snapshot.registers.d = registers_.d;
-		snapshot.registers.b = registers_.b;
-		snapshot.registers.v = registers_.v;
-		snapshot.registers.n = registers_.n;
+		snapshot.registers.p = registers_.p.value;
+		snapshot.registers.c = registers_.p.get_c();
+		snapshot.registers.z = registers_.p.get_z();
+		snapshot.registers.i = registers_.p.get_i();
+		snapshot.registers.d = registers_.p.get_d();
+		snapshot.registers.b = registers_.p.get_b();
+		snapshot.registers.v = registers_.p.get_v();
+		snapshot.registers.n = registers_.p.get_n();
 	}
 
 	auto cpu::stall_cycles(cycle_count const count) -> void
@@ -393,7 +393,7 @@ namespace nes
 		// ANC: AND #i + copy N to C
 		auto operand = fetch_operand<Mode>();
 		eval_and(operand.read());
-		registers_.c = registers_.n;
+		registers_.p.set_c(registers_.p.get_n());
 		current_cycles_ += operand.get_cycles();
 	}
 
@@ -401,13 +401,13 @@ namespace nes
 	auto cpu::run_bpl() -> void
 	{
 		// BPL: Break If Positive
-		branch<Mode>(!registers_.n);
+		branch<Mode>(!registers_.p.get_n());
 	}
 
 	auto cpu::run_clc() -> void
 	{
 		// CLC: Clear Carry Flag
-		registers_.c = false;
+		registers_.p.set_c(false);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -451,9 +451,9 @@ namespace nes
 		auto operand = fetch_operand<Mode>();
 		auto const arg = operand.read();
 		auto const res = (registers_.a & arg) != 0;
-		registers_.z = res == 0;
-		registers_.v = (arg & 0x40) != 0;
-		registers_.n = (arg & 0x80) != 0;
+		registers_.p.set_z(res == 0);
+		registers_.p.set_v((arg & 0x40) != 0);
+		registers_.p.set_n((arg & 0x80) != 0);
 		current_cycles_ += operand.get_cycles();
 	}
 
@@ -477,13 +477,13 @@ namespace nes
 	template<cpu::addressing_mode Mode>
 	auto cpu::run_bmi() -> void
 	{
-		branch<Mode>(registers_.n);
+		branch<Mode>(registers_.p.get_n());
 	}
 
 	auto cpu::run_sec() -> void
 	{
 		// SEC: Set Carry Flag
-		registers_.c = true;
+		registers_.p.set_c(true);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -523,7 +523,7 @@ namespace nes
 		auto const old_val = operand.read();
 		auto const new_val = static_cast<std::uint8_t>(old_val >> 1);
 		operand.write(new_val);
-		registers_.c = (old_val & 0x1) != 0;
+		registers_.p.set_c((old_val & 0x1) != 0);
 		update_zn(new_val);
 		current_cycles_ += shift_cycle_count<Mode>();
 	}
@@ -558,13 +558,13 @@ namespace nes
 	auto cpu::run_bvc() -> void
 	{
 		// BVC: Branch If Overflow Clear
-		branch<Mode>(!registers_.v);
+		branch<Mode>(!registers_.p.get_v());
 	}
 
 	auto cpu::run_cli() -> void
 	{
 		// CLI: Clear Interrupt Disable
-		registers_.i = false;
+		registers_.p.set_i(false);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -626,13 +626,13 @@ namespace nes
 	auto cpu::run_bvs() -> void
 	{
 		// BVS: Branch If Overflow Set
-		branch<Mode>(registers_.v);
+		branch<Mode>(registers_.p.get_v());
 	}
 
 	auto cpu::run_sei() -> void
 	{
 		// SEI: Set Interrupt Disable
-		registers_.i = true;
+		registers_.p.set_i(true);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -708,7 +708,7 @@ namespace nes
 	auto cpu::run_bcc() -> void
 	{
 		// BCC: Branch If Carry Clear
-		branch<Mode>(!registers_.c);
+		branch<Mode>(!registers_.p.get_c());
 	}
 
 	auto cpu::run_tya() -> void
@@ -810,13 +810,13 @@ namespace nes
 	auto cpu::run_bcs() -> void
 	{
 		// BCS: Branch If Carry Set
-		branch<Mode>(registers_.c);
+		branch<Mode>(registers_.p.get_c());
 	}
 
 	auto cpu::run_clv() -> void
 	{
 		// CLV: Clear Overflow Flag
-		registers_.v = false;
+		registers_.p.set_v(false);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -905,13 +905,13 @@ namespace nes
 	auto cpu::run_bne() -> void
 	{
 		// BNE: Branch If Not Equal
-		branch<Mode>(!registers_.z);
+		branch<Mode>(!registers_.p.get_z());
 	}
 
 	auto cpu::run_cld() -> void
 	{
 		// CLD: Clear Decimal Mode
-		registers_.d = false;
+		registers_.p.set_d(false);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 
@@ -968,13 +968,13 @@ namespace nes
 	auto cpu::run_beq() -> void
 	{
 		// BEQ: Branch If Equal
-		branch<Mode>(registers_.z);
+		branch<Mode>(registers_.p.get_z());
 	}
 
 	auto cpu::run_sed() -> void
 	{
 		// SED: Set Decimal Flag
-		registers_.d = true;
+		registers_.p.set_d(true);
 		current_cycles_ += cycle_count::from_cpu(2);
 	}
 	
@@ -1025,8 +1025,8 @@ namespace nes
 
 	auto cpu::update_zn(std::uint8_t const value) -> void
 	{
-		registers_.z = value == 0;
-		registers_.n = (value & 0x80) != 0;
+		registers_.p.set_z(value == 0);
+		registers_.p.set_n((value & 0x80) != 0);
 	}
 
 	template<cpu::addressing_mode Mode>
@@ -1051,22 +1051,22 @@ namespace nes
 		push_stack16(registers_.pc);
 		eval_php();
 		registers_.pc = read16(vector);
-		registers_.i = true;
+		registers_.p.set_i(true);
 		current_cycles_ += cycle_count::from_cpu(7);
 	}
 
 	auto cpu::eval_ror(std::uint8_t const arg) -> std::uint8_t
 	{
-		auto const res = static_cast<std::uint8_t>((registers_.c << 7) | (arg >> 1));
-		registers_.c = (arg & 0x1) != 0;
+		auto const res = static_cast<std::uint8_t>(((registers_.p.get_c() ? 1 :0) << 7) | (arg >> 1));
+		registers_.p.set_c((arg & 0x1) != 0);
 		update_zn(res);
 		return res;
 	}
 
 	auto cpu::eval_rol(std::uint8_t const arg) -> std::uint8_t
 	{
-		auto const res = static_cast<std::uint8_t>((arg << 1) | (registers_.c ? 1 : 0));
-		registers_.c = (arg & 0x80) != 0;
+		auto const res = static_cast<std::uint8_t>((arg << 1) | (registers_.p.get_c() ? 1 : 0));
+		registers_.p.set_c((arg & 0x80) != 0);
 		update_zn(res);
 		return res;
 	}
@@ -1074,7 +1074,7 @@ namespace nes
 	auto cpu::eval_asl(std::uint8_t const arg) -> std::uint8_t
 	{
 		auto const new_val = static_cast<std::uint8_t>(arg << 1);
-		registers_.c = (arg & 0x80) != 0;
+		registers_.p.set_c((arg & 0x80) != 0);
 		update_zn(new_val);
 		return new_val;
 	}
@@ -1082,7 +1082,7 @@ namespace nes
 	auto cpu::eval_lsr(std::uint8_t const arg) -> std::uint8_t
 	{
 		auto const new_val = static_cast<std::uint8_t>(arg >> 1);
-		registers_.c = (arg & 0x01) != 0;
+		registers_.p.set_c((arg & 0x01) != 0);
 		update_zn(new_val);
 		return new_val;
 	}
@@ -1090,12 +1090,12 @@ namespace nes
 	auto cpu::eval_adc(std::uint8_t const arg) -> void
 	{
 		auto const old_val = registers_.a;
-		auto const tmp = old_val + arg + (registers_.c ? 1 : 0);
+		auto const tmp = old_val + arg + (registers_.p.get_c() ? 1 : 0);
 		auto const new_val = static_cast<std::uint8_t>(tmp);
 
 		registers_.a = new_val;
-		registers_.c = tmp > 0xFF;
-		registers_.v = ((old_val ^ arg) & 0x80) == 0 && ((old_val ^ new_val) & 0x80) != 0;
+		registers_.p.set_c(tmp > 0xFF);
+		registers_.p.set_v(((old_val ^ arg) & 0x80) == 0 && ((old_val ^ new_val) & 0x80) != 0);
 		update_zn(registers_.a);
 	}
 
@@ -1120,21 +1120,21 @@ namespace nes
 	auto cpu::eval_cmp(std::uint8_t const a, std::uint8_t const b) -> void
 	{
 		update_zn(a - b);
-		registers_.c = a >= b;
+		registers_.p.set_c(a >= b);
 	}
 
 	auto cpu::eval_plp() -> void
 	{
 		// Ignore bits 4 and 5
-		registers_.p =
+		registers_.p.value =
 			(pop_stack8() & 0b11001111) |
-			(registers_.p & 0b00110000);
+			(registers_.p.value & 0b00110000);
 	}
 
 	auto cpu::eval_php() -> void
 	{
 		// Always set bits 4 and 5.
-		push_stack8(registers_.p | 0b00110000);
+		push_stack8(registers_.p.value | 0b00110000);
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------

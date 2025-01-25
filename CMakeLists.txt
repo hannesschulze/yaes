@@ -25,10 +25,7 @@ target_compile_options(nes_options
         -Wsign-conversion
         -Wdouble-promotion
         -Wformat=2
-        -Wswitch-enum
-        # extensions used
-        -Wno-nested-anon-types
-        -Wno-gnu-anonymous-struct)
+        -Wswitch-enum)
 if(APPLE)
     # Use automatic reference counting for Objective-C code.
     target_compile_options(nes_options INTERFACE "-fobjc-arc")

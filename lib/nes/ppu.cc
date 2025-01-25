@@ -27,7 +27,7 @@ namespace nes
 		// See https://www.nesdev.org/wiki/PPU_rendering
 		// Based on: https://github.com/fogleman/nes/blob/master/nes/ppu.go
 
-		auto const enable_rendering = mask_.enable_background || mask_.enable_sprites;
+		auto const enable_rendering = mask_.get_enable_background() || mask_.get_enable_sprites();
 
 		current_cycles_ += cycle_count::from_ppu(1);
 		scanline_cycle_ += 1;
@@ -130,14 +130,14 @@ namespace nes
 		if (scanline_ == 241 && scanline_cycle_ == 1)
 		{
 			display_.switch_buffers();
-			status_.vblank = true;
-			if (control_.vblank_nmi) { cpu_.trigger_nmi(); }
+			status_.set_vblank(true);
+			if (control_.get_vblank_nmi()) { cpu_.trigger_nmi(); }
 		}
 		if (pre_line && scanline_cycle_ == 1)
 		{
-			status_.vblank = false;
-			status_.sprite_zero_hit = false;
-			status_.sprite_overflow = false;
+			status_.set_vblank(false);
+			status_.set_sprite_zero_hit(false);
+			status_.set_sprite_overflow(false);
 		}
 	}
 
@@ -147,16 +147,16 @@ namespace nes
 		auto const y = scanline_;
 
 		auto background_color = color_index{ 0 };
-		if (mask_.enable_background)
+		if (mask_.get_enable_background())
 		{
 			auto const tile_data = static_cast<std::uint32_t>(tile_data_ >> 32);
 			background_color = color_index{ static_cast<std::uint8_t>((tile_data >> ((7 - internal_.x) * 4)) & 0xF) };
-			background_color.role = role::background;
+			background_color.set_role(role::background);
 		}
 
 		auto foreground = sprite{};
 		auto foreground_color = color_index{ 0 };
-		if (mask_.enable_sprites)
+		if (mask_.get_enable_sprites())
 		{
 			for (auto i = unsigned{ 0 }; i < sprite_count_; ++i)
 			{
@@ -164,20 +164,20 @@ namespace nes
 				auto const offset = static_cast<int>(x) - static_cast<int>(s.position);
 				if (offset < 0 || offset > 7) { continue; }
 				auto const color = color_index{ static_cast<std::uint8_t>((s.pattern >> ((7 - offset) * 4)) & 0xF) };
-				if (color.color == 0) { continue; }
+				if (color.get_color() == 0) { continue; }
 
 				foreground = s;
 				foreground_color = color;
-				foreground_color.role = role::sprite;
+				foreground_color.set_role(role::sprite);
 				break;
 			}
 		}
 
-		auto has_background = background_color.color != 0;
-		auto has_foreground = foreground_color.color != 0;
+		auto has_background = background_color.get_color() != 0;
+		auto has_foreground = foreground_color.get_color() != 0;
 
-		if (x < 8 && !mask_.show_background_start) { has_background = false; }
-		if (x < 8 && !mask_.show_sprites_start) { has_foreground = false; }
+		if (x < 8 && !mask_.get_show_background_start()) { has_background = false; }
+		if (x < 8 && !mask_.get_show_sprites_start()) { has_foreground = false; }
 
 		auto color = color_index{ 0 };
 		if (!has_background && has_foreground)
@@ -192,7 +192,7 @@ namespace nes
 		{
 			if (foreground.is_sprite_zero && x < 255)
 			{
-				status_.sprite_zero_hit = true;
+				status_.set_sprite_zero_hit(true);
 			}
 
 			color = foreground.is_in_front ? foreground_color : background_color;
@@ -217,8 +217,8 @@ namespace nes
 
 	auto ppu::fetch_low_tile_byte() -> void
 	{
-		auto const fine_y = (internal_.v >> 12) & 7;
-		auto const table = control_.background_pattern_table;
+		auto const fine_y = (internal_.v >> 12) & 7u;
+		auto const table = control_.get_background_pattern_table();
 		auto const tile = name_table_byte_;
 		auto const addr = static_cast<std::uint16_t>(0x1000 * table + 16 * tile + fine_y);
 		low_tile_byte_ = read8(address{ addr });
@@ -226,8 +226,8 @@ namespace nes
 
 	auto ppu::fetch_high_tile_byte() -> void
 	{
-		auto const fine_y = (internal_.v >> 12) & 7;
-		auto const table = control_.background_pattern_table;
+		auto const fine_y = (internal_.v >> 12) & 7u;
+		auto const table = control_.get_background_pattern_table();
 		auto const tile = name_table_byte_;
 		auto const addr = static_cast<std::uint16_t>(0x1000 * table + 16 * tile + fine_y);
 		high_tile_byte_ = read8(address{ addr } + 8);
@@ -340,7 +340,7 @@ namespace nes
 			}
 			else
 			{
-				status_.sprite_overflow = true;
+				status_.set_sprite_overflow(true);
 				break;
 			}
 		}
@@ -353,26 +353,21 @@ namespace nes
 		auto const flip_vertical = (attributes & 0x80) == 0x80;
 		if (flip_vertical) { row = sprite_height() - 1 - row; }
 		auto addr = address{};
-		switch (control_.sprite_size)
+		if (control_.get_large_sprites())
 		{
-			case sprite_size::_8x8:
+			auto const table = tile & 1u;
+			tile &= 0xFE;
+			if (row > 7)
 			{
-				auto const table = control_.sprite_pattern_table;
-				addr = address{ static_cast<std::uint16_t>(0x1000u * table + 16u * tile + row) };
-				break;
+				tile += 1;
+				row -= 8;
 			}
-			case sprite_size::_8x16:
-			{
-				auto const table = tile & 1u;
-				tile &= 0xFE;
-				if (row > 7)
-				{
-					tile += 1;
-					row -= 8;
-				}
-				addr = address{ static_cast<std::uint16_t>(0x1000u * table + 16u * tile + row) };
-				break;
-			}
+			addr = address{ static_cast<std::uint16_t>(0x1000u * table + 16u * tile + row) };
+		}
+		else
+		{
+			auto const table = control_.get_sprite_pattern_table();
+			addr = address{ static_cast<std::uint16_t>(0x1000u * table + 16u * tile + row) };
 		}
 
 		auto const a = (attributes & 3u) << 2;
@@ -461,7 +456,7 @@ namespace nes
 		auto const res = static_cast<std::uint8_t>(base | (status_.value & status_mask));
 		NES_DEBUG_LOG(ppu, "PPUSTATUS -> {:#2x}", res);
 
-		status_.vblank = false;
+		status_.set_vblank(false);
 		internal_.w = false;
 
 		write_latch(res);
@@ -514,7 +509,7 @@ namespace nes
 			NES_DEBUG_LOG(ppu, "PPUCTRL <- {:#2x}", value);
 			control_.value = value;
 			internal_.t = static_cast<std::uint16_t>((internal_.t & 0xF3FF) | ((value & 0x03) << 10));
-			if (control_.vblank_nmi && status_.vblank) { cpu_.trigger_nmi(); }
+			if (control_.get_vblank_nmi() && status_.get_vblank()) { cpu_.trigger_nmi(); }
 		}
 	}
 
@@ -617,38 +612,22 @@ namespace nes
 
 	auto ppu::sprite_height() -> unsigned
 	{
-		switch (control_.sprite_size)
-		{
-			case sprite_size::_8x8:
-				return 8;
-			case sprite_size::_8x16:
-				return 16;
-		}
-
-		return 8;
+		return control_.get_large_sprites() ? 16 : 8;
 	}
 
 	auto ppu::increment_vram() -> void
 	{
-		switch (control_.vram_increment)
-		{
-			case vram_increment::add_1_across:
-				internal_.v += 1;
-				break;
-			case vram_increment::add_32_down:
-				internal_.v += 32;
-				break;
-		}
+		internal_.v += control_.get_vram_row_increment() ? 32 : 1;
 	}
 
 	auto ppu::get_color(color_index index) -> color&
 	{
 		// See https://www.nesdev.org/wiki/PPU_palettes
 		index.value = index.value % 0x20;
-		if (index.color == 0)
+		if (index.get_color() == 0)
 		{
 			// The first color is mirrored between background and foreground palettes.
-			index.role = role::background;
+			index.set_role(role::background);
 		}
 		return palette_buffer_[index.value];
 	}

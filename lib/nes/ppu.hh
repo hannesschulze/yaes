@@ -20,18 +20,6 @@ namespace nes
 		// Writes to some registers are ignored until this clock cycle.
 		static constexpr auto boot_up_cycles = cycle_count::from_ppu(29658);
 
-		enum class vram_increment : unsigned
-		{
-			add_1_across = 0,
-			add_32_down = 1,
-		};
-
-		enum class sprite_size : unsigned
-		{
-			_8x8 = 0,
-			_8x16 = 1,
-		};
-
 		enum class role : unsigned
 		{
 			background = 0,
@@ -42,15 +30,18 @@ namespace nes
 		{
 		};
 
-		union color_index
+		struct color_index
 		{
-			struct __attribute__((packed))
-			{
-				unsigned color   : 2;
-				unsigned palette : 2;
-				role     role    : 1;
-			};
-			std::uint8_t value;
+			auto get_color() const -> unsigned { return (value & 0b00000011u) >> 0; }
+			auto get_palette() const -> unsigned { return (value & 0b00001100u) >> 2; }
+			auto get_role() const -> role { return role{ (value & 0b00010000u) >> 4 }; }
+
+			auto set_color(unsigned const v) -> void { value = (value & ~0b00000011) | ((v << 0) & 0b00000011); }
+			auto set_palette(unsigned const v) -> void { value = (value & ~0b00001100) | ((v << 2) & 0b00001100); }
+			auto set_role(unsigned const v) -> void { value = (value & ~0b00010000) | ((v << 4) & 0b00010000); }
+			auto set_role(role const v) -> void { set_role(static_cast<unsigned>(v)); }
+
+			std::uint8_t value{};
 
 			explicit color_index(std::uint8_t const value)
 				: value{ value }
@@ -84,48 +75,73 @@ namespace nes
 			color{ 0x00 }, color{ 0x20 }, color{ 0x2C }, color{ 0x08 },
 		};
 		std::uint8_t latch_{}; // The last read/written IO register value, returned when reading write-only registers.
-		union
+		struct
 		{
-			struct __attribute__((packed))
-			{
-				bool                 : 1;
-				bool                 : 1;
-				bool                 : 1;
-				bool                 : 1;
-				bool                 : 1;
-				bool sprite_overflow : 1;
-				bool sprite_zero_hit : 1;
-				bool vblank          : 1;
-			};
+			auto get_sprite_overflow() const -> bool { return value & 0b00100000; }
+			auto get_sprite_zero_hit() const -> bool { return value & 0b01000000; }
+			auto get_vblank() const -> bool { return value & 0b10000000; }
+
+			auto set_sprite_overflow(bool const v) -> void { value = (value & ~0b00100000) | (v ? 0b00100000 : 0); }
+			auto set_sprite_zero_hit(bool const v) -> void { value = (value & ~0b01000000) | (v ? 0b01000000 : 0); }
+			auto set_vblank(bool const v) -> void { value = (value & ~0b10000000) | (v ? 0b10000000 : 0); }
+
 			std::uint8_t value{ 0b00000000 };
 		} status_{};
-		union
+		struct
 		{
-			struct __attribute__((packed))
-			{
-				std::uint8_t   base_name_table          : 2; // Base nametable address.
-				vram_increment vram_increment           : 1; // VRAM increment per CPU read/write of PPUDATA.
-				std::uint8_t   sprite_pattern_table     : 1; // Sprite pattern table address for 8x8 sprites.
-				std::uint8_t   background_pattern_table : 1; // Background pattern table address.
-				sprite_size    sprite_size              : 1; // Sprite size.
-				bool           enable_ext_pin           : 1; // PPU master/slave select.
-				bool           vblank_nmi               : 1; // Enable/disable Vblank NMI
-			};
+			// Base nametable address.
+			auto get_base_name_table() const -> unsigned { return (value & 0b00000011u) >> 0; }
+			// Increment VRAM addresses downward (+ 32) instead of moving to the right (+ 1) on each read/write.
+			auto get_vram_row_increment() const -> bool { return value & 0b00000100; }
+			// Sprite pattern table address for 8x8 sprites.
+			auto get_sprite_pattern_table() const -> unsigned { return (value & 0b00001000u) >> 3; }
+			// Background pattern table address.
+			auto get_background_pattern_table() const -> unsigned { return (value & 0b00010000u) >> 4; }
+			// Whether to use double-height (8x16) instead of 8x8 sprites.
+			auto get_large_sprites() const -> bool { return value & 0b00100000; }
+			// PPU master/slave select.
+			auto get_enable_ext_pin() const -> bool { return value & 0b01000000; }
+			// Enable/disable vblank NMI.
+			auto get_vblank_nmi() const -> bool { return value & 0b10000000; }
+
+			auto set_base_name_table(unsigned const v) -> void { value = (value & ~0b00000011) | ((v << 0) & 0b00000011); }
+			auto set_vram_row_increment(bool const v) -> void { value = (value & ~0b00000100) | (v ? 0b00000100 : 0); }
+			auto set_sprite_pattern_table(unsigned const v) -> void { value = (value & ~0b00001000) | ((v << 3) & 0b00001000); }
+			auto set_background_pattern_table(unsigned const v) -> void { value = (value & ~0b00010000) | ((v << 4) & 0b00010000); }
+			auto set_large_sprites(bool const v) -> void { value = (value & ~0b00100000) | (v ? 0b00100000 : 0); }
+			auto set_enable_ext_pin(bool const v) -> void { value = (value & ~0b01000000) | (v ? 0b01000000 : 0); }
+			auto set_vblank_nmi(bool const v) -> void { value = (value & ~0b10000000) | (v ? 0b10000000 : 0); }
+
 			std::uint8_t value{ 0b00000000 };
 		} control_{};
-		union
+		struct
 		{
-			struct __attribute__((packed))
-			{
-				bool grayscale             : 1; // Enable/disable grayscale.
-				bool show_background_start : 1; // Show background in leftmost 8 pixels of screen.
-				bool show_sprites_start    : 1; // Show sprites in leftmost 8 pixels of screen.
-				bool enable_background     : 1; // Enable background rendering.
-				bool enable_sprites        : 1; // Enable sprite rendering.
-				bool emphasize_red         : 1; // Emphasize red.
-				bool emphasize_green       : 1; // Emphasize green.
-				bool emphasize_blue        : 1; // Emphasize blue.
-			};
+			// Enable/disable grayscale.
+			auto get_grayscale() const -> bool { return value & 0b00000001; }
+			// Show background in leftmost 8 pixels of screen.
+			auto get_show_background_start() const -> bool { return value & 0b00000010; }
+			// Show sprites in leftmost 8 pixels of screen.
+			auto get_show_sprites_start() const -> bool { return value & 0b00000100; }
+			// Enable background rendering.
+			auto get_enable_background() const -> bool { return value & 0b00001000; }
+			// Enable sprite rendering.
+			auto get_enable_sprites() const -> bool { return value & 0b00010000; }
+			// Emphasize red.
+			auto get_emphasize_red() const -> bool { return value & 0b00100000; }
+			// Emphasize green.
+			auto get_emphasize_green() const -> bool { return value & 0b01000000; }
+			// Emphasize blue.
+			auto get_emphasize_blue() const -> bool { return value & 0b10000000; }
+
+			auto set_grayscale(bool const v) -> void { value = (value & ~0b00000001) | (v ? 0b00000001 : 0); }
+			auto set_show_background_start(bool const v) -> void { value = (value & ~0b00000010) | (v ? 0b00000010 : 0); }
+			auto set_show_sprites_start(bool const v) -> void { value = (value & ~0b00000100) | (v ? 0b00000100 : 0); }
+			auto set_enable_background(bool const v) -> void { value = (value & ~0b00001000) | (v ? 0b00001000 : 0); }
+			auto set_enable_sprites(bool const v) -> void { value = (value & ~0b00010000) | (v ? 0b00010000 : 0); }
+			auto set_emphasize_red(bool const v) -> void { value = (value & ~0b00100000) | (v ? 0b00100000 : 0); }
+			auto set_emphasize_green(bool const v) -> void { value = (value & ~0b01000000) | (v ? 0b01000000 : 0); }
+			auto set_emphasize_blue(bool const v) -> void { value = (value & ~0b10000000) | (v ? 0b10000000 : 0); }
+
 			std::uint8_t value{ 0b00000000 };
 		} mask_{};
 		struct
