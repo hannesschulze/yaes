@@ -97,33 +97,33 @@ namespace
 
 - (void)keyDown:(NSEvent*)event
 {
-    auto& controller_1 = self->nes_->get_controller_1();
+    auto& controller_1 = self->nes_->ref_controller_1();
 
     switch ([event keyCode])
     {
         case 0x7e: // up arrow
-            controller_1.get_pressed().add(nes::buttons::up);
+            controller_1.ref_pressed().add(nes::buttons::up);
             break;
         case 0x7d: // down arrow
-            controller_1.get_pressed().add(nes::buttons::down);
+            controller_1.ref_pressed().add(nes::buttons::down);
             break;
         case 0x7b: // left arrow
-            controller_1.get_pressed().add(nes::buttons::left);
+            controller_1.ref_pressed().add(nes::buttons::left);
             break;
         case 0x7c: // right arrow
-            controller_1.get_pressed().add(nes::buttons::right);
+            controller_1.ref_pressed().add(nes::buttons::right);
             break;
         case 0x6: // "Z"
-            controller_1.get_pressed().add(nes::buttons::a);
+            controller_1.ref_pressed().add(nes::buttons::a);
             break;
         case 0x7: // "X"
-            controller_1.get_pressed().add(nes::buttons::b);
+            controller_1.ref_pressed().add(nes::buttons::b);
             break;
         case 0x24: // return
-            controller_1.get_pressed().add(nes::buttons::start);
+            controller_1.ref_pressed().add(nes::buttons::start);
             break;
         case 0x31: // space
-            controller_1.get_pressed().add(nes::buttons::select);
+            controller_1.ref_pressed().add(nes::buttons::select);
             break;
         default:
             [super keyDown:event];
@@ -133,33 +133,33 @@ namespace
 
 - (void)keyUp:(NSEvent*)event
 {
-    auto& controller_1 = self->nes_->get_controller_1();
+    auto& controller_1 = self->nes_->ref_controller_1();
 
     switch ([event keyCode])
     {
         case 0x7e: // up arrow
-            controller_1.get_pressed().remove(nes::buttons::up);
+            controller_1.ref_pressed().remove(nes::buttons::up);
             break;
         case 0x7d: // down arrow
-            controller_1.get_pressed().remove(nes::buttons::down);
+            controller_1.ref_pressed().remove(nes::buttons::down);
             break;
         case 0x7b: // left arrow
-            controller_1.get_pressed().remove(nes::buttons::left);
+            controller_1.ref_pressed().remove(nes::buttons::left);
             break;
         case 0x7c: // right arrow
-            controller_1.get_pressed().remove(nes::buttons::right);
+            controller_1.ref_pressed().remove(nes::buttons::right);
             break;
         case 0x6: // "Z"
-            controller_1.get_pressed().remove(nes::buttons::a);
+            controller_1.ref_pressed().remove(nes::buttons::a);
             break;
         case 0x7: // "X"
-            controller_1.get_pressed().remove(nes::buttons::b);
+            controller_1.ref_pressed().remove(nes::buttons::b);
             break;
         case 0x24: // return
-            controller_1.get_pressed().remove(nes::buttons::start);
+            controller_1.ref_pressed().remove(nes::buttons::start);
             break;
         case 0x31: // space
-            controller_1.get_pressed().remove(nes::buttons::select);
+            controller_1.ref_pressed().remove(nes::buttons::select);
             break;
         default:
             [super keyUp:event];

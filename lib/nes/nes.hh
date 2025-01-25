@@ -33,9 +33,9 @@ namespace nes
 		auto operator=(nes&&) -> nes& = delete;
 
 		auto get_controller_1() const -> controller const& { return controller_1_; }
-		auto get_controller_1() -> controller& { return controller_1_; }
+		auto ref_controller_1() -> controller& { return controller_1_; }
 		auto get_controller_2() const -> controller const& { return controller_2_; }
-		auto get_controller_2() -> controller& { return controller_2_; }
+		auto ref_controller_2() -> controller& { return controller_2_; }
 
 		auto step() -> void;
 		auto step(std::chrono::microseconds delta) -> void;
