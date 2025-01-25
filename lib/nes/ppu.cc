@@ -149,26 +149,28 @@ namespace nes
 		auto background_color = color_index{ 0 };
 		if (mask_.get_enable_background())
 		{
+			// TODO
 			auto const tile_data = static_cast<std::uint32_t>(tile_data_ >> 32);
 			background_color = color_index{ static_cast<std::uint8_t>((tile_data >> ((7 - internal_.x) * 4)) & 0xF) };
-			background_color.set_role(role::background);
+			background_color.set_foreground(false);
 		}
 
-		auto foreground = sprite{};
+		auto foreground = evaluated_sprite{};
 		auto foreground_color = color_index{ 0 };
 		if (mask_.get_enable_sprites())
 		{
 			for (auto i = unsigned{ 0 }; i < sprite_count_; ++i)
 			{
 				auto const s = sprites_[i];
-				auto const offset = static_cast<int>(x) - static_cast<int>(s.position);
+				auto const offset = static_cast<int>(x) - static_cast<int>(s.x);
 				if (offset < 0 || offset > 7) { continue; }
+				// TODO
 				auto const color = color_index{ static_cast<std::uint8_t>((s.pattern >> ((7 - offset) * 4)) & 0xF) };
 				if (color.get_color() == 0) { continue; }
 
 				foreground = s;
 				foreground_color = color;
-				foreground_color.set_role(role::sprite);
+				foreground_color.set_foreground(true);
 				break;
 			}
 		}
@@ -198,18 +200,20 @@ namespace nes
 			color = foreground.is_in_front ? foreground_color : background_color;
 		}
 
-		display_.set(x, y, resolve_color(get_color(color)));
+		display_.set(x, y, resolve_color(ref_color(color)));
 	}
 
 	auto ppu::fetch_name_table_byte() -> void
 	{
-		auto const addr = static_cast<std::uint16_t>(0x2000 | (internal_.v & 0x0FFF));
+		// TODO
+		auto const addr = static_cast<std::uint16_t>(0x2000 | (internal_.v.value & 0x0FFF));
 		name_table_byte_ = read8(address{ addr });
 	}
 
 	auto ppu::fetch_attribute_table_byte() -> void
 	{
-		auto const v = internal_.v;
+		// TODO
+		auto const v = internal_.v.value;
 		auto const addr = static_cast<std::uint16_t>(0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07));
 		auto const shift = ((v >> 4) & 4) | (v & 2);
 		attribute_table_byte_ = static_cast<std::uint8_t>(((read8(address{ addr }) >> shift) & 3) << 2);
@@ -217,24 +221,19 @@ namespace nes
 
 	auto ppu::fetch_low_tile_byte() -> void
 	{
-		auto const fine_y = (internal_.v >> 12) & 7u;
-		auto const table = control_.get_background_pattern_table();
-		auto const tile = name_table_byte_;
-		auto const addr = static_cast<std::uint16_t>(0x1000 * table + 16 * tile + fine_y);
+		auto const addr = static_cast<std::uint16_t>(0x1000 * control_.get_background_pattern_table() + 16 * name_table_byte_ + internal_.v.get_fine_y());
 		low_tile_byte_ = read8(address{ addr });
 	}
 
 	auto ppu::fetch_high_tile_byte() -> void
 	{
-		auto const fine_y = (internal_.v >> 12) & 7u;
-		auto const table = control_.get_background_pattern_table();
-		auto const tile = name_table_byte_;
-		auto const addr = static_cast<std::uint16_t>(0x1000 * table + 16 * tile + fine_y);
+		auto const addr = static_cast<std::uint16_t>(0x1000 * control_.get_background_pattern_table() + 16 * name_table_byte_ + internal_.v.get_fine_y());
 		high_tile_byte_ = read8(address{ addr } + 8);
 	}
 
 	auto ppu::store_tile_data() -> void
 	{
+		// TODO
 		auto data = std::uint32_t{ 0 };
 		for (auto i = unsigned{ 0 }; i < 8; ++i)
 		{
@@ -250,70 +249,53 @@ namespace nes
 
 	auto ppu::increment_x() -> void
 	{
-		// If coarse X == 31
-		if ((internal_.v & 0x1F) == 0x1F)
+		if (internal_.v.get_coarse_x() == 0x1F)
 		{
-			// Coarse X = 0
-			// TODO: Check
-			// internal_.v &= ~0x1F;
-			   internal_.v &= 0xFFE0;
-			// Switch horizontal nametable
-			internal_.v ^= 0x400;
+			internal_.v.set_coarse_x(0);
+			internal_.v.set_horizontal_name_table(1 ^ internal_.v.get_horizontal_name_table());
 		}
 		else
 		{
-			// Increment coarse X
-			internal_.v += 1;
+			internal_.v.set_coarse_x(internal_.v.get_coarse_x() + 1);
 		}
 	}
 
 	auto ppu::increment_y() -> void
 	{
-		// If fine Y == 7
-		if ((internal_.v & 0x7000) == 0x7000)
+		if (internal_.v.get_fine_y() == 7)
 		{
-			// Fine Y = 0
-			internal_.v &= 0x8FFF;
-			// Let y = coarse Y
-			auto y = (internal_.v & 0x03E0) >> 5;
-			if (y == 29)
+			internal_.v.set_fine_y(0);
+			if (internal_.v.get_coarse_y() == 29)
 			{
-				// Coarse Y = 0
-				y = 0;
-				// Switch vertical nametable
-				internal_.v ^= 0x0800;
+				internal_.v.set_coarse_y(0);
+				internal_.v.set_vertical_name_table(1 ^ internal_.v.get_vertical_name_table());
 			}
-			else if (y == 31)
+			else if (internal_.v.get_coarse_y() == 31)
 			{
-				// Coarse Y = 0, nametable not switched
-				y = 0;
+				internal_.v.set_coarse_y(0);
+				// Nametable not switched
 			}
 			else
 			{
-				// Increment coarse Y
-				y += 1;
+				internal_.v.set_coarse_y(internal_.v.get_coarse_y() + 1);
 			}
-			// Put coarse Y back into v
-			// TODO: Check
-			// internal_.v &= ~0x03E0;
-			   internal_.v &= 0xFC1F;
-			internal_.v |= y << 5;
 		}
 		else
 		{
-			// Increment fine Y
-			internal_.v += 0x1000;
+			internal_.v.set_fine_y(internal_.v.get_fine_y() + 1);
 		}
 	}
 
 	auto ppu::copy_x() -> void
 	{
-		internal_.v = (internal_.v & 0xFBE0) | (internal_.t & 0x041F);
+		// TODO
+		internal_.v.value = (internal_.v.value & 0xFBE0) | (internal_.t.value & 0x041F);
 	}
 
 	auto ppu::copy_y() -> void
 	{
-		internal_.v = (internal_.v & 0x841F) | (internal_.t & 0x7BE0);
+		// TODO
+		internal_.v.value = (internal_.v.value & 0x841F) | (internal_.t.value & 0x7BE0);
 	}
 
 	auto ppu::evaluate_sprites() -> void
@@ -322,19 +304,15 @@ namespace nes
 		sprite_count_ = 0;
 		for (auto i = unsigned{ 0 }; i < 64; ++i)
 		{
-			auto const y = oam_[i * 4 + 0];
-			auto const a = oam_[i * 4 + 2];
-			auto const x = oam_[i * 4 + 3];
-			auto const row = static_cast<int>(scanline_) - static_cast<int>(y);
+			auto const s = get_sprite(i);
+			auto const row = static_cast<int>(scanline_) - static_cast<int>(s.y);
 			if (row < 0 || static_cast<unsigned>(row) >= height) { continue; }
 
 			if (sprite_count_ < 8)
 			{
-				sprites_[sprite_count_].pattern = fetch_sprite_pattern(i, static_cast<unsigned>(row));
-				sprites_[sprite_count_].position = x;
-				// TODO: Check
-				// sprites_[sprite_count_].is_in_front = a & 0b00100000;
-				   sprites_[sprite_count_].is_in_front = ((a >> 5) & 1) == 0;
+				sprites_[sprite_count_].pattern = fetch_sprite_pattern(s, static_cast<unsigned>(row));
+				sprites_[sprite_count_].x = s.x;
+				sprites_[sprite_count_].is_in_front = !s.get_behind_background();
 				sprites_[sprite_count_].is_sprite_zero = i == 0;
 				sprite_count_ += 1;
 			}
@@ -346,39 +324,34 @@ namespace nes
 		}
 	}
 
-	auto ppu::fetch_sprite_pattern(unsigned const i, unsigned row) -> std::uint32_t
+	auto ppu::fetch_sprite_pattern(sprite const s, unsigned row) -> std::uint32_t
 	{
-		auto tile = oam_[i * 4 + 1];
-		auto const attributes = oam_[i * 4 + 2];
-		auto const flip_vertical = (attributes & 0x80) == 0x80;
-		if (flip_vertical) { row = sprite_height() - 1 - row; }
-		auto addr = address{};
+		if (s.get_flip_vertical()) { row = sprite_height() - 1 - row; }
+		address addr;
 		if (control_.get_large_sprites())
 		{
-			auto const table = tile & 1u;
-			tile &= 0xFE;
-			if (row > 7)
+			auto tile = s.get_top_tile();
+			if (row >= 8)
 			{
 				tile += 1;
 				row -= 8;
 			}
-			addr = address{ static_cast<std::uint16_t>(0x1000u * table + 16u * tile + row) };
+			addr = address{ static_cast<std::uint16_t>(0x1000u * s.get_pattern_table() + 16u * tile + row) };
 		}
 		else
 		{
-			auto const table = control_.get_sprite_pattern_table();
-			addr = address{ static_cast<std::uint16_t>(0x1000u * table + 16u * tile + row) };
+			addr = address{ static_cast<std::uint16_t>(0x1000u * control_.get_sprite_pattern_table() + 16u * s.tile_index + row) };
 		}
 
-		auto const a = (attributes & 3u) << 2;
+		auto const a = s.get_palette() << 2;
 		auto low_tile_byte = read8(addr);
 		auto high_tile_byte = read8(addr + 8);
 		auto data = std::uint32_t{ 0 };
 		for (auto j = unsigned{ 0 }; j < 8; ++j)
 		{
-			auto const flip_horizontal = (attributes & 0x40) == 0x40;
+			// TODO
 			std::uint8_t p1, p2;
-			if (flip_horizontal)
+			if (s.get_flip_horizontal())
 			{
 				p1 = static_cast<std::uint8_t>((low_tile_byte & 1) << 0);
 				p2 = static_cast<std::uint8_t>((high_tile_byte & 1) << 1);
@@ -414,7 +387,7 @@ namespace nes
 		if (addr <= address{ 0x3FFF })
 		{
 			auto const index = color_index{ static_cast<std::uint8_t>(addr.get_absolute() % 0x20) };
-			auto const color = get_color(index);
+			auto const color = ref_color(index);
 			return static_cast<std::uint8_t>(color);
 		}
 
@@ -432,7 +405,7 @@ namespace nes
 		if (addr <= address{ 0x3FFF })
 		{
 			auto const index = color_index{ static_cast<std::uint8_t>(addr.get_absolute() % 0x20) };
-			get_color(index) = color{ value };
+			ref_color(index) = color{ value };
 			return;
 		}
 	}
@@ -477,7 +450,7 @@ namespace nes
 
 	auto ppu::read_ppudata() -> std::uint8_t
 	{
-		auto const addr = address{ internal_.v };
+		auto const addr = address{ internal_.v.value };
 		auto res = read8(addr);
 		write_latch(ppudata_read_buffer_);
 
@@ -508,7 +481,8 @@ namespace nes
 		{
 			NES_DEBUG_LOG(ppu, "PPUCTRL <- {:#2x}", value);
 			control_.value = value;
-			internal_.t = static_cast<std::uint16_t>((internal_.t & 0xF3FF) | ((value & 0x03) << 10));
+			// TODO: https://www.nesdev.org/wiki/PPU_registers#PPUCTRL
+			internal_.t.value = static_cast<std::uint16_t>((internal_.t.value & 0xF3FF) | ((value & 0x03) << 10));
 			if (control_.get_vblank_nmi() && status_.get_vblank()) { cpu_.trigger_nmi(); }
 		}
 	}
@@ -522,14 +496,14 @@ namespace nes
 			if (!internal_.w)
 			{
 				// First write -> x value.
-				internal_.t = static_cast<std::uint16_t>((internal_.t & 0b1111111111100000) | (value >> 3));
-				internal_.x = value & 0b00000111;
+				internal_.t.set_coarse_x((value & 0b11111000) >> 3);
+				internal_.x = (value & 0b00000111) >> 0;
 			}
 			else
 			{
 				// Second write -> y value.
-				internal_.t = static_cast<std::uint16_t>((internal_.t & 0b1000111111111111) | ((value & 0b00000111) << 12));
-				internal_.t = static_cast<std::uint16_t>((internal_.t & 0b1111110000011111) | ((value & 0b11111000) << 2));
+				internal_.t.set_coarse_y((value & 0b11111000) >> 3);
+				internal_.t.set_fine_y((value & 0b00000111) >> 0);
 			}
 
 			internal_.w = !internal_.w;
@@ -555,12 +529,12 @@ namespace nes
 			if (!internal_.w)
 			{
 				// First write.
-				internal_.t = static_cast<std::uint16_t>((internal_.t & 0b1000000011111111) | ((value & 0b00111111) << 8));
+				internal_.t.set_address_high(value & 0b00111111);
 			}
 			else
 			{
 				// Second write.
-				internal_.t = static_cast<std::uint16_t>((internal_.t & 0b1111111100000000) | ((value & 0b11111111) << 0));
+				internal_.t.set_address_low(value);
 				internal_.v = internal_.t;
 			}
 
@@ -572,7 +546,7 @@ namespace nes
 	{
 		NES_DEBUG_LOG(ppu, "PPUDATA <- {:#2x} (address: {:#4x})", value, internal_.v);
 		write_latch(value);
-		write8(address{ internal_.v }, value);
+		write8(address{ internal_.v.value }, value);
 		increment_vram();
 	}
 
@@ -610,29 +584,34 @@ namespace nes
 	// Helpers
 	// -----------------------------------------------------------------------------------------------------------------
 
-	auto ppu::sprite_height() -> unsigned
+	auto ppu::sprite_height() const -> unsigned
 	{
 		return control_.get_large_sprites() ? 16 : 8;
 	}
 
 	auto ppu::increment_vram() -> void
 	{
-		internal_.v += control_.get_vram_row_increment() ? 32 : 1;
+		internal_.v.value += control_.get_vram_row_increment() ? 32 : 1;
 	}
 
-	auto ppu::get_color(color_index index) -> color&
+	auto ppu::get_sprite(unsigned const i) const -> sprite
+	{
+		return sprite{ oam_[i * 4 + 0], oam_[i * 4 + 1], oam_[i * 4 + 2], oam_[i * 4 + 3] };
+	}
+
+	auto ppu::ref_color(color_index index) -> color&
 	{
 		// See https://www.nesdev.org/wiki/PPU_palettes
 		index.value = index.value % 0x20;
 		if (index.get_color() == 0)
 		{
 			// The first color is mirrored between background and foreground palettes.
-			index.set_role(role::background);
+			index.set_foreground(false);
 		}
 		return palette_buffer_[index.value];
 	}
 
-	auto ppu::resolve_color(color const color) -> rgb
+	auto ppu::resolve_color(color const color) const -> rgb
 	{
 		auto const index = static_cast<std::uint8_t>(color);
 		switch (index & 0x3F)

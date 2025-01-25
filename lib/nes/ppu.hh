@@ -20,26 +20,19 @@ namespace nes
 		// Writes to some registers are ignored until this clock cycle.
 		static constexpr auto boot_up_cycles = cycle_count::from_ppu(29658);
 
-		enum class role : unsigned
-		{
-			background = 0,
-			sprite = 1,
-		};
-
 		enum class color : std::uint8_t
 		{
 		};
 
 		struct color_index
 		{
-			auto get_color() const -> unsigned { return (value & 0b00000011u) >> 0; }
-			auto get_palette() const -> unsigned { return (value & 0b00001100u) >> 2; }
-			auto get_role() const -> role { return role{ (value & 0b00010000u) >> 4 }; }
+			auto get_color() const -> unsigned { return (value & 0b00000011) >> 0; }
+			auto get_palette() const -> unsigned { return (value & 0b00001100) >> 2; }
+			auto get_foreground() const -> bool { return value & 0b00010000; }
 
 			auto set_color(unsigned const v) -> void { value = (value & ~0b00000011) | ((v << 0) & 0b00000011); }
 			auto set_palette(unsigned const v) -> void { value = (value & ~0b00001100) | ((v << 2) & 0b00001100); }
-			auto set_role(unsigned const v) -> void { value = (value & ~0b00010000) | ((v << 4) & 0b00010000); }
-			auto set_role(role const v) -> void { set_role(static_cast<unsigned>(v)); }
+			auto set_foreground(bool const v) -> void { value = (value & ~0b00010000) | (v ? 0b00010000 : 0); }
 
 			std::uint8_t value{};
 
@@ -51,8 +44,42 @@ namespace nes
 
 		struct sprite
 		{
+			// Tile index and pattern table for large sprites
+			auto get_pattern_table() const -> unsigned { return (tile_index & 0b00000001) >> 0; }
+			auto get_top_tile() const -> unsigned { return (tile_index & 0b11111110) >> 1; }
+
+			auto set_pattern_table(unsigned const v) -> void { tile_index = (tile_index & ~0b00000001) | ((v << 0) & 0b00000001); }
+			auto set_top_tile(unsigned const v) -> void { tile_index = (tile_index & ~0b11111110) | ((v << 1) & 0b11111110); }
+
+			// Attributes
+			auto get_palette() const -> unsigned { return (attributes & 0b00000011) >> 0; }
+			auto get_behind_background() const -> bool { return attributes & 0b00100000; }
+			auto get_flip_horizontal() const -> bool { return attributes & 0b01000000; }
+			auto get_flip_vertical() const -> bool { return attributes & 0b10000000; }
+
+			auto set_palette(unsigned const v) -> void { attributes = (attributes & ~0b00000011) | ((v << 0) & 0b00000011); }
+			auto set_behind_background(bool const v) -> void { attributes = (attributes & ~0b00100000) | (v ? 0b00100000 : 0); }
+			auto set_flip_horizontal(bool const v) -> void { attributes = (attributes & ~0b01000000) | (v ? 0b01000000 : 0); }
+			auto set_flip_vertical(bool const v) -> void { attributes = (attributes & ~0b10000000) | (v ? 0b10000000 : 0); }
+
+			std::uint8_t y{};
+			std::uint8_t tile_index{};
+			std::uint8_t attributes{};
+			std::uint8_t x{};
+
+			explicit sprite(std::uint8_t const y, std::uint8_t const tile_index, std::uint8_t const attributes, std::uint8_t const x)
+				: y{ y }
+				, tile_index{ tile_index }
+				, attributes{ attributes }
+				, x{ x }
+			{
+			}
+		};
+
+		struct evaluated_sprite
+		{
 			std::uint32_t pattern{ 0 };
-			std::uint8_t position{ 0 };
+			std::uint8_t x{ 0 };
 			bool is_in_front{ false };
 			bool is_sprite_zero{ false };
 		};
@@ -147,8 +174,30 @@ namespace nes
 		struct
 		{
 			// See https://www.nesdev.org/wiki/PPU_scrolling#PPU_internal_registers
-			std::uint16_t v{}; // Current VRAM address (15 bits)
-			std::uint16_t t{}; // Temporary VRAM address (15 bits)
+			struct
+			{
+				// Scroll position
+				auto get_coarse_x() const -> unsigned { return (value & 0b0000000000011111) >> 0; }
+				auto get_coarse_y() const -> unsigned { return (value & 0b0000001111100000) >> 5; }
+				auto get_horizontal_name_table() const -> unsigned { return (value & 0b0000010000000000) >> 10; }
+				auto get_vertical_name_table() const -> unsigned { return (value & 0b0000100000000000) >> 11; }
+				auto get_fine_y() const -> unsigned { return (value & 0b0111000000000000) >> 12; }
+
+				auto set_coarse_x(unsigned const v) -> void { value = (value & ~0b0000000000011111) | ((v << 0) & 0b0000000000011111); }
+				auto set_coarse_y(unsigned const v) -> void { value = (value & ~0b0000001111100000) | ((v << 5) & 0b0000001111100000); }
+				auto set_horizontal_name_table(unsigned const v) -> void { value = (value & ~0b0000010000000000) | ((v << 10) & 0b0000010000000000); }
+				auto set_vertical_name_table(unsigned const v) -> void { value = (value & ~0b0000100000000000) | ((v << 11) & 0b0000100000000000); }
+				auto set_fine_y(unsigned const v) -> void { value = (value & ~0b0111000000000000) | ((v << 12) & 0b0111000000000000); }
+
+				// Address
+				auto get_address_low() const -> unsigned { return (value & 0b0000000011111111) >> 0; }
+				auto get_address_high() const -> unsigned { return (value & 0b0111111100000000) >> 8; }
+
+				auto set_address_low(unsigned const v) -> void { value = (value & ~0b0000000011111111) | ((v << 0) & 0b0000000011111111); }
+				auto set_address_high(unsigned const v) -> void { value = (value & ~0b0111111100000000) | ((v << 8) & 0b0111111100000000); }
+
+				std::uint16_t value{};
+			} v{}, t{}; // Current and temporary VRAM address and scroll position (15 bits)
 			std::uint8_t  x{}; // Fine X scroll (3 bits)
 			bool          w{}; // Second write toggle (1 bit)
 		} internal_{};
@@ -162,7 +211,7 @@ namespace nes
 		std::uint8_t attribute_table_byte_{ 0 };
 		std::uint8_t low_tile_byte_{ 0 };
 		std::uint8_t high_tile_byte_{ 0 };
-		sprite sprites_[8]{}; // Evaluated sprites.
+		evaluated_sprite sprites_[8]{}; // Evaluated sprites.
 		unsigned sprite_count_{ 0 }; // Number of evaluated sprites in sprites_.
 
 	public:
@@ -211,13 +260,14 @@ namespace nes
 		auto copy_x() -> void;
 		auto copy_y() -> void;
 		auto evaluate_sprites() -> void;
-		auto fetch_sprite_pattern(unsigned i, unsigned row) -> std::uint32_t;
+		auto fetch_sprite_pattern(sprite, unsigned row) -> std::uint32_t;
 
 		// Helpers
 
-		auto sprite_height() -> unsigned;
+		auto sprite_height() const -> unsigned;
 		auto increment_vram() -> void;
-		auto get_color(color_index) -> color&;
-		auto resolve_color(color) -> rgb;
+		auto get_sprite(unsigned) const -> sprite;
+		auto ref_color(color_index) -> color&;
+		auto resolve_color(color) const -> rgb;
 	};
 } // namespace nes
