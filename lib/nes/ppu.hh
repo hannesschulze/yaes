@@ -21,19 +21,38 @@ namespace nes
 		// Writes to some registers are ignored until this clock cycle.
 		static constexpr auto boot_up_cycles = cycle_count::from_ppu(29658);
 
-		enum class color : std::uint8_t
-		{
-		};
+		enum class bitplane : unsigned { _0, _1 };
+		enum class palette : unsigned { _0, _1, _2, _3 };
+		enum class palette_color : unsigned { _0, _1, _2, _3 };
+		enum class name_table : unsigned { _0, _1, _2, _3 };
+		enum class role : unsigned { background, foreground };
+		enum class pattern_table : unsigned { _0, _1 };
+		enum class vram_increment : unsigned { forward, downward };
+		enum class sprite_size : unsigned { single_height, double_height };
+		enum class tile : std::uint8_t {};
+		enum class color : std::uint8_t {};
+
+#define BITFIELD_VALIDATE(mask, offset_from_right) \
+	static_assert((mask & (1 << offset_from_right)) != 0); \
+	static_assert(offset_from_right == 0 || (mask & (1 << (offset_from_right - 1))) == 0);
+#define BITFIELD_VALUE(name, base, mask, offset_from_right) \
+	BITFIELD_VALIDATE(mask, offset_from_right) \
+	auto get_##name() const -> unsigned { return (base & mask) >> offset_from_right; } \
+	auto set_##name(unsigned const v) -> void { base = (base & ~mask) | ((v << offset_from_right) & mask); }
+#define BITFIELD_ENUM(name, type, base, mask, offset_from_right) \
+	BITFIELD_VALIDATE(mask, offset_from_right) \
+	auto get_##name() const -> type { return static_cast<type>((base & mask) >> offset_from_right); } \
+	auto set_##name(type const v) -> void { base = (base & ~mask) | ((static_cast<unsigned>(v) << offset_from_right) & mask); }
+#define BITFIELD_FLAG(name, base, mask, offset_from_right) \
+	BITFIELD_VALIDATE(mask, offset_from_right) \
+	auto get_##name() const -> bool { return base & mask; } \
+	auto set_##name(unsigned const v) -> void { base = (base & ~mask) | (v ? mask : 0); }
 
 		struct color_index
 		{
-			auto get_color() const -> unsigned { return (value & 0b00000011) >> 0; }
-			auto get_palette() const -> unsigned { return (value & 0b00001100) >> 2; }
-			auto get_foreground() const -> bool { return value & 0b00010000; }
-
-			auto set_color(unsigned const v) -> void { value = (value & ~0b00000011) | ((v << 0) & 0b00000011); }
-			auto set_palette(unsigned const v) -> void { value = (value & ~0b00001100) | ((v << 2) & 0b00001100); }
-			auto set_foreground(bool const v) -> void { value = (value & ~0b00010000) | (v ? 0b00010000 : 0); }
+			BITFIELD_ENUM(color, palette_color, value, 0b00000011, 0)
+			BITFIELD_ENUM(palette, palette, value, 0b00001100, 2)
+			BITFIELD_ENUM(role, role, value, 0b00010000, 4)
 
 			std::uint8_t value{};
 
@@ -47,23 +66,16 @@ namespace nes
 
 		struct sprite
 		{
-			// Tile index and pattern table for large sprites
-			auto get_pattern_table() const -> unsigned { return (tile_index & 0b00000001) >> 0; }
-			auto get_top_tile() const -> unsigned { return (tile_index & 0b11111110) >> 1; }
-
-			auto set_pattern_table(unsigned const v) -> void { tile_index = (tile_index & ~0b00000001) | ((v << 0) & 0b00000001); }
-			auto set_top_tile(unsigned const v) -> void { tile_index = (tile_index & ~0b11111110) | ((v << 1) & 0b11111110); }
+			// Tile index (and pattern table) for sprites
+			BITFIELD_ENUM(large_pattern_table, pattern_table, tile_index, 0b00000001, 0)
+			BITFIELD_ENUM(large_top_tile, tile, tile_index, 0b11111110, 1)
+			BITFIELD_ENUM(small_tile, tile, tile_index, 0b11111111, 0)
 
 			// Attributes
-			auto get_palette() const -> unsigned { return (attributes & 0b00000011) >> 0; }
-			auto get_behind_background() const -> bool { return attributes & 0b00100000; }
-			auto get_flip_horizontal() const -> bool { return attributes & 0b01000000; }
-			auto get_flip_vertical() const -> bool { return attributes & 0b10000000; }
-
-			auto set_palette(unsigned const v) -> void { attributes = (attributes & ~0b00000011) | ((v << 0) & 0b00000011); }
-			auto set_behind_background(bool const v) -> void { attributes = (attributes & ~0b00100000) | (v ? 0b00100000 : 0); }
-			auto set_flip_horizontal(bool const v) -> void { attributes = (attributes & ~0b01000000) | (v ? 0b01000000 : 0); }
-			auto set_flip_vertical(bool const v) -> void { attributes = (attributes & ~0b10000000) | (v ? 0b10000000 : 0); }
+			BITFIELD_ENUM(palette, palette, attributes, 0b00000011, 0)
+			BITFIELD_FLAG(behind_background, attributes, 0b00100000, 5)
+			BITFIELD_FLAG(flip_horizontal, attributes, 0b01000000, 6)
+			BITFIELD_FLAG(flip_vertical, attributes, 0b10000000, 7)
 
 			std::uint8_t y{};
 			std::uint8_t tile_index{};
@@ -114,13 +126,9 @@ namespace nes
 		std::uint8_t latch_{}; // The last read/written IO register value, returned when reading write-only registers.
 		struct
 		{
-			auto get_sprite_overflow() const -> bool { return value & 0b00100000; }
-			auto get_sprite_zero_hit() const -> bool { return value & 0b01000000; }
-			auto get_vblank() const -> bool { return value & 0b10000000; }
-
-			auto set_sprite_overflow(bool const v) -> void { value = (value & ~0b00100000) | (v ? 0b00100000 : 0); }
-			auto set_sprite_zero_hit(bool const v) -> void { value = (value & ~0b01000000) | (v ? 0b01000000 : 0); }
-			auto set_vblank(bool const v) -> void { value = (value & ~0b10000000) | (v ? 0b10000000 : 0); }
+			BITFIELD_FLAG(sprite_overflow, value, 0b00100000, 5)
+			BITFIELD_FLAG(sprite_zero_hit, value, 0b01000000, 6)
+			BITFIELD_FLAG(vblank, value, 0b10000000, 7)
 
 			// Set the remaining (unused) bits based on the given value.
 			auto set_remaining(std::uint8_t const v) -> void { value = (value & ~0b00011111) | (v & 0b00011111); }
@@ -130,57 +138,40 @@ namespace nes
 		struct
 		{
 			// Base nametable address.
-			auto get_base_name_table() const -> unsigned { return (value & 0b00000011u) >> 0; }
-			// Increment VRAM addresses downward (+ 32) instead of moving to the right (+ 1) on each read/write.
-			auto get_vram_row_increment() const -> bool { return value & 0b00000100; }
+			BITFIELD_ENUM(base_name_table, name_table, value, 0b00000011, 0)
+			// How VRAM addresses should be incremented each read/write.
+			BITFIELD_ENUM(vram_increment, vram_increment, value, 0b00000100, 2)
 			// Sprite pattern table address for 8x8 sprites.
-			auto get_sprite_pattern_table() const -> unsigned { return (value & 0b00001000u) >> 3; }
+			BITFIELD_ENUM(sprite_pattern_table, pattern_table, value, 0b00001000, 3)
 			// Background pattern table address.
-			auto get_background_pattern_table() const -> unsigned { return (value & 0b00010000u) >> 4; }
-			// Whether to use double-height (8x16) instead of 8x8 sprites.
-			auto get_large_sprites() const -> bool { return value & 0b00100000; }
+			BITFIELD_ENUM(background_pattern_table, pattern_table, value, 0b00010000, 4)
+			// The size of the sprites used (i.e. single-height or double-height).
+			BITFIELD_ENUM(sprite_size, sprite_size, value, 0b00100000, 5)
 			// PPU master/slave select.
-			auto get_enable_ext_pin() const -> bool { return value & 0b01000000; }
+			BITFIELD_FLAG(enable_ext_pin, value, 0b01000000, 6)
 			// Enable/disable vblank NMI.
-			auto get_vblank_nmi() const -> bool { return value & 0b10000000; }
-
-			auto set_base_name_table(unsigned const v) -> void { value = (value & ~0b00000011) | ((v << 0) & 0b00000011); }
-			auto set_vram_row_increment(bool const v) -> void { value = (value & ~0b00000100) | (v ? 0b00000100 : 0); }
-			auto set_sprite_pattern_table(unsigned const v) -> void { value = (value & ~0b00001000) | ((v << 3) & 0b00001000); }
-			auto set_background_pattern_table(unsigned const v) -> void { value = (value & ~0b00010000) | ((v << 4) & 0b00010000); }
-			auto set_large_sprites(bool const v) -> void { value = (value & ~0b00100000) | (v ? 0b00100000 : 0); }
-			auto set_enable_ext_pin(bool const v) -> void { value = (value & ~0b01000000) | (v ? 0b01000000 : 0); }
-			auto set_vblank_nmi(bool const v) -> void { value = (value & ~0b10000000) | (v ? 0b10000000 : 0); }
+			BITFIELD_FLAG(vblank_nmi, value, 0b10000000, 7)
 
 			std::uint8_t value{ 0b00000000 };
 		} control_{};
 		struct
 		{
 			// Enable/disable grayscale.
-			auto get_grayscale() const -> bool { return value & 0b00000001; }
+			BITFIELD_FLAG(grayscale, value, 0b00000001, 0)
 			// Show background in leftmost 8 pixels of screen.
-			auto get_show_background_start() const -> bool { return value & 0b00000010; }
+			BITFIELD_FLAG(show_background_start, value, 0b00000010, 1)
 			// Show sprites in leftmost 8 pixels of screen.
-			auto get_show_sprites_start() const -> bool { return value & 0b00000100; }
+			BITFIELD_FLAG(show_sprites_start, value, 0b00000100, 2)
 			// Enable background rendering.
-			auto get_enable_background() const -> bool { return value & 0b00001000; }
+			BITFIELD_FLAG(enable_background, value, 0b00001000, 3)
 			// Enable sprite rendering.
-			auto get_enable_sprites() const -> bool { return value & 0b00010000; }
+			BITFIELD_FLAG(enable_sprites, value, 0b00010000, 4)
 			// Emphasize red.
-			auto get_emphasize_red() const -> bool { return value & 0b00100000; }
+			BITFIELD_FLAG(emphasize_red, value, 0b00100000, 5)
 			// Emphasize green.
-			auto get_emphasize_green() const -> bool { return value & 0b01000000; }
+			BITFIELD_FLAG(emphasize_green, value, 0b01000000, 6)
 			// Emphasize blue.
-			auto get_emphasize_blue() const -> bool { return value & 0b10000000; }
-
-			auto set_grayscale(bool const v) -> void { value = (value & ~0b00000001) | (v ? 0b00000001 : 0); }
-			auto set_show_background_start(bool const v) -> void { value = (value & ~0b00000010) | (v ? 0b00000010 : 0); }
-			auto set_show_sprites_start(bool const v) -> void { value = (value & ~0b00000100) | (v ? 0b00000100 : 0); }
-			auto set_enable_background(bool const v) -> void { value = (value & ~0b00001000) | (v ? 0b00001000 : 0); }
-			auto set_enable_sprites(bool const v) -> void { value = (value & ~0b00010000) | (v ? 0b00010000 : 0); }
-			auto set_emphasize_red(bool const v) -> void { value = (value & ~0b00100000) | (v ? 0b00100000 : 0); }
-			auto set_emphasize_green(bool const v) -> void { value = (value & ~0b01000000) | (v ? 0b01000000 : 0); }
-			auto set_emphasize_blue(bool const v) -> void { value = (value & ~0b10000000) | (v ? 0b10000000 : 0); }
+			BITFIELD_FLAG(emphasize_blue, value, 0b10000000, 7)
 
 			std::uint8_t value{ 0b00000000 };
 		} mask_{};
@@ -190,28 +181,17 @@ namespace nes
 			struct
 			{
 				// Scroll position
-				auto get_coarse_x() const -> unsigned { return (value & 0b0000000000011111) >> 0; }
-				auto get_coarse_y() const -> unsigned { return (value & 0b0000001111100000) >> 5; }
-				auto get_name_table() const -> unsigned { return (value & 0b0000110000000000) >> 10; }
-				auto get_horizontal_name_table() const -> unsigned { return (value & 0b0000010000000000) >> 10; }
-				auto get_vertical_name_table() const -> unsigned { return (value & 0b0000100000000000) >> 11; }
-				auto get_tile_address() const -> unsigned { return (value & 0b0000111111111111) >> 0; }
-				auto get_fine_y() const -> unsigned { return (value & 0b0111000000000000) >> 12; }
-
-				auto set_coarse_x(unsigned const v) -> void { value = (value & ~0b0000000000011111) | ((v << 0) & 0b0000000000011111); }
-				auto set_coarse_y(unsigned const v) -> void { value = (value & ~0b0000001111100000) | ((v << 5) & 0b0000001111100000); }
-				auto set_name_table(unsigned const v) -> void { value = (value & ~0b0000110000000000) | ((v << 10) & 0b0000110000000000); }
-				auto set_horizontal_name_table(unsigned const v) -> void { value = (value & ~0b0000010000000000) | ((v << 10) & 0b0000010000000000); }
-				auto set_vertical_name_table(unsigned const v) -> void { value = (value & ~0b0000100000000000) | ((v << 11) & 0b0000100000000000); }
-				auto set_tile_address(unsigned const v) -> void { value = (value & ~0b0000111111111111) | ((v << 0) & 0b0000111111111111); }
-				auto set_fine_y(unsigned const v) -> void { value = (value & ~0b0111000000000000) | ((v << 12) & 0b0111000000000000); }
+				BITFIELD_VALUE(coarse_x, value, 0b0000000000011111, 0)
+				BITFIELD_VALUE(coarse_y, value, 0b0000001111100000, 5)
+				BITFIELD_ENUM(name_table, name_table, value, 0b0000110000000000, 10)
+				BITFIELD_VALUE(horizontal_name_table, value, 0b0000010000000000, 10)
+				BITFIELD_VALUE(vertical_name_table, value, 0b0000100000000000, 11)
+				BITFIELD_VALUE(tile_address, value, 0b0000111111111111, 0)
+				BITFIELD_VALUE(fine_y, value, 0b0111000000000000, 12)
 
 				// Address
-				auto get_address_low() const -> unsigned { return (value & 0b0000000011111111) >> 0; }
-				auto get_address_high() const -> unsigned { return (value & 0b0111111100000000) >> 8; }
-
-				auto set_address_low(unsigned const v) -> void { value = (value & ~0b0000000011111111) | ((v << 0) & 0b0000000011111111); }
-				auto set_address_high(unsigned const v) -> void { value = (value & ~0b0111111100000000) | ((v << 8) & 0b0111111100000000); }
+				BITFIELD_VALUE(address_low, value, 0b0000000011111111, 0)
+				BITFIELD_VALUE(address_high, value, 0b0111111100000000, 8)
 
 				std::uint16_t value{};
 			} v{}, t{}; // Current and temporary VRAM address and scroll position (15 bits)
@@ -227,13 +207,18 @@ namespace nes
 		tile_row next_background_{};
 		struct
 		{
-			std::uint8_t tile{ 0 };
-			std::uint8_t palette{ 0 };
+			tile tile{ 0 };
+			palette palette{ 0 };
 			std::uint8_t bitplane_0{ 0 };
 			std::uint8_t bitplane_1{ 0 };
 		} fetch_cycle_{}; // Data populated during the fetch cycle.
 		evaluated_sprite sprites_[8]{}; // Evaluated sprites.
 		unsigned sprite_count_{ 0 }; // Number of evaluated sprites in sprites_.
+
+#undef BITFIELD_VALIDATE
+#undef BITFIELD_VALUE
+#undef BITFIELD_ENUM
+#undef BITFIELD_FLAG
 
 	public:
 		explicit ppu(cpu&, cartridge&, display&);
@@ -282,9 +267,9 @@ namespace nes
 		auto copy_x() -> void;
 		auto copy_y() -> void;
 		auto get_sprite_height() const -> unsigned;
-		auto get_sprite(unsigned) const -> sprite;
-		auto get_tile_bitplane(unsigned pattern_table, unsigned tile, unsigned row, unsigned bitplane) -> std::uint8_t;
-		auto get_tile_row(unsigned palette, std::uint8_t bitplane_0, std::uint8_t bitplane_1) const -> tile_row;
+		auto get_sprite(unsigned i) const -> sprite;
+		auto get_tile_bitplane(pattern_table, tile, unsigned row, bitplane) -> std::uint8_t;
+		auto get_tile_row(palette, std::uint8_t bitplane_0, std::uint8_t bitplane_1) const -> tile_row;
 		auto ref_color(color_index) -> color&;
 		auto resolve_color(color) const -> rgb;
 	};

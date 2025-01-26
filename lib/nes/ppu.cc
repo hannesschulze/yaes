@@ -71,7 +71,7 @@ namespace nes
 					case 1:
 					{
 						// Load the tile pattern for the background from the name table.
-						fetch_cycle_.tile = read8(address{ 0x2000 } + internal_.v.get_tile_address());
+						fetch_cycle_.tile = tile{ read8(address{ 0x2000 } + internal_.v.get_tile_address()) };
 						break;
 					}
 					case 3:
@@ -79,27 +79,33 @@ namespace nes
 						// Load the tile palette for the background from the attribute table.
 						auto const addr =
 							address{ 0x23C0 } +
-							(internal_.v.get_name_table() * 0x400u) +
+							(static_cast<unsigned>(internal_.v.get_name_table()) * 0x400u) +
 							((internal_.v.get_coarse_y() & 0b11100u) << 1) +
 							((internal_.v.get_coarse_x() & 0b11100u) >> 2);
 						auto const shift =
 							((internal_.v.get_coarse_y() & 0b00010u) << 1) |
 							((internal_.v.get_coarse_x() & 0b00010u) << 0);
-						fetch_cycle_.palette = static_cast<std::uint8_t>((read8(addr) >> shift) & 0b11);
+						fetch_cycle_.palette = static_cast<palette>((read8(addr) >> shift) & 0b11);
 						break;
 					}
 					case 5:
 					{
 						// Load bitplane 0 for the background tile's pattern.
 						fetch_cycle_.bitplane_0 = get_tile_bitplane(
-							control_.get_background_pattern_table(), fetch_cycle_.tile, internal_.v.get_fine_y(), 0);
+							control_.get_background_pattern_table(),
+							fetch_cycle_.tile,
+							internal_.v.get_fine_y(),
+							bitplane::_0);
 						break;
 					}
 					case 7:
 					{
 						// Load bitplane 1 for the background tile's pattern.
 						fetch_cycle_.bitplane_1 = get_tile_bitplane(
-							control_.get_background_pattern_table(), fetch_cycle_.tile, internal_.v.get_fine_y(), 1);
+							control_.get_background_pattern_table(),
+							fetch_cycle_.tile,
+							internal_.v.get_fine_y(),
+							bitplane::_1);
 						break;
 					}
 					case 0:
@@ -177,7 +183,7 @@ namespace nes
 		if (mask_.get_enable_background())
 		{
 			background_color = current_background_.colors[internal_.x + x % tile_size];
-			background_color.set_foreground(false);
+			background_color.set_role(role::background);
 		}
 
 		auto foreground = evaluated_sprite{};
@@ -190,17 +196,17 @@ namespace nes
 				auto const offset = static_cast<int>(x) - static_cast<int>(s.x);
 				if (offset < 0 || static_cast<unsigned>(offset) >= tile_size) { continue; }
 				auto const color = s.pattern.colors[offset];
-				if (color.get_color() == 0) { continue; }
+				if (color.get_color() == palette_color::_0) { continue; }
 
 				foreground = s;
 				foreground_color = color;
-				foreground_color.set_foreground(true);
+				foreground_color.set_role(role::foreground);
 				break;
 			}
 		}
 
-		auto has_background = background_color.get_color() != 0;
-		auto has_foreground = foreground_color.get_color() != 0;
+		auto has_background = background_color.get_color() != palette_color::_0;
+		auto has_foreground = foreground_color.get_color() != palette_color::_0;
 
 		if (x < tile_size && !mask_.get_show_background_start()) { has_background = false; }
 		if (x < tile_size && !mask_.get_show_sprites_start()) { has_foreground = false; }
@@ -256,25 +262,29 @@ namespace nes
 	auto ppu::fetch_sprite_pattern(sprite const s, unsigned row) -> tile_row
 	{
 		if (s.get_flip_vertical()) { row = get_sprite_height() - 1 - row; }
-		unsigned tile, pattern_table;
-		if (control_.get_large_sprites())
+		tile tile;
+		pattern_table pattern_table;
+		switch (control_.get_sprite_size())
 		{
-			tile = s.get_top_tile();
-			if (row >= tile_size)
-			{
-				tile += 1;
-				row -= tile_size;
-			}
-			pattern_table = s.get_pattern_table();
-		}
-		else
-		{
-			tile = s.tile_index;
-			pattern_table = control_.get_sprite_pattern_table();
+			case sprite_size::single_height:
+				tile = s.get_small_tile();
+				pattern_table = control_.get_sprite_pattern_table();
+				break;
+			case sprite_size::double_height:
+				tile = s.get_large_top_tile();
+				if (row >= tile_size)
+				{
+					tile = static_cast<ppu::tile>(1);
+					row -= tile_size;
+				}
+				pattern_table = s.get_large_pattern_table();
+				break;
+			default:
+				return tile_row{};
 		}
 
-		auto const bitplane_0 = get_tile_bitplane(pattern_table, tile, row, 0);
-		auto const bitplane_1 = get_tile_bitplane(pattern_table, tile, row, 1);
+		auto const bitplane_0 = get_tile_bitplane(pattern_table, tile, row, bitplane::_0);
+		auto const bitplane_1 = get_tile_bitplane(pattern_table, tile, row, bitplane::_1);
 		auto res = get_tile_row(s.get_palette(), bitplane_0, bitplane_1);
 
 		if (s.get_flip_horizontal())
@@ -501,7 +511,15 @@ namespace nes
 
 	auto ppu::increment_vram() -> void
 	{
-		internal_.v.value += control_.get_vram_row_increment() ? 32 : 1;
+		switch (control_.get_vram_increment())
+		{
+			case vram_increment::forward:
+				internal_.v.value += 1;
+				break;
+			case vram_increment::downward:
+				internal_.v.value += 32;
+				break;
+		}
 	}
 
 	auto ppu::increment_x() -> void
@@ -558,7 +576,15 @@ namespace nes
 
 	auto ppu::get_sprite_height() const -> unsigned
 	{
-		return tile_size * (control_.get_large_sprites() ? 2 : 1);
+		switch (control_.get_sprite_size())
+		{
+			case sprite_size::single_height:
+				return tile_size;
+			case sprite_size::double_height:
+				return tile_size * 2;
+		}
+
+		return tile_size;
 	}
 
 	auto ppu::get_sprite(unsigned const i) const -> sprite
@@ -567,13 +593,14 @@ namespace nes
 	}
 
 	auto ppu::get_tile_bitplane(
-		unsigned const pattern_table, unsigned const tile, unsigned const row, unsigned const bitplane) -> std::uint8_t
+		pattern_table const pattern_table, tile const tile, unsigned const row, bitplane const bitplane) -> std::uint8_t
 	{
-		auto const addr = static_cast<std::uint16_t>(0x1000 * pattern_table + 0x10 * tile + row);
-		return read8(address{ addr } + (bitplane * 8u));
+		auto const addr = static_cast<std::uint16_t>(
+			0x1000 * static_cast<unsigned>(pattern_table) + 0x10 * static_cast<unsigned>(tile) + row);
+		return read8(address{ addr } + (static_cast<unsigned>(bitplane) * 8u));
 	}
 
-	auto ppu::get_tile_row(unsigned const palette, std::uint8_t bitplane_0, std::uint8_t bitplane_1) const -> tile_row
+	auto ppu::get_tile_row(palette const palette, std::uint8_t bitplane_0, std::uint8_t bitplane_1) const -> tile_row
 	{
 		auto res = tile_row{};
 		for (auto i = unsigned{ 0 }; i < tile_size; ++i)
@@ -583,7 +610,7 @@ namespace nes
 			bitplane_0 <<= 1;
 			bitplane_1 <<= 1;
 			res.colors[i].set_palette(palette);
-			res.colors[i].set_color((bit_1 << 1) | (bit_0 << 0));
+			res.colors[i].set_color(palette_color{ (bit_1 << 1) | (bit_0 << 0) });
 		}
 		return res;
 	}
@@ -592,10 +619,10 @@ namespace nes
 	{
 		// See https://www.nesdev.org/wiki/PPU_palettes
 		index.value = index.value % 0x20;
-		if (index.get_color() == 0)
+		if (index.get_color() == palette_color::_0)
 		{
 			// The first color is mirrored between background and foreground palettes.
-			index.set_foreground(false);
+			index.set_role(role::background);
 		}
 		return palette_buffer_[index.value];
 	}
