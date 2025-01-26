@@ -25,7 +25,7 @@ namespace nes
 	auto ppu::step() -> void
 	{
 		// See https://www.nesdev.org/wiki/PPU_rendering
-		// Based on: https://github.com/fogleman/nes/blob/master/nes/ppu.go
+		// Inspired by https://github.com/fogleman/nes/blob/master/nes/ppu.go
 
 		auto const enable_rendering = mask_.get_enable_background() || mask_.get_enable_sprites();
 
@@ -65,26 +65,52 @@ namespace nes
 
 			if (render_line && fetch_cycle)
 			{
-				tile_data_ <<= 4;
+				// Fetch cycle for the background.
 				switch (scanline_cycle_ % 8)
 				{
 					case 1:
-						fetch_name_table_byte();
+					{
+						// Load the tile pattern for the background from the name table.
+						fetch_cycle_.tile = read8(address{ 0x2000 } + internal_.v.get_tile_address());
 						break;
+					}
 					case 3:
-						fetch_attribute_table_byte();
+					{
+						// Load the tile palette for the background from the attribute table.
+						auto const addr =
+							address{ 0x23C0 } +
+							(internal_.v.get_name_table() * 0x400u) +
+							((internal_.v.get_coarse_y() & 0b11100u) << 1) +
+							((internal_.v.get_coarse_x() & 0b11100u) >> 2);
+						auto const shift =
+							((internal_.v.get_coarse_y() & 0b00010u) << 1) |
+							((internal_.v.get_coarse_x() & 0b00010u) << 0);
+						fetch_cycle_.palette = static_cast<std::uint8_t>((read8(addr) >> shift) & 0b11);
 						break;
+					}
 					case 5:
-						fetch_low_tile_byte();
+					{
+						// Load bitplane 0 for the background tile's pattern.
+						fetch_cycle_.bitplane_0 = get_tile_bitplane(
+							control_.get_background_pattern_table(), fetch_cycle_.tile, internal_.v.get_fine_y(), 0);
 						break;
+					}
 					case 7:
-						fetch_high_tile_byte();
+					{
+						// Load bitplane 1 for the background tile's pattern.
+						fetch_cycle_.bitplane_1 = get_tile_bitplane(
+							control_.get_background_pattern_table(), fetch_cycle_.tile, internal_.v.get_fine_y(), 1);
 						break;
+					}
 					case 0:
-						store_tile_data();
+					{
+						// Fetch cycle done -> build the tile row for the background.
+						current_background_ = next_background_;
+						next_background_ = get_tile_row(
+							fetch_cycle_.palette, fetch_cycle_.bitplane_0, fetch_cycle_.bitplane_1);
 						break;
-					default:
-						break;
+					}
+					default: break;
 				}
 			}
 
@@ -149,9 +175,7 @@ namespace nes
 		auto background_color = color_index{ 0 };
 		if (mask_.get_enable_background())
 		{
-			// TODO
-			auto const tile_data = static_cast<std::uint32_t>(tile_data_ >> 32);
-			background_color = color_index{ static_cast<std::uint8_t>((tile_data >> ((7 - internal_.x) * 4)) & 0xF) };
+			background_color = current_background_.colors[internal_.x + x % tile_size];
 			background_color.set_foreground(false);
 		}
 
@@ -163,9 +187,8 @@ namespace nes
 			{
 				auto const s = sprites_[i];
 				auto const offset = static_cast<int>(x) - static_cast<int>(s.x);
-				if (offset < 0 || offset > 7) { continue; }
-				// TODO
-				auto const color = color_index{ static_cast<std::uint8_t>((s.pattern >> ((7 - offset) * 4)) & 0xF) };
+				if (offset < 0 || static_cast<unsigned>(offset) >= tile_size) { continue; }
+				auto const color = s.pattern.colors[offset];
 				if (color.get_color() == 0) { continue; }
 
 				foreground = s;
@@ -178,8 +201,8 @@ namespace nes
 		auto has_background = background_color.get_color() != 0;
 		auto has_foreground = foreground_color.get_color() != 0;
 
-		if (x < 8 && !mask_.get_show_background_start()) { has_background = false; }
-		if (x < 8 && !mask_.get_show_sprites_start()) { has_foreground = false; }
+		if (x < tile_size && !mask_.get_show_background_start()) { has_background = false; }
+		if (x < tile_size && !mask_.get_show_sprites_start()) { has_foreground = false; }
 
 		auto color = color_index{ 0 };
 		if (!has_background && has_foreground)
@@ -203,104 +226,9 @@ namespace nes
 		display_.set(x, y, resolve_color(ref_color(color)));
 	}
 
-	auto ppu::fetch_name_table_byte() -> void
-	{
-		// TODO
-		auto const addr = static_cast<std::uint16_t>(0x2000 | (internal_.v.value & 0x0FFF));
-		name_table_byte_ = read8(address{ addr });
-	}
-
-	auto ppu::fetch_attribute_table_byte() -> void
-	{
-		// TODO
-		auto const v = internal_.v.value;
-		auto const addr = static_cast<std::uint16_t>(0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07));
-		auto const shift = ((v >> 4) & 4) | (v & 2);
-		attribute_table_byte_ = static_cast<std::uint8_t>(((read8(address{ addr }) >> shift) & 3) << 2);
-	}
-
-	auto ppu::fetch_low_tile_byte() -> void
-	{
-		auto const addr = static_cast<std::uint16_t>(0x1000 * control_.get_background_pattern_table() + 16 * name_table_byte_ + internal_.v.get_fine_y());
-		low_tile_byte_ = read8(address{ addr });
-	}
-
-	auto ppu::fetch_high_tile_byte() -> void
-	{
-		auto const addr = static_cast<std::uint16_t>(0x1000 * control_.get_background_pattern_table() + 16 * name_table_byte_ + internal_.v.get_fine_y());
-		high_tile_byte_ = read8(address{ addr } + 8);
-	}
-
-	auto ppu::store_tile_data() -> void
-	{
-		// TODO
-		auto data = std::uint32_t{ 0 };
-		for (auto i = unsigned{ 0 }; i < 8; ++i)
-		{
-			auto const p1 = (low_tile_byte_ & 0x80u) >> 7;
-			auto const p2 = (high_tile_byte_ & 0x80u) >> 6;
-			low_tile_byte_ <<= 1;
-			high_tile_byte_ <<= 1;
-			data <<= 4;
-			data |= attribute_table_byte_ | p1 | p2;
-		}
-		tile_data_ |= data;
-	}
-
-	auto ppu::increment_x() -> void
-	{
-		if (internal_.v.get_coarse_x() == 0x1F)
-		{
-			internal_.v.set_coarse_x(0);
-			internal_.v.set_horizontal_name_table(1 ^ internal_.v.get_horizontal_name_table());
-		}
-		else
-		{
-			internal_.v.set_coarse_x(internal_.v.get_coarse_x() + 1);
-		}
-	}
-
-	auto ppu::increment_y() -> void
-	{
-		if (internal_.v.get_fine_y() == 7)
-		{
-			internal_.v.set_fine_y(0);
-			if (internal_.v.get_coarse_y() == 29)
-			{
-				internal_.v.set_coarse_y(0);
-				internal_.v.set_vertical_name_table(1 ^ internal_.v.get_vertical_name_table());
-			}
-			else if (internal_.v.get_coarse_y() == 31)
-			{
-				internal_.v.set_coarse_y(0);
-				// Nametable not switched
-			}
-			else
-			{
-				internal_.v.set_coarse_y(internal_.v.get_coarse_y() + 1);
-			}
-		}
-		else
-		{
-			internal_.v.set_fine_y(internal_.v.get_fine_y() + 1);
-		}
-	}
-
-	auto ppu::copy_x() -> void
-	{
-		// TODO
-		internal_.v.value = (internal_.v.value & 0xFBE0) | (internal_.t.value & 0x041F);
-	}
-
-	auto ppu::copy_y() -> void
-	{
-		// TODO
-		internal_.v.value = (internal_.v.value & 0x841F) | (internal_.t.value & 0x7BE0);
-	}
-
 	auto ppu::evaluate_sprites() -> void
 	{
-		auto const height = sprite_height();
+		auto const height = get_sprite_height();
 		sprite_count_ = 0;
 		for (auto i = unsigned{ 0 }; i < 64; ++i)
 		{
@@ -324,52 +252,39 @@ namespace nes
 		}
 	}
 
-	auto ppu::fetch_sprite_pattern(sprite const s, unsigned row) -> std::uint32_t
+	auto ppu::fetch_sprite_pattern(sprite const s, unsigned row) -> tile_row
 	{
-		if (s.get_flip_vertical()) { row = sprite_height() - 1 - row; }
-		address addr;
+		if (s.get_flip_vertical()) { row = get_sprite_height() - 1 - row; }
+		unsigned tile, pattern_table;
 		if (control_.get_large_sprites())
 		{
-			auto tile = s.get_top_tile();
-			if (row >= 8)
+			tile = s.get_top_tile();
+			if (row >= tile_size)
 			{
 				tile += 1;
-				row -= 8;
+				row -= tile_size;
 			}
-			addr = address{ static_cast<std::uint16_t>(0x1000u * s.get_pattern_table() + 16u * tile + row) };
+			pattern_table = s.get_pattern_table();
 		}
 		else
 		{
-			addr = address{ static_cast<std::uint16_t>(0x1000u * control_.get_sprite_pattern_table() + 16u * s.tile_index + row) };
+			tile = s.tile_index;
+			pattern_table = control_.get_sprite_pattern_table();
 		}
 
-		auto const a = s.get_palette() << 2;
-		auto low_tile_byte = read8(addr);
-		auto high_tile_byte = read8(addr + 8);
-		auto data = std::uint32_t{ 0 };
-		for (auto j = unsigned{ 0 }; j < 8; ++j)
+		auto const bitplane_0 = get_tile_bitplane(pattern_table, tile, row, 0);
+		auto const bitplane_1 = get_tile_bitplane(pattern_table, tile, row, 1);
+		auto res = get_tile_row(s.get_palette(), bitplane_0, bitplane_1);
+
+		if (s.get_flip_horizontal())
 		{
-			// TODO
-			std::uint8_t p1, p2;
-			if (s.get_flip_horizontal())
+			for (auto i = unsigned{ 0 }; i < tile_size / 2; ++i)
 			{
-				p1 = static_cast<std::uint8_t>((low_tile_byte & 1) << 0);
-				p2 = static_cast<std::uint8_t>((high_tile_byte & 1) << 1);
-				low_tile_byte >>= 1;
-				high_tile_byte >>= 1;
+				std::swap(res.colors[i], res.colors[tile_size - 1 - i]);
 			}
-			else
-			{
-				p1 = static_cast<std::uint8_t>((low_tile_byte & 0x80) >> 7);
-				p2 = static_cast<std::uint8_t>((high_tile_byte & 0x80) >> 6);
-				low_tile_byte <<= 1;
-				high_tile_byte <<= 1;
-			}
-			data <<= 4;
-			data |= a | p1 | p2;
 		}
 
-		return data;
+		return res;
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -425,15 +340,15 @@ namespace nes
 
 	auto ppu::read_ppustatus() -> std::uint8_t
 	{
-		auto const base = latch_ & ~status_mask;
-		auto const res = static_cast<std::uint8_t>(base | (status_.value & status_mask));
-		NES_DEBUG_LOG(ppu, "PPUSTATUS -> {:#2x}", res);
+		auto res = status_;
+		res.set_remaining(latch_);
+		NES_DEBUG_LOG(ppu, "PPUSTATUS -> {:#2x}", res.value);
 
 		status_.set_vblank(false);
 		internal_.w = false;
 
-		write_latch(res);
-		return res;
+		write_latch(res.value);
+		return res.value;
 	}
 
 	auto ppu::read_oamdata() -> std::uint8_t
@@ -481,8 +396,7 @@ namespace nes
 		{
 			NES_DEBUG_LOG(ppu, "PPUCTRL <- {:#2x}", value);
 			control_.value = value;
-			// TODO: https://www.nesdev.org/wiki/PPU_registers#PPUCTRL
-			internal_.t.value = static_cast<std::uint16_t>((internal_.t.value & 0xF3FF) | ((value & 0x03) << 10));
+			internal_.t.set_name_table(control_.get_base_name_table());
 			if (control_.get_vblank_nmi() && status_.get_vblank()) { cpu_.trigger_nmi(); }
 		}
 	}
@@ -584,19 +498,93 @@ namespace nes
 	// Helpers
 	// -----------------------------------------------------------------------------------------------------------------
 
-	auto ppu::sprite_height() const -> unsigned
-	{
-		return control_.get_large_sprites() ? 16 : 8;
-	}
-
 	auto ppu::increment_vram() -> void
 	{
 		internal_.v.value += control_.get_vram_row_increment() ? 32 : 1;
 	}
 
+	auto ppu::increment_x() -> void
+	{
+		if (internal_.v.get_coarse_x() == 31)
+		{
+			internal_.v.set_coarse_x(0);
+			internal_.v.set_horizontal_name_table(1 ^ internal_.v.get_horizontal_name_table());
+		}
+		else
+		{
+			internal_.v.set_coarse_x(internal_.v.get_coarse_x() + 1);
+		}
+	}
+
+	auto ppu::increment_y() -> void
+	{
+		if (internal_.v.get_fine_y() == 7)
+		{
+			internal_.v.set_fine_y(0);
+			if (internal_.v.get_coarse_y() == 29)
+			{
+				internal_.v.set_coarse_y(0);
+				internal_.v.set_vertical_name_table(1 ^ internal_.v.get_vertical_name_table());
+			}
+			else if (internal_.v.get_coarse_y() == 31)
+			{
+				internal_.v.set_coarse_y(0);
+				// Nametable not switched
+			}
+			else
+			{
+				internal_.v.set_coarse_y(internal_.v.get_coarse_y() + 1);
+			}
+		}
+		else
+		{
+			internal_.v.set_fine_y(internal_.v.get_fine_y() + 1);
+		}
+	}
+
+	auto ppu::copy_x() -> void
+	{
+		internal_.v.set_coarse_x(internal_.t.get_coarse_x());
+		internal_.v.set_horizontal_name_table(internal_.t.get_horizontal_name_table());
+	}
+
+	auto ppu::copy_y() -> void
+	{
+		internal_.v.set_coarse_y(internal_.t.get_coarse_y());
+		internal_.v.set_fine_y(internal_.t.get_fine_y());
+		internal_.v.set_vertical_name_table(internal_.t.get_vertical_name_table());
+	}
+
+	auto ppu::get_sprite_height() const -> unsigned
+	{
+		return tile_size * (control_.get_large_sprites() ? 2 : 1);
+	}
+
 	auto ppu::get_sprite(unsigned const i) const -> sprite
 	{
 		return sprite{ oam_[i * 4 + 0], oam_[i * 4 + 1], oam_[i * 4 + 2], oam_[i * 4 + 3] };
+	}
+
+	auto ppu::get_tile_bitplane(
+		unsigned const pattern_table, unsigned const tile, unsigned const row, unsigned const bitplane) -> std::uint8_t
+	{
+		auto const addr = static_cast<std::uint16_t>(0x1000 * pattern_table + 0x10 * tile + row);
+		return read8(address{ addr } + (bitplane * 8u));
+	}
+
+	auto ppu::get_tile_row(unsigned const palette, std::uint8_t bitplane_0, std::uint8_t bitplane_1) const -> tile_row
+	{
+		auto res = tile_row{};
+		for (auto i = unsigned{ 0 }; i < tile_size; ++i)
+		{
+			auto const bit_0 = (bitplane_0 & 0b10000000u) >> 7;
+			auto const bit_1 = (bitplane_1 & 0b10000000u) >> 7;
+			bitplane_0 <<= 1;
+			bitplane_1 <<= 1;
+			res.colors[i].set_palette(palette);
+			res.colors[i].set_color((bit_1 << 1) | (bit_0 << 0));
+		}
+		return res;
 	}
 
 	auto ppu::ref_color(color_index index) -> color&

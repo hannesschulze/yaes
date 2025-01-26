@@ -51,22 +51,22 @@ namespace nes
 	constexpr auto operator<=(address const a, address const b) -> bool { return a.get_absolute() <= b.get_absolute(); }
 	constexpr auto operator>=(address const a, address const b) -> bool { return a.get_absolute() >= b.get_absolute(); }
 
-	constexpr auto operator+(address const a, std::uint16_t const b) -> address
+	constexpr auto operator+(address const a, unsigned const b) -> address
 	{
 		return address{ static_cast<std::uint16_t>(a.get_absolute() + b) };
 	}
 
-	constexpr auto operator+(std::uint16_t const a, address const b) -> address
+	constexpr auto operator+(unsigned const a, address const b) -> address
 	{
 		return address{ static_cast<std::uint16_t>(a + b.get_absolute()) };
 	}
 
-	constexpr auto operator-(address const a, std::uint16_t const b) -> address
+	constexpr auto operator-(address const a, unsigned const b) -> address
 	{
 		return address{ static_cast<std::uint16_t>(a.get_absolute() - b) };
 	}
 
-	constexpr auto operator%(address const a, std::uint16_t const b) -> address
+	constexpr auto operator%(address const a, unsigned const b) -> address
 	{
 		return address{ static_cast<std::uint16_t>(a.get_absolute() % b) };
 	}

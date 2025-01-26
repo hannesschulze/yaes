@@ -16,7 +16,7 @@ namespace nes
 		static constexpr auto vram_size = std::size_t{ 0x800 };
 		static constexpr auto oam_size = std::size_t{ 0x100 };
 		static constexpr auto palette_buffer_size = std::size_t{ 0x20 };
-		static constexpr auto status_mask = std::uint8_t{ 0b11100000 };
+		static constexpr auto tile_size = unsigned{ 8 };
 		// Writes to some registers are ignored until this clock cycle.
 		static constexpr auto boot_up_cycles = cycle_count::from_ppu(29658);
 
@@ -35,6 +35,8 @@ namespace nes
 			auto set_foreground(bool const v) -> void { value = (value & ~0b00010000) | (v ? 0b00010000 : 0); }
 
 			std::uint8_t value{};
+
+			color_index() = default;
 
 			explicit color_index(std::uint8_t const value)
 				: value{ value }
@@ -67,6 +69,8 @@ namespace nes
 			std::uint8_t attributes{};
 			std::uint8_t x{};
 
+			explicit sprite() = default;
+
 			explicit sprite(std::uint8_t const y, std::uint8_t const tile_index, std::uint8_t const attributes, std::uint8_t const x)
 				: y{ y }
 				, tile_index{ tile_index }
@@ -76,9 +80,14 @@ namespace nes
 			}
 		};
 
+		struct tile_row
+		{
+			color_index colors[tile_size]{};
+		};
+
 		struct evaluated_sprite
 		{
-			std::uint32_t pattern{ 0 };
+			tile_row pattern;
 			std::uint8_t x{ 0 };
 			bool is_in_front{ false };
 			bool is_sprite_zero{ false };
@@ -111,6 +120,9 @@ namespace nes
 			auto set_sprite_overflow(bool const v) -> void { value = (value & ~0b00100000) | (v ? 0b00100000 : 0); }
 			auto set_sprite_zero_hit(bool const v) -> void { value = (value & ~0b01000000) | (v ? 0b01000000 : 0); }
 			auto set_vblank(bool const v) -> void { value = (value & ~0b10000000) | (v ? 0b10000000 : 0); }
+
+			// Set the remaining (unused) bits based on the given value.
+			auto set_remaining(std::uint8_t const v) -> void { value = (value & ~0b00011111) | (v & 0b00011111); }
 
 			std::uint8_t value{ 0b00000000 };
 		} status_{};
@@ -179,14 +191,18 @@ namespace nes
 				// Scroll position
 				auto get_coarse_x() const -> unsigned { return (value & 0b0000000000011111) >> 0; }
 				auto get_coarse_y() const -> unsigned { return (value & 0b0000001111100000) >> 5; }
+				auto get_name_table() const -> unsigned { return (value & 0b0000110000000000) >> 10; }
 				auto get_horizontal_name_table() const -> unsigned { return (value & 0b0000010000000000) >> 10; }
 				auto get_vertical_name_table() const -> unsigned { return (value & 0b0000100000000000) >> 11; }
+				auto get_tile_address() const -> unsigned { return (value & 0b0000111111111111) >> 0; }
 				auto get_fine_y() const -> unsigned { return (value & 0b0111000000000000) >> 12; }
 
 				auto set_coarse_x(unsigned const v) -> void { value = (value & ~0b0000000000011111) | ((v << 0) & 0b0000000000011111); }
 				auto set_coarse_y(unsigned const v) -> void { value = (value & ~0b0000001111100000) | ((v << 5) & 0b0000001111100000); }
+				auto set_name_table(unsigned const v) -> void { value = (value & ~0b0000110000000000) | ((v << 10) & 0b0000110000000000); }
 				auto set_horizontal_name_table(unsigned const v) -> void { value = (value & ~0b0000010000000000) | ((v << 10) & 0b0000010000000000); }
 				auto set_vertical_name_table(unsigned const v) -> void { value = (value & ~0b0000100000000000) | ((v << 11) & 0b0000100000000000); }
+				auto set_tile_address(unsigned const v) -> void { value = (value & ~0b0000111111111111) | ((v << 0) & 0b0000111111111111); }
 				auto set_fine_y(unsigned const v) -> void { value = (value & ~0b0111000000000000) | ((v << 12) & 0b0111000000000000); }
 
 				// Address
@@ -198,19 +214,23 @@ namespace nes
 
 				std::uint16_t value{};
 			} v{}, t{}; // Current and temporary VRAM address and scroll position (15 bits)
-			std::uint8_t  x{}; // Fine X scroll (3 bits)
-			bool          w{}; // Second write toggle (1 bit)
+			std::uint8_t x{}; // Fine X scroll (3 bits)
+			bool w{}; // Second write toggle (1 bit)
 		} internal_{};
 		std::uint8_t oamaddr_{}; // Address accessed by IO registers
 		std::uint8_t ppudata_read_buffer_{}; // Delays PPUDATA reads by one.
 		unsigned scanline_{ 240 };
 		unsigned scanline_cycle_{ 340 };
 		bool even_frame_{ true };
-		std::uint64_t tile_data_{ 0 }; // Data for the current tile (higher 32 bits) and the next tile (lower 32 bits).
-		std::uint8_t name_table_byte_{ 0 };
-		std::uint8_t attribute_table_byte_{ 0 };
-		std::uint8_t low_tile_byte_{ 0 };
-		std::uint8_t high_tile_byte_{ 0 };
+		tile_row current_background_{};
+		tile_row next_background_{};
+		struct
+		{
+			std::uint8_t tile{ 0 };
+			std::uint8_t palette{ 0 };
+			std::uint8_t bitplane_0{ 0 };
+			std::uint8_t bitplane_1{ 0 };
+		} fetch_cycle_{}; // Data populated during the fetch cycle.
 		evaluated_sprite sprites_[8]{}; // Evaluated sprites.
 		unsigned sprite_count_{ 0 }; // Number of evaluated sprites in sprites_.
 
@@ -250,23 +270,20 @@ namespace nes
 
 	private:
 		auto render_pixel() -> void;
-		auto fetch_name_table_byte() -> void;
-		auto fetch_attribute_table_byte() -> void;
-		auto fetch_low_tile_byte() -> void;
-		auto fetch_high_tile_byte() -> void;
-		auto store_tile_data() -> void;
+		auto evaluate_sprites() -> void;
+		auto fetch_sprite_pattern(sprite, unsigned row) -> tile_row;
+
+		// Helpers
+
+		auto increment_vram() -> void;
 		auto increment_x() -> void;
 		auto increment_y() -> void;
 		auto copy_x() -> void;
 		auto copy_y() -> void;
-		auto evaluate_sprites() -> void;
-		auto fetch_sprite_pattern(sprite, unsigned row) -> std::uint32_t;
-
-		// Helpers
-
-		auto sprite_height() const -> unsigned;
-		auto increment_vram() -> void;
+		auto get_sprite_height() const -> unsigned;
 		auto get_sprite(unsigned) const -> sprite;
+		auto get_tile_bitplane(unsigned pattern_table, unsigned tile, unsigned row, unsigned bitplane) -> std::uint8_t;
+		auto get_tile_row(unsigned palette, std::uint8_t bitplane_0, std::uint8_t bitplane_1) const -> tile_row;
 		auto ref_color(color_index) -> color&;
 		auto resolve_color(color) const -> rgb;
 	};
