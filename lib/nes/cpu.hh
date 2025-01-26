@@ -2,12 +2,13 @@
 
 #include "nes/util/cycle-count.hh"
 #include "nes/util/address.hh"
+#include "nes/util/status.hh"
 
 namespace nes
 {
 	class ppu;
 	class controller;
-	class mapper;
+	class cartridge;
 	struct snapshot;
 
 	class cpu
@@ -17,7 +18,7 @@ namespace nes
 
 		cycle_count current_cycles_;
 		ppu& ppu_;
-		mapper& mapper_;
+		cartridge& cartridge_;
 		controller& controller_1_;
 		controller& controller_2_;
 		std::uint8_t ram_[ram_size]{};
@@ -128,7 +129,7 @@ namespace nes
 		};
 
 	public:
-		explicit cpu(ppu&, mapper&, controller& controller_1, controller& controller_2);
+		explicit cpu(ppu&, cartridge&, controller& controller_1, controller& controller_2);
 
 		cpu(cpu const&) = delete;
 		cpu(cpu&&) = delete;
@@ -139,7 +140,7 @@ namespace nes
 		auto build_snapshot(snapshot&) -> void;
 		auto stall_cycles(cycle_count) -> void;
 		auto trigger_nmi() -> void;
-		auto step() -> void;
+		auto step() -> status;
 		auto is_nmi_pending() const -> bool { return nmi_pending_; } // XXX: Debugging
 
 		// Memory access
@@ -153,9 +154,9 @@ namespace nes
 		// Instructions
 
 #define DEFINE_SIMPLE_INSTRUCTION(name) \
-	auto run_##name() -> void;
+	auto run_##name() -> status;
 #define DEFINE_OPERAND_INSTRUCTION(name) \
-	template<addressing_mode Mode> auto run_##name() -> void;
+	template<addressing_mode Mode> auto run_##name() -> status;
 
 		DEFINE_OPERAND_INSTRUCTION(brk)
 		DEFINE_OPERAND_INSTRUCTION(ora)

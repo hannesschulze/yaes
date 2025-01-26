@@ -4,6 +4,7 @@
 #import "nes/util/rgb.hh"
 #import <memory>
 #import <optional>
+#import <iostream>
 
 namespace
 {
@@ -88,6 +89,11 @@ namespace
         [self addChild:node];
 
         auto cartridge = nes::cartridge::from_file([filePath UTF8String]);
+        if (cartridge.get_status() != nes::status::success)
+        {
+            std::cerr << "Unable to load cartridge: " << to_string(cartridge.get_status()) << std::endl;
+            std::abort();
+        }
 
         self->display_ = std::make_unique<display_impl>(node);
         self->nes_ = std::make_unique<nes::nes>(std::move(cartridge), *self->display_);
@@ -174,6 +180,11 @@ namespace
     auto delta_us = static_cast<std::uint64_t>((currentTime - last_time) * 1000. * 1000.);
     delta_us = std::min(delta_us, std::uint64_t{ 50000 });
     self->nes_->step(std::chrono::microseconds{ delta_us });
+    if (self->nes_->get_status() != nes::status::success)
+    {
+        std::cerr << "Invalid state: " << to_string(self->nes_->get_status()) << std::endl;
+        std::abort();
+    }
     self->display_->actually_switch_buffers();
 }
 

@@ -6,15 +6,16 @@ namespace nes
 {
 	class address;
 	class cpu;
-	class mapper;
+	class cartridge;
 	class display;
 	class rgb;
 	struct snapshot;
 
 	class ppu
 	{
+		static constexpr auto sprite_max_count = unsigned{ 64 };
 		static constexpr auto vram_size = std::size_t{ 0x800 };
-		static constexpr auto oam_size = std::size_t{ 0x100 };
+		static constexpr auto oam_size = std::size_t{ sprite_max_count * 4 };
 		static constexpr auto palette_buffer_size = std::size_t{ 0x20 };
 		static constexpr auto tile_size = unsigned{ 8 };
 		// Writes to some registers are ignored until this clock cycle.
@@ -95,7 +96,7 @@ namespace nes
 
 		cycle_count current_cycles_;
 		cpu& cpu_;
-		mapper& mapper_;
+		cartridge& cartridge_;
 		display& display_;
 		std::uint8_t vram_[vram_size]{};
 		std::uint8_t oam_[oam_size]{};
@@ -235,7 +236,7 @@ namespace nes
 		unsigned sprite_count_{ 0 }; // Number of evaluated sprites in sprites_.
 
 	public:
-		explicit ppu(cpu&, mapper&, display&);
+		explicit ppu(cpu&, cartridge&, display&);
 
 		ppu(ppu const&) = delete;
 		ppu(ppu&&) = delete;

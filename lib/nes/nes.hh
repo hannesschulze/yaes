@@ -5,7 +5,6 @@
 #include "nes/controller.hh"
 #include "nes/cpu.hh"
 #include "nes/ppu.hh"
-#include "nes/mapper.hh"
 
 namespace nes
 {
@@ -19,10 +18,10 @@ namespace nes
 		display& display_;
 		controller controller_1_;
 		controller controller_2_;
-		mapper mapper_;
 		ppu ppu_;
 		cpu cpu_;
 		cycle_count current_cycles_;
+		status status_{ status::success };
 
 	public:
 		explicit nes(cartridge, display&);
@@ -32,6 +31,7 @@ namespace nes
 		auto operator=(nes const&) -> nes& = delete;
 		auto operator=(nes&&) -> nes& = delete;
 
+		auto get_status() const -> status { return status_; }
 		auto get_controller_1() const -> controller const& { return controller_1_; }
 		auto ref_controller_1() -> controller& { return controller_1_; }
 		auto get_controller_2() const -> controller const& { return controller_2_; }

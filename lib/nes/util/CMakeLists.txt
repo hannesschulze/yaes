@@ -7,4 +7,5 @@ target_sources(
 		debug.hh
 		display.hh
         rgb.hh
-		snapshot.hh)
+		snapshot.hh
+		status.hh)

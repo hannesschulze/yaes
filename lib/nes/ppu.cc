@@ -1,6 +1,6 @@
 #include "nes/ppu.hh"
 #include "nes/cpu.hh"
-#include "nes/mapper.hh"
+#include "nes/cartridge.hh"
 #include "nes/util/address.hh"
 #include "nes/util/display.hh"
 #include "nes/util/rgb.hh"
@@ -9,9 +9,9 @@
 
 namespace nes
 {
-	ppu::ppu(cpu& cpu, mapper& mapper, display& display)
+	ppu::ppu(cpu& cpu, cartridge& cartridge, display& display)
 		: cpu_{ cpu }
-		, mapper_{ mapper }
+		, cartridge_{ cartridge }
 		, display_{ display }
 	{
 	}
@@ -110,7 +110,8 @@ namespace nes
 							fetch_cycle_.palette, fetch_cycle_.bitplane_0, fetch_cycle_.bitplane_1);
 						break;
 					}
-					default: break;
+					default:
+						break;
 				}
 			}
 
@@ -230,7 +231,7 @@ namespace nes
 	{
 		auto const height = get_sprite_height();
 		sprite_count_ = 0;
-		for (auto i = unsigned{ 0 }; i < 64; ++i)
+		for (auto i = unsigned{ 0 }; i < sprite_max_count; ++i)
 		{
 			auto const s = get_sprite(i);
 			auto const row = static_cast<int>(scanline_) - static_cast<int>(s.y);
@@ -298,7 +299,7 @@ namespace nes
 	auto ppu::read8(address addr) -> std::uint8_t
 	{
 		addr = addr % 0x4000; // PPU only has 16 KiB addresses.
-		if (addr <= address{ 0x3EFF }) { return mapper_.read_ppu(addr, vram_); }
+		if (addr <= address{ 0x3EFF }) { return cartridge_.get_mapper().read_ppu(addr, cartridge_, vram_); }
 		if (addr <= address{ 0x3FFF })
 		{
 			auto const index = color_index{ static_cast<std::uint8_t>(addr.get_absolute() % 0x20) };
@@ -314,7 +315,7 @@ namespace nes
 		addr = addr % 0x4000; // PPU only has 16 KiB addresses.
 		if (addr <= address{ 0x3EFF })
 		{
-			mapper_.write_ppu(addr, vram_, value);
+			cartridge_.get_mapper().write_ppu(addr, value, cartridge_, vram_);
 			return;
 		}
 		if (addr <= address{ 0x3FFF })

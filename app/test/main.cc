@@ -44,9 +44,9 @@ int main()
 
 	// Initialize the system to be tested.
 	auto cartridge_a = nes::cartridge::from_file(path);
-	if (!cartridge_a.is_valid())
+	if (cartridge_a.get_status() != nes::status::success)
 	{
-		std::cerr << "Could not load cartridge!" << std::endl;
+		std::cerr << "Could not load cartridge: " << to_string(cartridge_a.get_status()) << std::endl;
 		std::abort();
 	}
 	auto display_a = std::make_unique<dummy_display>();
