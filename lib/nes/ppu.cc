@@ -239,14 +239,14 @@ namespace nes
 		sprite_count_ = 0;
 		for (auto i = unsigned{ 0 }; i < sprite_max_count; ++i)
 		{
-			auto const s = get_sprite(i);
-			auto const row = static_cast<int>(scanline_) - static_cast<int>(s.y);
+			auto const s = sprite{ &oam_[i * 4] };
+			auto const row = static_cast<int>(scanline_) - static_cast<int>(s.get_y());
 			if (row < 0 || static_cast<unsigned>(row) >= height) { continue; }
 
 			if (sprite_count_ < 8)
 			{
 				sprites_[sprite_count_].pattern = fetch_sprite_pattern(s, static_cast<unsigned>(row));
-				sprites_[sprite_count_].x = s.x;
+				sprites_[sprite_count_].x = s.get_x();
 				sprites_[sprite_count_].is_in_front = !s.get_behind_background();
 				sprites_[sprite_count_].is_sprite_zero = i == 0;
 				sprite_count_ += 1;
@@ -585,11 +585,6 @@ namespace nes
 		}
 
 		return tile_size;
-	}
-
-	auto ppu::get_sprite(unsigned const i) const -> sprite
-	{
-		return sprite{ oam_[i * 4 + 0], oam_[i * 4 + 1], oam_[i * 4 + 2], oam_[i * 4 + 3] };
 	}
 
 	auto ppu::get_tile_bitplane(

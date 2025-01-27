@@ -67,28 +67,32 @@ namespace nes
 		struct sprite
 		{
 			// Tile index (and pattern table) for sprites
-			BITFIELD_ENUM(large_pattern_table, pattern_table, tile_index, 0b00000001, 0)
-			BITFIELD_ENUM(large_top_tile, tile, tile_index, 0b11111110, 1)
-			BITFIELD_ENUM(small_tile, tile, tile_index, 0b11111111, 0)
+			BITFIELD_ENUM(large_pattern_table, pattern_table, value[1], 0b00000001, 0)
+			BITFIELD_ENUM(large_top_tile, tile, value[1], 0b11111110, 1)
+			BITFIELD_ENUM(small_tile, tile, value[1], 0b11111111, 0)
 
 			// Attributes
-			BITFIELD_ENUM(palette, palette, attributes, 0b00000011, 0)
-			BITFIELD_FLAG(behind_background, attributes, 0b00100000, 5)
-			BITFIELD_FLAG(flip_horizontal, attributes, 0b01000000, 6)
-			BITFIELD_FLAG(flip_vertical, attributes, 0b10000000, 7)
+			BITFIELD_ENUM(palette, palette, value[2], 0b00000011, 0)
+			BITFIELD_FLAG(behind_background, value[2], 0b00100000, 5)
+			BITFIELD_FLAG(flip_horizontal, value[2], 0b01000000, 6)
+			BITFIELD_FLAG(flip_vertical, value[2], 0b10000000, 7)
 
-			std::uint8_t y{};
-			std::uint8_t tile_index{};
-			std::uint8_t attributes{};
-			std::uint8_t x{};
+			auto get_y() const -> std::uint8_t { return value[0]; }
+			auto get_tile_index() const -> std::uint8_t { return value[1]; }
+			auto get_attributes() const -> std::uint8_t { return value[2]; }
+			auto get_x() const -> std::uint8_t { return value[3]; }
+
+			auto set_y(std::uint8_t const v) -> void { value[0] = v; }
+			auto set_tile_index(std::uint8_t const v) -> void { value[1] = v; }
+			auto set_attributes(std::uint8_t const v) -> void { value[2] = v; }
+			auto set_x(std::uint8_t const v) -> void { value[3] = v; }
+
+			std::uint8_t value[4]{};
 
 			explicit sprite() = default;
 
-			explicit sprite(std::uint8_t const y, std::uint8_t const tile_index, std::uint8_t const attributes, std::uint8_t const x)
-				: y{ y }
-				, tile_index{ tile_index }
-				, attributes{ attributes }
-				, x{ x }
+			explicit sprite(std::uint8_t const* data)
+				: value{ data[0], data[1], data[2], data[3] }
 			{
 			}
 		};
@@ -267,7 +271,6 @@ namespace nes
 		auto copy_x() -> void;
 		auto copy_y() -> void;
 		auto get_sprite_height() const -> unsigned;
-		auto get_sprite(unsigned i) const -> sprite;
 		auto get_tile_bitplane(pattern_table, tile, unsigned row, bitplane) -> std::uint8_t;
 		auto get_tile_row(palette, std::uint8_t bitplane_0, std::uint8_t bitplane_1) const -> tile_row;
 		auto ref_color(color_index) -> color&;
