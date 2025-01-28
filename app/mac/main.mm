@@ -1,8 +1,7 @@
-#import "scene.hh"
+#import "view-controller.hh"
 #import <iostream>
 
 #import <Cocoa/Cocoa.h>
-#import <SpriteKit/SpriteKit.h>
 
 int main(int argc, char** argv)
 {
@@ -34,23 +33,12 @@ int main(int argc, char** argv)
     [mainMenu addItem:item];
     [app setMainMenu:mainMenu];
 
-    auto scene = [[Scene alloc] initWithFilePath:filePath];
-    auto minSize = [scene size];
-
-    auto view = [[SKView alloc] init];
-    [view setIgnoresSiblingOrder:YES];
-    [view setShowsFPS:YES];
-    [view presentScene:scene];
-
-    auto window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0., 0., minSize.width * 2, minSize.height * 2)
-                                              styleMask:(NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
-                                                         NSWindowMiniaturizeButton | NSWindowStyleMaskResizable)
-                                                backing:NSBackingStoreBuffered
-                                                  defer:false];
+	auto viewController = [[ViewController alloc] initWithFilePath:filePath];
+	auto window = [NSWindow windowWithContentViewController:viewController];
     [window setTitle:@"NES"];
-    [window setContentAspectRatio:minSize];
-    [window setContentMinSize:minSize];
-    [window setContentView:view];
+    [window setContentAspectRatio:[viewController minimumDisplaySize]];
+	[window setContentMinSize:[viewController minimumDisplaySize]];
+	[window setContentSize:[viewController preferredDisplaySize]];
     [window makeKeyAndOrderFront:nil];
 
     [app activateIgnoringOtherApps:YES];

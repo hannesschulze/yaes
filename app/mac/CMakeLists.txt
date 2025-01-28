@@ -1,7 +1,8 @@
 add_executable(nes_mac)
 
-find_library(FRAMEWORK_COCOA Cocoa REQUIRED)
-find_library(FRAMEWORK_SPRITEKIT SpriteKit REQUIRED)
+find_library(FRAMEWORK_Cocoa Cocoa REQUIRED)
+find_library(FRAMEWORK_SpriteKit SpriteKit REQUIRED)
+find_library(FRAMEWORK_GameController GameController REQUIRED)
 
 target_include_directories(nes_mac PRIVATE .)
 target_link_libraries(
@@ -9,12 +10,18 @@ target_link_libraries(
 	PRIVATE
 		nes::options
 		nes::nes
-		${FRAMEWORK_COCOA}
-		${FRAMEWORK_SPRITEKIT})
+		${FRAMEWORK_Cocoa}
+		${FRAMEWORK_SpriteKit}
+		${FRAMEWORK_GameController})
 
 target_sources(
 	nes_mac
 	PRIVATE
 		main.mm
 		scene.hh
-		scene.mm)
+		scene.mm
+		view-controller.hh
+		view-controller.mm
+		controller-adapter.hh
+		controller-adapter-keyboard.hh
+		controller-adapter-keyboard.mm)

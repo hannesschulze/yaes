@@ -1,7 +1,6 @@
 #import "scene.hh"
 #import "nes/nes.hh"
 #import "nes/util/display.hh"
-#import "nes/util/rgb.hh"
 #import <memory>
 #import <optional>
 #import <iostream>
@@ -32,13 +31,10 @@ namespace
             buffer_back_ = buffer_front_;
             buffer_front_ = tmp;
             bytes_back_ = static_cast<std::uint8_t*>([buffer_back_ mutableBytes]);
-        }
 
-        auto actually_switch_buffers() -> void
-        {
-            auto texture = [SKTexture textureWithData:buffer_front_ size:CGSizeMake(width, height) flipped:YES];
-            [texture setFilteringMode:SKTextureFilteringNearest];
-            [node_ setTexture:texture];
+			auto texture = [SKTexture textureWithData:buffer_front_ size:CGSizeMake(width, height) flipped:YES];
+			[texture setFilteringMode:SKTextureFilteringNearest];
+			[node_ setTexture:texture];
         }
 
 		virtual auto set(unsigned x, unsigned y, nes::rgb value) -> void override
@@ -71,9 +67,9 @@ namespace
 
 @implementation Scene
 {
-    std::unique_ptr<display_impl> display_;
-    std::unique_ptr<nes::nes> nes_;
-    std::optional<NSTimeInterval> last_time_;
+	std::unique_ptr<display_impl> _display;
+	std::unique_ptr<nes::nes> _nes;
+    std::optional<NSTimeInterval> _lastTimestamp;
 }
 
 - (instancetype)initWithFilePath:(NSString*)filePath
@@ -95,97 +91,28 @@ namespace
             std::abort();
         }
 
-        self->display_ = std::make_unique<display_impl>(node);
-        self->nes_ = std::make_unique<nes::nes>(std::move(cartridge), *self->display_);
+        _display = std::make_unique<display_impl>(node);
+        _nes = std::make_unique<nes::nes>(std::move(cartridge), *self->_display);
     }
     return self;
 }
 
-- (void)keyDown:(NSEvent*)event
-{
-    auto& controller_1 = self->nes_->ref_controller_1();
-
-    switch ([event keyCode])
-    {
-        case 0x7e: // up arrow
-            controller_1.ref_pressed().add(nes::buttons::up);
-            break;
-        case 0x7d: // down arrow
-            controller_1.ref_pressed().add(nes::buttons::down);
-            break;
-        case 0x7b: // left arrow
-            controller_1.ref_pressed().add(nes::buttons::left);
-            break;
-        case 0x7c: // right arrow
-            controller_1.ref_pressed().add(nes::buttons::right);
-            break;
-        case 0x6: // "Z"
-            controller_1.ref_pressed().add(nes::buttons::a);
-            break;
-        case 0x7: // "X"
-            controller_1.ref_pressed().add(nes::buttons::b);
-            break;
-        case 0x24: // return
-            controller_1.ref_pressed().add(nes::buttons::start);
-            break;
-        case 0x31: // space
-            controller_1.ref_pressed().add(nes::buttons::select);
-            break;
-        default:
-            [super keyDown:event];
-            break;
-    }
-}
-
-- (void)keyUp:(NSEvent*)event
-{
-    auto& controller_1 = self->nes_->ref_controller_1();
-
-    switch ([event keyCode])
-    {
-        case 0x7e: // up arrow
-            controller_1.ref_pressed().remove(nes::buttons::up);
-            break;
-        case 0x7d: // down arrow
-            controller_1.ref_pressed().remove(nes::buttons::down);
-            break;
-        case 0x7b: // left arrow
-            controller_1.ref_pressed().remove(nes::buttons::left);
-            break;
-        case 0x7c: // right arrow
-            controller_1.ref_pressed().remove(nes::buttons::right);
-            break;
-        case 0x6: // "Z"
-            controller_1.ref_pressed().remove(nes::buttons::a);
-            break;
-        case 0x7: // "X"
-            controller_1.ref_pressed().remove(nes::buttons::b);
-            break;
-        case 0x24: // return
-            controller_1.ref_pressed().remove(nes::buttons::start);
-            break;
-        case 0x31: // space
-            controller_1.ref_pressed().remove(nes::buttons::select);
-            break;
-        default:
-            [super keyUp:event];
-            break;
-    }
-}
-
 - (void)update:(NSTimeInterval)currentTime
 {
-    auto const last_time = self->last_time_.value_or(currentTime);
-    last_time_ = currentTime;
-    auto delta_us = static_cast<std::uint64_t>((currentTime - last_time) * 1000. * 1000.);
-    delta_us = std::min(delta_us, std::uint64_t{ 50000 });
-    self->nes_->step(std::chrono::microseconds{ delta_us });
-    if (self->nes_->get_status() != nes::status::success)
+	_nes->ref_controller_1().set_pressed(_primaryController ? [_primaryController readPressedButtons] : nes::button_mask{});
+	_nes->ref_controller_2().set_pressed(_secondaryController ? [_secondaryController readPressedButtons] : nes::button_mask{});
+
+    auto const lastTimestamp = _lastTimestamp.value_or(currentTime);
+    _lastTimestamp = currentTime;
+    auto deltaMicroseconds = static_cast<std::uint64_t>((currentTime - lastTimestamp) * 1000. * 1000.);
+	deltaMicroseconds = std::min(deltaMicroseconds, std::uint64_t{ 50000 });
+    _nes->step(std::chrono::microseconds{ deltaMicroseconds });
+
+    if (_nes->get_status() != nes::status::success)
     {
-        std::cerr << "Invalid state: " << to_string(self->nes_->get_status()) << std::endl;
+        std::cerr << "Invalid state: " << to_string(_nes->get_status()) << std::endl;
         std::abort();
     }
-    self->display_->actually_switch_buffers();
 }
 
 @end
