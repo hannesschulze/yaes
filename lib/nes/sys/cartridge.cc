@@ -1,5 +1,5 @@
-#include "nes/cartridge.hh"
-#include "nes/util/status.hh"
+#include "nes/sys/cartridge.hh"
+#include "nes/sys/types/status.hh"
 #include <fstream>
 
 namespace nes

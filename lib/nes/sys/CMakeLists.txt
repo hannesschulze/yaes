@@ -1,8 +1,6 @@
 target_sources(
-	nes_ref
+	nes
 	PRIVATE
-		nes.hh
-		nes.cc
 		cartridge.hh
 		cartridge.cc
 		controller.hh
@@ -12,4 +10,8 @@ target_sources(
 		ppu.hh
 		ppu.cc
 		mapper.hh
-		mapper.cc)
+		mapper.cc
+		nes.hh
+		nes.cc)
+
+add_subdirectory(types)

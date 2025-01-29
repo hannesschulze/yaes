@@ -1,8 +1,8 @@
 #pragma once
 
-#include "nes/util/button-mask.hh"
+#include "nes/sys/types/button-mask.hh"
 
-namespace nes::ref
+namespace nes
 {
 	class controller
 	{
@@ -19,7 +19,7 @@ namespace nes::ref
 		auto operator=(controller&&) -> controller& = delete;
 
 		auto get_pressed() const -> button_mask { return pressed_;}
-		auto get_pressed() -> button_mask& { return pressed_; }
+		auto ref_pressed() -> button_mask& { return pressed_; }
 		auto set_pressed(button_mask const value) -> void { pressed_ = value; }
 
 		// IO register
@@ -27,4 +27,4 @@ namespace nes::ref
 		auto read() -> std::uint8_t;
 		auto write(std::uint8_t) -> void;
 	};
-} // namespace nes::ref
+} // namespace nes

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "nes/util/address.hh"
-#include "nes/util/status.hh"
+#include "nes/sys/types/address.hh"
+#include "nes/sys/types/status.hh"
 
 namespace nes
 {

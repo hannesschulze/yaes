@@ -1,7 +1,7 @@
 #pragma once
 
-#include "nes/util/status.hh"
-#include "nes/mapper.hh"
+#include "nes/sys/types/status.hh"
+#include "nes/sys/mapper.hh"
 #include <cstddef>
 #include <vector>
 #include <string_view>

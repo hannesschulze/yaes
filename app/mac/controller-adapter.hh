@@ -1,6 +1,6 @@
 #pragma once
 
-#import "nes/util/button-mask.hh"
+#import "nes/sys/types/button-mask.hh"
 
 #import <Foundation/Foundation.h>
 

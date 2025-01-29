@@ -12,10 +12,4 @@ if(NES_ENABLE_DEBUG_OUTPUT)
 	target_link_libraries(nes PUBLIC spdlog::spdlog)
 endif()
 
-add_library(nes_ref STATIC)
-add_library(nes::ref ALIAS nes_ref)
-
-target_link_libraries(nes_ref PRIVATE nes::options)
-target_link_libraries(nes_ref PUBLIC nes::nes)
-
 add_subdirectory(nes)

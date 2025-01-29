@@ -1,18 +1,15 @@
 #pragma once
 
-#include "nes/util/cycle-count.hh"
-#include "nes/util/address.hh"
+#include "nes/sys/types/cycle-count.hh"
+#include "nes/sys/types/address.hh"
+#include "nes/sys/types/status.hh"
 
 namespace nes
 {
-	struct snapshot;
-} // namespace nes
-
-namespace nes::ref
-{
 	class ppu;
 	class controller;
-	class mapper;
+	class cartridge;
+	struct snapshot;
 
 	class cpu
 	{
@@ -21,7 +18,7 @@ namespace nes::ref
 
 		cycle_count current_cycles_;
 		ppu& ppu_;
-		mapper& mapper_;
+		cartridge& cartridge_;
 		controller& controller_1_;
 		controller& controller_2_;
 		std::uint8_t ram_[ram_size]{};
@@ -35,21 +32,26 @@ namespace nes::ref
 			std::uint8_t a{ 0 };
 			std::uint8_t x{ 0 };
 			std::uint8_t y{ 0 };
-			union
+			struct
 			{
-				struct
-				{
-					bool c : 1; // carry
-					bool z : 1; // zero
-					bool i : 1; // interrupt inhibit
-					bool d : 1; // decimal
-					bool b : 1; // break
-					bool   : 1; // (unused, always true)
-					bool v : 1; // overflow
-					bool n : 1; // negative
-				};
-				std::uint8_t p{ 0b00100100 }; // initially, set i = true
-			};
+				auto get_c() const -> bool { return value & 0b00000001; } // carry
+				auto get_z() const -> bool { return value & 0b00000010; } // zero
+				auto get_i() const -> bool { return value & 0b00000100; } // interrupt inhibit
+				auto get_d() const -> bool { return value & 0b00001000; } // decimal
+				auto get_b() const -> bool { return value & 0b00010000; } // break
+				auto get_v() const -> bool { return value & 0b01000000; } // overflow
+				auto get_n() const -> bool { return value & 0b10000000; } // negative
+
+				auto set_c(bool const v) -> void { value = (value & ~0b00000001) | (v ? 0b00000001 : 0); }
+				auto set_z(bool const v) -> void { value = (value & ~0b00000010) | (v ? 0b00000010 : 0); }
+				auto set_i(bool const v) -> void { value = (value & ~0b00000100) | (v ? 0b00000100 : 0); }
+				auto set_d(bool const v) -> void { value = (value & ~0b00001000) | (v ? 0b00001000 : 0); }
+				auto set_b(bool const v) -> void { value = (value & ~0b00010000) | (v ? 0b00010000 : 0); }
+				auto set_v(bool const v) -> void { value = (value & ~0b01000000) | (v ? 0b01000000 : 0); }
+				auto set_n(bool const v) -> void { value = (value & ~0b10000000) | (v ? 0b10000000 : 0); }
+
+				std::uint8_t value{ 0b00100100 };
+			} p{};
 		} registers_{};
 
 		enum class addressing_mode
@@ -84,8 +86,8 @@ namespace nes::ref
 		public:
 			explicit operand(cpu& cpu, address const address, cycle_count const cycles)
 				: cpu_{ cpu }
-			, address_{ address }
-			, cycles_{ cycles }
+				, address_{ address }
+				, cycles_{ cycles }
 			{
 			}
 
@@ -127,7 +129,7 @@ namespace nes::ref
 		};
 
 	public:
-		explicit cpu(ppu&, mapper&, controller& controller_1, controller& controller_2);
+		explicit cpu(ppu&, cartridge&, controller& controller_1, controller& controller_2);
 
 		cpu(cpu const&) = delete;
 		cpu(cpu&&) = delete;
@@ -138,7 +140,7 @@ namespace nes::ref
 		auto build_snapshot(snapshot&) -> void;
 		auto stall_cycles(cycle_count) -> void;
 		auto trigger_nmi() -> void;
-		auto step() -> void;
+		auto step() -> status;
 		auto is_nmi_pending() const -> bool { return nmi_pending_; } // XXX: Debugging
 
 		// Memory access
@@ -152,9 +154,9 @@ namespace nes::ref
 		// Instructions
 
 #define DEFINE_SIMPLE_INSTRUCTION(name) \
-	auto run_##name() -> void;
+	auto run_##name() -> status;
 #define DEFINE_OPERAND_INSTRUCTION(name) \
-	template<addressing_mode Mode> auto run_##name() -> void;
+	template<addressing_mode Mode> auto run_##name() -> status;
 
 		DEFINE_OPERAND_INSTRUCTION(brk)
 		DEFINE_OPERAND_INSTRUCTION(ora)
@@ -295,4 +297,4 @@ namespace nes::ref
 		template<>
 		auto fetch_operand<addressing_mode::immediate>(force_page_crossing) -> operand<addressing_mode::immediate>;
 	};
-} // namespace nes::ref
+} // namespace nes

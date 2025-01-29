@@ -1,6 +1,6 @@
-#include "nes/ref/controller.hh"
+#include "nes/sys/controller.hh"
 
-namespace nes::ref
+namespace nes
 {
 	auto controller::read() -> std::uint8_t
 	{
@@ -15,4 +15,4 @@ namespace nes::ref
 		strobing_ = value & 1;
 		if (strobing_) { index_ = 0; }
 	}
-} // namespace nes::ref
+} // namespace nes

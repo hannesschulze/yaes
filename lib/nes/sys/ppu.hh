@@ -1,6 +1,6 @@
 #pragma once
 
-#include "nes/util/cycle-count.hh"
+#include "nes/sys/types/cycle-count.hh"
 
 namespace nes
 {

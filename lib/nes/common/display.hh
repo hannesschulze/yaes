@@ -1,6 +1,6 @@
 #pragma once
 
-#include "nes/util/rgb.hh"
+#include "nes/common/rgb.hh"
 
 namespace nes
 {

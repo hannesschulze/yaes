@@ -1,6 +1,6 @@
 #import "scene.hh"
-#import "nes/nes.hh"
-#import "nes/util/display.hh"
+#import "nes/sys/nes.hh"
+#import "nes/common/display.hh"
 #import <memory>
 #import <optional>
 #import <iostream>

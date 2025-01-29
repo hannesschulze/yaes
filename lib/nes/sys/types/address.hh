@@ -4,7 +4,8 @@
 
 namespace nes
 {
-	/// An address on the NES.
+	/// An address on the NES (for simplicity, we share the same type for CPU and PPU, even though the PPU only uses
+	/// 14 bit addresses).
 	class address
 	{
 		std::uint16_t absolute_{ 0 };

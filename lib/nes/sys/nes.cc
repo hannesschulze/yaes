@@ -1,7 +1,7 @@
-#include "nes/nes.hh"
-#include "nes/util/display.hh"
-#include "nes/util/rgb.hh"
-#include "nes/util/snapshot.hh"
+#include "nes/sys/nes.hh"
+#include "nes/sys/types/snapshot.hh"
+#include "nes/common/display.hh"
+#include "nes/common/rgb.hh"
 
 namespace nes
 {

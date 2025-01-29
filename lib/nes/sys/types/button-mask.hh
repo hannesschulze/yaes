@@ -4,6 +4,7 @@
 
 namespace nes
 {
+	/// Buttons pressed on a controller.
 	class button_mask
 	{
 		std::uint8_t raw_value_{ 0 };
