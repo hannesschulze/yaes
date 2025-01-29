@@ -1,16 +1,18 @@
-//
-// Created by Hannes Schulze on 29.01.25.
-//
+#pragma once
 
-#ifndef NES_CONTROLLER_ADAPTER_GAMEPAD_HH
-#define NES_CONTROLLER_ADAPTER_GAMEPAD_HH
+#import "controller-adapter.hh"
 
+#import <GameController/GameController.h>
 
+NS_ASSUME_NONNULL_BEGIN
 
-class ControllerAdapterGamepad {
+@interface ControllerAdapterGamepad : NSObject <ControllerAdapter>
 
-};
+- (instancetype)initWithProfile:(GCExtendedGamepad*)profile;
+- (instancetype)init NS_UNAVAILABLE;
 
+@property (readonly) GCExtendedGamepad* profile;
 
+@end
 
-#endif //NES_CONTROLLER_ADAPTER_GAMEPAD_HH
+NS_ASSUME_NONNULL_END

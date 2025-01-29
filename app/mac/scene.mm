@@ -97,6 +97,16 @@ namespace
     return self;
 }
 
+- (void)keyUp:(NSEvent*)event
+{
+	// Handled by Game Controller
+}
+
+- (void)keyDown:(NSEvent*)event
+{
+	// Handled by Game Controller
+}
+
 - (void)update:(NSTimeInterval)currentTime
 {
 	_nes->ref_controller_1().set_pressed(_primaryController ? [_primaryController readPressedButtons] : nes::button_mask{});

@@ -1,6 +1,7 @@
 #pragma once
 
 #import "controller-adapter.hh"
+
 #import <SpriteKit/SpriteKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
