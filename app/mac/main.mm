@@ -5,14 +5,6 @@
 
 int main(int argc, char** argv)
 {
-    if (argc != 2)
-    {
-        std::cerr << "Usage: " << argv[0] << " <rom-path>" << std::endl;
-        return 1;
-    }
-
-    auto filePath = [NSString stringWithUTF8String:argv[1]];
-
     auto app = [NSApplication sharedApplication];
     [app setActivationPolicy:NSApplicationActivationPolicyRegular];
 
@@ -33,7 +25,7 @@ int main(int argc, char** argv)
     [mainMenu addItem:item];
     [app setMainMenu:mainMenu];
 
-	auto viewController = [[ViewController alloc] initWithFilePath:filePath];
+	auto viewController = [[ViewController alloc] init];
 	auto window = [NSWindow windowWithContentViewController:viewController];
     [window setTitle:@"NES"];
     [window setContentAspectRatio:[viewController minimumDisplaySize]];

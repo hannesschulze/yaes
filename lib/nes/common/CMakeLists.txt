@@ -3,4 +3,5 @@ target_sources(
 	PRIVATE
 		debug.hh
 		rgb.hh
+		list.hh
 		display.hh)

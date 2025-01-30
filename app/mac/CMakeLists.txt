@@ -21,9 +21,4 @@ target_sources(
 		scene.hh
 		scene.mm
 		view-controller.hh
-		view-controller.mm
-		controller-adapter.hh
-		controller-adapter-gamepad.hh
-		controller-adapter-gamepad.mm
-		controller-adapter-keyboard.hh
-		controller-adapter-keyboard.mm)
+		view-controller.mm)
