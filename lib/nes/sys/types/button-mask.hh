@@ -32,13 +32,13 @@ namespace nes
 
 	namespace buttons
 	{
-		static constexpr auto a = button_mask::from_raw_value(1 << 0);
-		static constexpr auto b = button_mask::from_raw_value(1 << 1);
-		static constexpr auto select = button_mask::from_raw_value(1 << 2);
-		static constexpr auto start = button_mask::from_raw_value(1 << 3);
-		static constexpr auto up = button_mask::from_raw_value(1 << 4);
-		static constexpr auto down = button_mask::from_raw_value(1 << 5);
-		static constexpr auto left = button_mask::from_raw_value(1 << 6);
-		static constexpr auto right = button_mask::from_raw_value(1 << 7);
+		inline constexpr auto a = button_mask::from_raw_value(1 << 0);
+		inline constexpr auto b = button_mask::from_raw_value(1 << 1);
+		inline constexpr auto select = button_mask::from_raw_value(1 << 2);
+		inline constexpr auto start = button_mask::from_raw_value(1 << 3);
+		inline constexpr auto up = button_mask::from_raw_value(1 << 4);
+		inline constexpr auto down = button_mask::from_raw_value(1 << 5);
+		inline constexpr auto left = button_mask::from_raw_value(1 << 6);
+		inline constexpr auto right = button_mask::from_raw_value(1 << 7);
 	} // namespace buttons
 } // namespace nes

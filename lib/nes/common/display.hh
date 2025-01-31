@@ -26,17 +26,6 @@ namespace nes
 		virtual auto set(unsigned x, unsigned y, rgb value) -> void = 0;
 		/// Load the pixel value at the given position in the back buffer.
 		virtual auto get(unsigned x, unsigned y) const -> rgb = 0;
-		/// Clear the entire back buffer with a color.
-		virtual auto clear(rgb const color) -> void
-		{
-			for (auto y = unsigned{ 0 }; y < height; ++y)
-			{
-				for (auto x = unsigned{ 0 }; x < width; ++x)
-				{
-					set(x, y, color);
-				}
-			}
-		}
 
 	protected:
 		explicit display() = default;

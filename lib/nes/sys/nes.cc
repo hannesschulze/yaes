@@ -12,9 +12,6 @@ namespace nes
 		, cpu_{ ppu_, cartridge_, controller_1_, controller_2_ }
 		, status_{ cartridge_.get_status() }
 	{
-		display_.clear(rgb{});
-		display_.switch_buffers();
-		display_.clear(rgb{});
 	}
 
 	auto nes::step(std::chrono::microseconds const delta) -> void

@@ -5,3 +5,4 @@ target_sources(
 		application.cc)
 
 add_subdirectory(input)
+add_subdirectory(graphics)

@@ -1,0 +1,9 @@
+target_sources(
+	nes
+	PRIVATE
+		color.hh
+		image-view.hh
+		mask-tile.hh
+		image-tile.hh
+		renderer.hh
+		renderer.cc)
