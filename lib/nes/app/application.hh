@@ -1,16 +1,16 @@
 #pragma once
 
 #include "nes/app/input/input-manager.hh"
+#include "nes/app/ui/screen-title.hh"
 #include "nes/sys/nes.hh"
+#include "nes/common/box.hh"
+#include "nes/common/display.hh"
 #include <chrono>
-
-namespace nes
-{
-	class display;
-} // namespace nes
 
 namespace nes::app
 {
+	class screen;
+
 	/// Entrypoint for the application.
 	///
 	/// This class takes care of presenting a UI screen or the emulator, handling any errors and implementing the main
@@ -19,9 +19,28 @@ namespace nes::app
 	/// It delegates some platform-specific tasks to interfaces.
 	class application
 	{
-		display& display_;
+		/// Acts like a regular display, but renders a screen on top of the back buffer when requested to switch
+		/// buffers.
+		class display_proxy final : public display
+		{
+		public:
+			display& base;
+			screen* screen{ nullptr };
+
+			explicit display_proxy(display& base)
+				: base{ base }
+			{
+			}
+
+			auto get(unsigned const x, unsigned const y) const -> rgb override { return base.get(x, y); }
+			auto set(unsigned const x, unsigned const y, rgb const value) -> void override { base.set(x, y, value); }
+			auto switch_buffers() -> void override;
+		};
+
+		display_proxy display_;
 		input_manager input_manager_;
-		sys::nes console_;
+		box<sys::nes> console_;
+		screen_title screen_title_;
 
 	public:
 		explicit application(display&, input_device_keyboard&);
@@ -36,5 +55,8 @@ namespace nes::app
 
 		auto add_controller(input_device_controller& c) -> void { input_manager_.add_controller(c); }
 		auto remove_controller(input_device_controller& c) -> void { input_manager_.remove_controller(c); }
+
+	private:
+		auto handle_action(action) -> void;
 	};
 } // namespace nes::app

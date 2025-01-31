@@ -68,7 +68,7 @@ namespace nes::app
 
 		auto const resolved = resolve_color(c);
 		auto const x_stop = std::min(x + width, renderer::width);
-		auto const y_stop = std::min(y + width, renderer::height);
+		auto const y_stop = std::min(y + height, renderer::height);
 		for (auto y_px = unsigned{ y * 8 }; y_px < y_stop * 8; ++y_px)
 		{
 			for (auto x_px = unsigned{ x * 8 }; x_px < x_stop * 8; ++x_px)

@@ -4,4 +4,5 @@ target_sources(
 		debug.hh
 		rgb.hh
 		list.hh
+		box.hh
 		display.hh)

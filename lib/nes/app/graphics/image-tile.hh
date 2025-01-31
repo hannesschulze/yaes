@@ -11,19 +11,4 @@ namespace nes::app
 	{
 		color data[8 * 8]{};
 	};
-
-	namespace tiles
-	{
-		inline constexpr auto test = image_tile
-		{
-			color{ 0 }, color{ 0 }, color{ 9 }, color{ 9 }, color{ 9 }, color{ 9 }, color{ 0 }, color{ 0 },
-			color{ 0 }, color{ 9 }, color{ 9 }, color{ 8 }, color{ 8 }, color{ 9 }, color{ 9 }, color{ 0 },
-			color{ 9 }, color{ 9 }, color{ 8 }, color{ 8 }, color{ 8 }, color{ 8 }, color{ 9 }, color{ 9 },
-			color{ 9 }, color{ 8 }, color{ 8 }, color{ 9 }, color{ 9 }, color{ 8 }, color{ 8 }, color{ 9 },
-			color{ 9 }, color{ 8 }, color{ 8 }, color{ 9 }, color{ 9 }, color{ 8 }, color{ 8 }, color{ 9 },
-			color{ 9 }, color{ 9 }, color{ 8 }, color{ 8 }, color{ 8 }, color{ 8 }, color{ 9 }, color{ 9 },
-			color{ 0 }, color{ 9 }, color{ 9 }, color{ 8 }, color{ 8 }, color{ 9 }, color{ 9 }, color{ 0 },
-			color{ 0 }, color{ 0 }, color{ 9 }, color{ 9 }, color{ 9 }, color{ 9 }, color{ 0 }, color{ 0 },
-		};
-	} // namespace tiles
 } // namespace nes::app

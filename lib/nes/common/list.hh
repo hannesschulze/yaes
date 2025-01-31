@@ -39,7 +39,7 @@ namespace nes
 			auto operator==(iterator const& other) -> bool { return current_ == other.current_; }
 			auto operator!=(iterator const& other) -> bool { return current_ != other.current_; }
 
-			auto operator*() -> T* { return current_; }
+			auto operator*() const -> T* { return current_; }
 
 			auto operator++() -> iterator&
 			{
