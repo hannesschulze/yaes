@@ -4,7 +4,7 @@
 #include "nes/sys/types/address.hh"
 #include "nes/sys/types/status.hh"
 
-namespace nes
+namespace nes::sys
 {
 	class ppu;
 	class controller;
@@ -297,4 +297,4 @@ namespace nes
 		template<>
 		auto fetch_operand<addressing_mode::immediate>(force_page_crossing) -> operand<addressing_mode::immediate>;
 	};
-} // namespace nes
+} // namespace nes::sys

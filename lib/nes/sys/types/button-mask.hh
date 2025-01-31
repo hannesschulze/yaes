@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace nes
+namespace nes::sys
 {
 	/// Buttons pressed on a controller.
 	class button_mask
@@ -41,4 +41,4 @@ namespace nes
 		inline constexpr auto left = button_mask::from_raw_value(1 << 6);
 		inline constexpr auto right = button_mask::from_raw_value(1 << 7);
 	} // namespace buttons
-} // namespace nes
+} // namespace nes::sys

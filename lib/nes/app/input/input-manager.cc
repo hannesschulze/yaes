@@ -1,6 +1,6 @@
 #include "nes/app/input/input-manager.hh"
 
-namespace nes
+namespace nes::app
 {
 	namespace
 	{
@@ -99,4 +99,4 @@ namespace nes
 			}
 		}
 	}
-} // namespace nes
+} // namespace nes::app

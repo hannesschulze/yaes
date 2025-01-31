@@ -2,7 +2,7 @@
 
 #include "nes/sys/types/button-mask.hh"
 
-namespace nes
+namespace nes::sys
 {
 	class controller
 	{
@@ -27,4 +27,4 @@ namespace nes
 		auto read() -> std::uint8_t;
 		auto write(std::uint8_t) -> void;
 	};
-} // namespace nes
+} // namespace nes::sys

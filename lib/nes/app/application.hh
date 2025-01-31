@@ -7,7 +7,10 @@
 namespace nes
 {
 	class display;
+} // namespace nes
 
+namespace nes::app
+{
 	/// Entrypoint for the application.
 	///
 	/// This class takes care of presenting a UI screen or the emulator, handling any errors and implementing the main
@@ -18,7 +21,7 @@ namespace nes
 	{
 		display& display_;
 		input_manager input_manager_;
-		nes console_;
+		sys::nes console_;
 
 	public:
 		explicit application(display&, input_device_keyboard&);
@@ -34,4 +37,4 @@ namespace nes
 		auto add_controller(input_device_controller& c) -> void { input_manager_.add_controller(c); }
 		auto remove_controller(input_device_controller& c) -> void { input_manager_.remove_controller(c); }
 	};
-} // namespace nes
+} // namespace nes::app

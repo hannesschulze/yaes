@@ -6,7 +6,7 @@
 #include <vector>
 #include <string_view>
 
-namespace nes
+namespace nes::sys
 {
 	enum class name_table_arrangement
 	{
@@ -75,4 +75,4 @@ namespace nes
 	private:
 		explicit cartridge(status);
 	};
-} // namespace nes
+} // namespace nes::sys

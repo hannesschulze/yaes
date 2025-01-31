@@ -4,11 +4,15 @@
 
 namespace nes
 {
+	class display;
+	class rgb;
+} // namespace nes
+
+namespace nes::sys
+{
 	class address;
 	class cpu;
 	class cartridge;
-	class display;
-	class rgb;
 	struct snapshot;
 
 	class ppu
@@ -276,4 +280,4 @@ namespace nes
 		auto ref_color(color_index) -> color&;
 		auto resolve_color(color) const -> rgb;
 	};
-} // namespace nes
+} // namespace nes::sys

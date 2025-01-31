@@ -9,6 +9,10 @@
 namespace nes
 {
 	class display;
+} // namespace nes
+
+namespace nes::sys
+{
 	struct snapshot;
 
 	/// The main console abstraction.
@@ -44,4 +48,4 @@ namespace nes
 
 		auto get_snapshot() -> snapshot;
 	};
-} // namespace nes
+} // namespace nes::sys

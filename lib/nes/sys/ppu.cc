@@ -7,7 +7,7 @@
 #include "nes/common/rgb.hh"
 #include "nes/common/debug.hh"
 
-namespace nes
+namespace nes::sys
 {
 	ppu::ppu(cpu& cpu, cartridge& cartridge, display& display)
 		: cpu_{ cpu }
@@ -694,4 +694,4 @@ namespace nes
 			default: return rgb::from_hex(0x000000);
 		}
 	}
-} // namespace nes
+} // namespace nes::sys

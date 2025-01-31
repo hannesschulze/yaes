@@ -3,7 +3,7 @@
 #include "nes/sys/types/address.hh"
 #include "nes/sys/types/status.hh"
 
-namespace nes
+namespace nes::sys
 {
 	class cartridge;
 
@@ -29,4 +29,4 @@ namespace nes
 	protected:
 		explicit mapper() = default;
 	};
-} // namespace nes
+} // namespace nes::sys

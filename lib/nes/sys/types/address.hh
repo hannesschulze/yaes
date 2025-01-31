@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace nes
+namespace nes::sys
 {
 	/// An address on the NES (for simplicity, we share the same type for CPU and PPU, even though the PPU only uses
 	/// 14 bit addresses).
@@ -71,4 +71,4 @@ namespace nes
 	{
 		return address{ static_cast<std::uint16_t>(a.get_absolute() % b) };
 	}
-} // namespace nes
+} // namespace nes::sys

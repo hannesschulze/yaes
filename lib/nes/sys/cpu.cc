@@ -4,7 +4,7 @@
 #include "nes/sys/cartridge.hh"
 #include "nes/sys/types/snapshot.hh"
 
-namespace nes
+namespace nes::sys
 {
 	cpu::cpu(ppu& ppu, cartridge& cartridge, controller& controller_1, controller& controller_2)
 		: ppu_{ ppu }
@@ -1422,4 +1422,4 @@ namespace nes
 		write8(addr + 0, low);
 		write8(addr + 1, high);
 	}
-} // namespace nes
+} // namespace nes::sys

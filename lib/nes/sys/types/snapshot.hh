@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace nes
+namespace nes::sys
 {
 	/// System snapshot used for comparison with a reference implementation.
 	struct snapshot
@@ -60,4 +60,4 @@ namespace nes
 	}
 
 	inline auto operator!=(snapshot const& a, snapshot const& b) -> bool { return !(a == b); }
-} // namespace nes
+} // namespace nes::sys

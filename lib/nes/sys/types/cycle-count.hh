@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-namespace nes
+namespace nes::sys
 {
 	/// A cycle count that can be used for multiple components.
 	///
@@ -84,4 +84,4 @@ namespace nes
 	constexpr auto operator*(std::uint64_t const a, cycle_count const b) -> cycle_count { return cycle_count{ a * b.get_units() }; }
 	constexpr auto operator*(cycle_count const a, std::uint64_t const b) -> cycle_count { return cycle_count{ a.get_units() * b }; }
 	constexpr auto operator/(cycle_count const a, cycle_count const b) -> std::uint64_t { return a.get_units() / b.get_units(); }
-} // namespace nes
+} // namespace nes::sys

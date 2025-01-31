@@ -4,7 +4,7 @@
 #include "nes/app/input/input-device-controller.hh"
 #include "nes/common/list.hh"
 
-namespace nes
+namespace nes::app
 {
 	/// Manages input devices.
 	///
@@ -42,4 +42,4 @@ namespace nes
 	private:
 		auto fill_unassigned_inputs() -> void;
 	};
-} // namespace nes
+} // namespace nes::app

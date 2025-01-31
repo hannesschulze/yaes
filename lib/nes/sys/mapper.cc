@@ -1,7 +1,7 @@
 #include "nes/sys/mapper.hh"
 #include "nes/sys/cartridge.hh"
 
-namespace nes
+namespace nes::sys
 {
 	namespace
 	{
@@ -169,4 +169,4 @@ namespace nes
 			}
 		}
 	}
-} // namespace nes
+} // namespace nes::sys

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace nes
+namespace nes::sys
 {
 	/// A status code.
 	enum class status
@@ -33,4 +33,4 @@ namespace nes
 
 		return "(invalid)";
 	}
-} // namespace nes
+} // namespace nes::sys

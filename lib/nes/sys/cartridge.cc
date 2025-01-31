@@ -2,7 +2,7 @@
 #include "nes/sys/types/status.hh"
 #include <fstream>
 
-namespace nes
+namespace nes::sys
 {
 	cartridge::cartridge(status const status)
 		: status_{ status }
@@ -65,4 +65,4 @@ namespace nes
 
 		return from_data(data.data(), data.size());
 	}
-} // namespace nes
+} // namespace nes::sys

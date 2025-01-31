@@ -4,7 +4,7 @@
 #include "nes/common/list.hh"
 #include <string_view>
 
-namespace nes
+namespace nes::app
 {
 	/// A game controller input device.
 	class input_device_controller : public input_device, public list<input_device_controller>::node
@@ -35,4 +35,4 @@ namespace nes
 	protected:
 		explicit input_device_controller() = default;
 	};
-} // namespace nes
+} // namespace nes::app

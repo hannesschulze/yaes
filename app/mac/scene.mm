@@ -65,7 +65,7 @@ namespace
         }
     };
 
-	class input_device_keyboard_impl final : public nes::input_device_keyboard
+	class input_device_keyboard_impl final : public nes::app::input_device_keyboard
 	{
 		GCKeyboardInput* profile_;
 
@@ -88,7 +88,7 @@ namespace
 		auto read_key_escape() -> bool override { return [[profile_ buttonForKeyCode:GCKeyCodeEscape] isPressed]; }
 	};
 
-	class input_device_controller_impl final : public nes::input_device_controller
+	class input_device_controller_impl final : public nes::app::input_device_controller
 	{
 		GCExtendedGamepad* profile_;
 
@@ -150,7 +150,7 @@ namespace
 	std::unique_ptr<display_impl> _display;
 	std::unique_ptr<input_device_keyboard_impl> _keyboard;
 	std::vector<std::unique_ptr<input_device_controller_impl>> _controllers;
-	std::unique_ptr<nes::application> _app;
+	std::unique_ptr<nes::app::application> _app;
     std::optional<NSTimeInterval> _lastTimestamp;
 }
 
@@ -168,7 +168,7 @@ namespace
 
         _display = std::make_unique<display_impl>(node);
 		_keyboard = std::make_unique<input_device_keyboard_impl>([[GCKeyboard coalescedKeyboard] keyboardInput]);
-        _app = std::make_unique<nes::application>(*_display, *_keyboard);
+        _app = std::make_unique<nes::app::application>(*_display, *_keyboard);
 
 		for (GCController* controller in [GCController controllers])
 		{

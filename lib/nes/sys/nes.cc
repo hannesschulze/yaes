@@ -3,7 +3,7 @@
 #include "nes/common/display.hh"
 #include "nes/common/rgb.hh"
 
-namespace nes
+namespace nes::sys
 {
 	nes::nes(cartridge cartridge, display& display)
 		: cartridge_{ std::move(cartridge) }
@@ -59,4 +59,4 @@ namespace nes
 		ppu_.build_snapshot(res);
 		return res;
 	}
-} // namespace nes
+} // namespace nes::sys
