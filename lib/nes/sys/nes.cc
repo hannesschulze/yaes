@@ -3,8 +3,8 @@
 
 namespace nes::sys
 {
-	nes::nes(cartridge const& cartridge, display& display)
-		: cartridge_{ std::move(cartridge) }
+	nes::nes(display& display, u8 const* rom_data, u32 rom_length)
+		: cartridge_{ rom_data, rom_length }
 		, display_{ display }
 		, ppu_{ cpu_, cartridge_, display_ }
 		, cpu_{ ppu_, cartridge_, controller_1_, controller_2_ }

@@ -4,7 +4,7 @@
 #include "nes/app/ui/screen.hh"
 #include "nes/app/graphics/renderer.hh"
 #include "ui/action.hh"
-
+#include <fstream>
 #include <iostream>
 
 namespace nes::app
@@ -74,7 +74,20 @@ namespace nes::app
 			}
 			case action::load_game:
 			{
-				console_.emplace(sys::cartridge::from_file(file), display_);
+				auto stream = std::ifstream{ file, std::ios::binary };
+				if (!stream.good())
+				{
+					std::cerr << "Unable to open cartridge file!" << std::endl;
+					std::abort();
+				}
+
+				stream.seekg(0, std::ios::end);
+				auto const length = stream.tellg();
+				stream.seekg(0, std::ios::beg);
+				auto data = std::vector<u8>(static_cast<u32>(length));
+				stream.read(reinterpret_cast<char*>(data.data()), length);
+
+				console_.emplace(display_, data.data(), static_cast<u32>(length));
 				if (console_->get_status() != sys::status::success)
 				{
 					std::cerr << "Unable to load cartridge: " << to_string(console_->get_status()) << std::endl;

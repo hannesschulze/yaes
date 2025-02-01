@@ -6,7 +6,6 @@ namespace nes::sys
 	enum class status
 	{
 		success,
-		error_uninitialized,
 		error_system_error,
 		error_invalid_ines_data,
 		error_unsupported_mapper,
@@ -19,8 +18,6 @@ namespace nes::sys
 		{
 			case status::success:
 				return "Success";
-			case status::error_uninitialized:
-				return "Uninitialized";
 			case status::error_system_error:
 				return "System error";
 			case status::error_invalid_ines_data:

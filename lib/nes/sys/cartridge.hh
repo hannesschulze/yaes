@@ -51,7 +51,7 @@ namespace nes::sys
 			}
 		};
 
-		status status_{ status::error_uninitialized };
+		status status_{ status::error_invalid_ines_data };
 		u8 prg_rom_[max_prg_rom_size]{};
 		u8 chr_rom_[max_chr_rom_size]{};
 		u8 ram_[max_ram_size]{};
@@ -62,10 +62,7 @@ namespace nes::sys
 		mapper* mapper_{ &mapper::invalid() };
 
 	public:
-		explicit cartridge() = default;
-
-		static auto from_data(void const* data, u32 length) -> cartridge;
-		static auto from_file(std::string_view path) -> cartridge;
+		explicit cartridge(u8 const* data, u32 length);
 
 		auto get_status() const -> status { return status_; }
 		auto get_prg_rom() const -> u8 const* { return prg_rom_; }
@@ -77,8 +74,5 @@ namespace nes::sys
 		auto get_ram_length() const -> u32 { return ram_size_; }
 		auto get_mapper() const -> mapper& { return *mapper_; }
 		auto get_name_table_arrangement() const -> name_table_arrangement { return name_table_arrangement_; }
-
-	private:
-		explicit cartridge(status);
 	};
 } // namespace nes::sys

@@ -5,6 +5,7 @@
 #include "nes/sys/controller.hh"
 #include "nes/sys/cpu.hh"
 #include "nes/sys/ppu.hh"
+#include <string_view>
 
 namespace nes
 {
@@ -25,11 +26,10 @@ namespace nes::sys
 		ppu ppu_;
 		cpu cpu_;
 		cycle_count current_cycles_;
-		status status_{ status::success };
+		status status_{ status::error_invalid_ines_data };
 
 	public:
-		// TODO: Don't copy cartridge
-		explicit nes(cartridge const&, display&);
+		explicit nes(display&, u8 const* rom_data, u32 rom_length);
 
 		nes(nes const&) = delete;
 		nes(nes&&) = delete;
