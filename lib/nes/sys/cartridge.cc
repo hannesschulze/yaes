@@ -1,6 +1,7 @@
 #include "nes/sys/cartridge.hh"
 #include "nes/sys/types/status.hh"
 #include <fstream>
+#include <algorithm>
 
 namespace nes::sys
 {
@@ -9,11 +10,11 @@ namespace nes::sys
 	{
 	}
 
-	auto cartridge::from_data(void const* data, std::size_t const length) -> cartridge
+	auto cartridge::from_data(void const* data, u32 const length) -> cartridge
 	{
 		// See: https://www.nesdev.org/wiki/INES
 
-		auto const bytes = static_cast<std::uint8_t const*>(data);
+		auto const bytes = static_cast<u8 const*>(data);
 		auto res = cartridge{ status::success };
 
 		// Parse header.
@@ -23,26 +24,29 @@ namespace nes::sys
 		{
 			return cartridge{ status::error_invalid_ines_data };
 		}
-		auto const mapper_number = static_cast<std::uint8_t>((h.get_mapper_high() << 4) | (h.get_mapper_low() << 0));
+		auto const mapper_number = static_cast<u8>((h.get_mapper_high() << 4) | (h.get_mapper_low() << 0));
 
 		res.mapper_ = &mapper::get(mapper_number);
 		res.name_table_arrangement_ = h.get_name_table_arrangement();
 
 		// Load program data.
-		auto offset = std::size_t{ 16 };
+		auto offset = u32{ 16 };
 		if (h.get_has_trainer()) { offset += 512; }
 
-		auto const prg_rom_size = h.get_prg_rom_banks() * prg_rom_bank_size;
-		if (length < offset + prg_rom_size) { return cartridge{ status::error_invalid_ines_data }; }
-		res.prg_rom_ = std::vector(&bytes[offset], &bytes[offset + prg_rom_size]);
+		res.prg_rom_size_ = h.get_prg_rom_banks() * prg_rom_bank_size;
+		if (length < offset + res.prg_rom_size_) { return cartridge{ status::error_invalid_ines_data }; }
+		if (res.prg_rom_size_ > max_prg_rom_size) { return cartridge{ status::error_invalid_ines_data }; }
+		std::copy_n(&bytes[offset], res.prg_rom_size_, res.prg_rom_);
 
-		offset += prg_rom_size;
+		offset += res.prg_rom_size_;
 
-		auto const chr_rom_size = h.get_chr_rom_banks() * chr_rom_bank_size;
-		if (length < offset + chr_rom_size) { return cartridge{ status::error_invalid_ines_data }; }
-		res.chr_rom_ = std::vector(&bytes[offset], &bytes[offset + chr_rom_size]);
+		res.chr_rom_size_ = h.get_chr_rom_banks() * chr_rom_bank_size;
+		if (length < offset + res.chr_rom_size_) { return cartridge{ status::error_invalid_ines_data }; }
+		if (res.chr_rom_size_ > max_chr_rom_size) { return cartridge{ status::error_invalid_ines_data }; }
+		std::copy_n(&bytes[offset], res.chr_rom_size_, res.chr_rom_);
 
-		res.ram_ = std::vector(std::max(h.get_ram_banks(), 1u) * ram_bank_size, std::uint8_t{ 0 });
+		res.ram_size_ = std::max(h.get_ram_banks(), 1u) * ram_bank_size;
+		if (res.ram_size_ > max_ram_size) { return cartridge{ status::error_invalid_ines_data }; }
 
 		if (auto const status = res.get_mapper().validate(res); status != status::success)
 		{
@@ -60,9 +64,9 @@ namespace nes::sys
 		stream.seekg(0, std::ios::end);
 		auto const length = stream.tellg();
 		stream.seekg(0, std::ios::beg);
-		auto data = std::vector<std::uint8_t>(static_cast<std::size_t>(length));
+		auto data = std::vector<u8>(static_cast<u32>(length));
 		stream.read(reinterpret_cast<char*>(data.data()), length);
 
-		return from_data(data.data(), data.size());
+		return from_data(data.data(), static_cast<u32>(length));
 	}
 } // namespace nes::sys

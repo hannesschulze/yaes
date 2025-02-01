@@ -2,15 +2,15 @@
 
 namespace nes::sys
 {
-	auto controller::read() -> std::uint8_t
+	auto controller::read() -> u8
 	{
 		auto const res = index_ < 8 ? (pressed_.get_raw_value() >> index_) & 1 : 0;
 		index_ += 1;
 		if (strobing_) { index_ = 0; }
-		return static_cast<std::uint8_t>(res);
+		return static_cast<u8>(res);
 	}
 
-	auto controller::write(std::uint8_t const value) -> void
+	auto controller::write(u8 const value) -> void
 	{
 		strobing_ = value & 1;
 		if (strobing_) { index_ = 0; }

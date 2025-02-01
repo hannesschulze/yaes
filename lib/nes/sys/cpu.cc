@@ -541,7 +541,7 @@ namespace nes::sys
 		// LSR: Logical Shift Right
 		auto operand = fetch_operand<Mode>();
 		auto const old_val = operand.read();
-		auto const new_val = static_cast<std::uint8_t>(old_val >> 1);
+		auto const new_val = static_cast<u8>(old_val >> 1);
 		operand.write(new_val);
 		registers_.p.set_c((old_val & 0x1) != 0);
 		update_zn(new_val);
@@ -692,7 +692,7 @@ namespace nes::sys
 	{
 		// SAX: AND A X
 		auto operand = fetch_operand<Mode>();
-		auto const result = static_cast<std::uint8_t>(registers_.a & registers_.x);
+		auto const result = static_cast<u8>(registers_.a & registers_.x);
 		operand.write(result);
 		current_cycles_ += operand.get_cycles();
 		return status::success;
@@ -921,7 +921,7 @@ namespace nes::sys
 	{
 		// DCP: DEC + CMP
 		auto operand = fetch_operand<Mode>(force_page_crossing::yes);
-		auto const tmp = static_cast<std::uint8_t>(operand.read() - 1);
+		auto const tmp = static_cast<u8>(operand.read() - 1);
 		operand.write(tmp);
 		eval_cmp(registers_.a, tmp);
 		current_cycles_ += operand.get_cycles() + cycle_count::from_cpu(2);
@@ -934,7 +934,7 @@ namespace nes::sys
 		// DEC: Decrement Memory
 		auto operand = fetch_operand<Mode>();
 		auto const old_val = read8(operand.get_address());
-		auto const new_val = static_cast<std::uint8_t>(old_val - 1);
+		auto const new_val = static_cast<u8>(old_val - 1);
 		write8(operand.get_address(), new_val);
 		update_zn(new_val);
 		current_cycles_ += inc_dec_cycle_count<Mode>();
@@ -1000,7 +1000,7 @@ namespace nes::sys
 	{
 		// ISC: INC + SBC
 		auto operand = fetch_operand<Mode>(force_page_crossing::yes);
-		auto const tmp = static_cast<std::uint8_t>(operand.read() + 1);
+		auto const tmp = static_cast<u8>(operand.read() + 1);
 		operand.write(tmp);
 		eval_adc(~tmp);
 		current_cycles_ += operand.get_cycles() + cycle_count::from_cpu(2);
@@ -1013,7 +1013,7 @@ namespace nes::sys
 		// INC: Increment Memory
 		auto operand = fetch_operand<Mode>();
 		auto const old_val = read8(operand.get_address());
-		auto const new_val = static_cast<std::uint8_t>(old_val + 1);
+		auto const new_val = static_cast<u8>(old_val + 1);
 		write8(operand.get_address(), new_val);
 		update_zn(new_val);
 		current_cycles_ += inc_dec_cycle_count<Mode>();
@@ -1049,48 +1049,48 @@ namespace nes::sys
 	// Helpers
 	// -----------------------------------------------------------------------------------------------------------------
 
-	auto cpu::advance_pc8() -> std::uint8_t
+	auto cpu::advance_pc8() -> u8
 	{
 		auto const val = read8(address{ registers_.pc });
 		registers_.pc += 1;
 		return val;
 	}
 
-	auto cpu::advance_pc16() -> std::uint16_t
+	auto cpu::advance_pc16() -> u16
 	{
 		auto const val = read16(address{ registers_.pc });
 		registers_.pc += 2;
 		return val;
 	}
 
-	auto cpu::push_stack8(std::uint8_t const value) -> void
+	auto cpu::push_stack8(u8 const value) -> void
 	{
 		write8(stack_offset + registers_.sp, value);
 		registers_.sp -= 1;
 	}
 
-	auto cpu::push_stack16(std::uint16_t const value) -> void
+	auto cpu::push_stack16(u16 const value) -> void
 	{
-		auto const low = static_cast<std::uint8_t>(value >> 0 & 0xFF);
-		auto const high = static_cast<std::uint8_t>(value >> 8 & 0xFF);
+		auto const low = static_cast<u8>(value >> 0 & 0xFF);
+		auto const high = static_cast<u8>(value >> 8 & 0xFF);
 		push_stack8(high);
 		push_stack8(low);
 	}
 
-	auto cpu::pop_stack8() -> std::uint8_t
+	auto cpu::pop_stack8() -> u8
 	{
 		registers_.sp += 1;
 		return read8(stack_offset + registers_.sp);
 	}
 
-	auto cpu::pop_stack16() -> std::uint16_t
+	auto cpu::pop_stack16() -> u16
 	{
 		auto const low = pop_stack8();
 		auto const high = pop_stack8();
-		return static_cast<std::uint16_t>((high << 8) | (low << 0));
+		return static_cast<u16>((high << 8) | (low << 0));
 	}
 
-	auto cpu::update_zn(std::uint8_t const value) -> void
+	auto cpu::update_zn(u8 const value) -> void
 	{
 		registers_.p.set_z(value == 0);
 		registers_.p.set_n((value & 0x80) != 0);
@@ -1122,43 +1122,43 @@ namespace nes::sys
 		current_cycles_ += cycle_count::from_cpu(7);
 	}
 
-	auto cpu::eval_ror(std::uint8_t const arg) -> std::uint8_t
+	auto cpu::eval_ror(u8 const arg) -> u8
 	{
-		auto const res = static_cast<std::uint8_t>(((registers_.p.get_c() ? 1 :0) << 7) | (arg >> 1));
+		auto const res = static_cast<u8>(((registers_.p.get_c() ? 1 :0) << 7) | (arg >> 1));
 		registers_.p.set_c((arg & 0x1) != 0);
 		update_zn(res);
 		return res;
 	}
 
-	auto cpu::eval_rol(std::uint8_t const arg) -> std::uint8_t
+	auto cpu::eval_rol(u8 const arg) -> u8
 	{
-		auto const res = static_cast<std::uint8_t>((arg << 1) | (registers_.p.get_c() ? 1 : 0));
+		auto const res = static_cast<u8>((arg << 1) | (registers_.p.get_c() ? 1 : 0));
 		registers_.p.set_c((arg & 0x80) != 0);
 		update_zn(res);
 		return res;
 	}
 
-	auto cpu::eval_asl(std::uint8_t const arg) -> std::uint8_t
+	auto cpu::eval_asl(u8 const arg) -> u8
 	{
-		auto const new_val = static_cast<std::uint8_t>(arg << 1);
+		auto const new_val = static_cast<u8>(arg << 1);
 		registers_.p.set_c((arg & 0x80) != 0);
 		update_zn(new_val);
 		return new_val;
 	}
 
-	auto cpu::eval_lsr(std::uint8_t const arg) -> std::uint8_t
+	auto cpu::eval_lsr(u8 const arg) -> u8
 	{
-		auto const new_val = static_cast<std::uint8_t>(arg >> 1);
+		auto const new_val = static_cast<u8>(arg >> 1);
 		registers_.p.set_c((arg & 0x01) != 0);
 		update_zn(new_val);
 		return new_val;
 	}
 
-	auto cpu::eval_adc(std::uint8_t const arg) -> void
+	auto cpu::eval_adc(u8 const arg) -> void
 	{
 		auto const old_val = registers_.a;
 		auto const tmp = old_val + arg + (registers_.p.get_c() ? 1 : 0);
-		auto const new_val = static_cast<std::uint8_t>(tmp);
+		auto const new_val = static_cast<u8>(tmp);
 
 		registers_.a = new_val;
 		registers_.p.set_c(tmp > 0xFF);
@@ -1166,25 +1166,25 @@ namespace nes::sys
 		update_zn(registers_.a);
 	}
 
-	auto cpu::eval_and(std::uint8_t const arg) -> void
+	auto cpu::eval_and(u8 const arg) -> void
 	{
 		registers_.a &= arg;
 		update_zn(registers_.a);
 	}
 
-	auto cpu::eval_ora(std::uint8_t const arg) -> void
+	auto cpu::eval_ora(u8 const arg) -> void
 	{
 		registers_.a |= arg;
 		update_zn(registers_.a);
 	}
 
-	auto cpu::eval_eor(std::uint8_t const arg) -> void
+	auto cpu::eval_eor(u8 const arg) -> void
 	{
 		registers_.a ^= arg;
 		update_zn(registers_.a);
 	}
 
-	auto cpu::eval_cmp(std::uint8_t const a, std::uint8_t const b) -> void
+	auto cpu::eval_cmp(u8 const a, u8 const b) -> void
 	{
 		update_zn(a - b);
 		registers_.p.set_c(a >= b);
@@ -1238,7 +1238,7 @@ namespace nes::sys
 			{
 				auto const offset = static_cast<std::int8_t>(advance_pc8());
 				auto const base = address{ registers_.pc };
-				addr = address{ static_cast<std::uint16_t>(registers_.pc + offset) };
+				addr = address{ static_cast<u16>(registers_.pc + offset) };
 				auto const page_crossing =
 					base.get_page() != addr.get_page() || force_page_crossing == force_page_crossing::yes;
 				cycles = cycle_count::from_cpu(page_crossing ? 4 : 3);
@@ -1257,14 +1257,14 @@ namespace nes::sys
 			case addressing_mode::zero_page_indexed_x:
 			{
 				// PEEK((arg + X) % 256)
-				addr = address{ 0x00, static_cast<std::uint8_t>(advance_pc8() + registers_.x) };
+				addr = address{ 0x00, static_cast<u8>(advance_pc8() + registers_.x) };
 				cycles = cycle_count::from_cpu(4);
 				break;
 			}
 			case addressing_mode::zero_page_indexed_y:
 			{
 				// PEEK((arg + Y) % 256)
-				addr = address{ 0x00, static_cast<std::uint8_t>(advance_pc8() + registers_.y) };
+				addr = address{ 0x00, static_cast<u8>(advance_pc8() + registers_.y) };
 				cycles = cycle_count::from_cpu(4);
 				break;
 			}
@@ -1292,8 +1292,8 @@ namespace nes::sys
 			{
 				// PEEK(PEEK((arg + X) % 256) + PEEK((arg + X + 1) % 256) * 256)
 				auto const arg = advance_pc8();
-				auto const page = read8(address{ 0x00, static_cast<std::uint8_t>(arg + registers_.x + 1) });
-				auto const offset = read8(address{ 0x00, static_cast<std::uint8_t>(arg + registers_.x) });
+				auto const page = read8(address{ 0x00, static_cast<u8>(arg + registers_.x + 1) });
+				auto const offset = read8(address{ 0x00, static_cast<u8>(arg + registers_.x) });
 				addr = address{ page, offset };
 				cycles = cycle_count::from_cpu(6);
 				break;
@@ -1302,8 +1302,8 @@ namespace nes::sys
 			{
 				// PEEK(PEEK(arg) + PEEK((arg + 1) % 256) * 256 + Y)
 				auto const arg = advance_pc8();
-				auto const page = read8(address{ 0x00, static_cast<std::uint8_t>(arg + 1) });
-				auto const offset = read8(address{ 0x00, static_cast<std::uint8_t>(arg) });
+				auto const page = read8(address{ 0x00, static_cast<u8>(arg + 1) });
+				auto const offset = read8(address{ 0x00, static_cast<u8>(arg) });
 				auto const base = address{ page, offset };
 				addr = base + registers_.y;
 				auto const page_crossing =
@@ -1338,7 +1338,7 @@ namespace nes::sys
 	// See: https://www.nesdev.org/wiki/CPU_memory_map
 	//
 
-	auto cpu::read8(address const addr) -> std::uint8_t
+	auto cpu::read8(address const addr) -> u8
 	{
 		if (addr <= address{ 0x1FFF }) { return ram_[addr.get_absolute() % ram_size]; }
 		if (addr <= address{ 0x3FFF })
@@ -1373,14 +1373,14 @@ namespace nes::sys
 		return cartridge_.get_mapper().read_cpu(addr, cartridge_);
 	}
 
-	auto cpu::read16(address const addr) -> std::uint16_t
+	auto cpu::read16(address const addr) -> u16
 	{
 		auto const low = read8(addr + 0);
 		auto const high = read8(addr + 1);
-		return static_cast<std::uint16_t>((high << 8) | (low << 0));
+		return static_cast<u16>((high << 8) | (low << 0));
 	}
 
-	auto cpu::write8(address const addr, std::uint8_t const value) -> void
+	auto cpu::write8(address const addr, u8 const value) -> void
 	{
 		if (addr <= address{ 0x1FFF }) { ram_[addr.get_absolute() % ram_size] = value; return; }
 		if (addr <= address{ 0x3FFF })
@@ -1415,10 +1415,10 @@ namespace nes::sys
 		cartridge_.get_mapper().write_cpu(addr, value, cartridge_);
 	}
 
-	auto cpu::write16(address const addr, std::uint16_t const value) -> void
+	auto cpu::write16(address const addr, u16 const value) -> void
 	{
-		auto const low = static_cast<std::uint8_t>(value >> 0 & 0xFF);
-		auto const high = static_cast<std::uint8_t>(value >> 8 & 0xFF);
+		auto const low = static_cast<u8>(value >> 0 & 0xFF);
+		auto const high = static_cast<u8>(value >> 8 & 0xFF);
 		write8(addr + 0, low);
 		write8(addr + 1, high);
 	}

@@ -2,6 +2,7 @@
 
 #include "nes/sys/types/address.hh"
 #include "nes/sys/types/status.hh"
+#include "nes/common/types.hh"
 
 namespace nes::sys
 {
@@ -11,7 +12,7 @@ namespace nes::sys
 	{
 	public:
 		static auto invalid() -> mapper&;
-		static auto get(std::uint8_t number) -> mapper&;
+		static auto get(u8 number) -> mapper&;
 
 		virtual ~mapper() = default;
 
@@ -21,10 +22,10 @@ namespace nes::sys
 		auto operator=(mapper&&) -> mapper& = delete;
 
 		virtual auto validate(cartridge&) -> status = 0;
-		virtual auto read_cpu(address, cartridge&) -> std::uint8_t = 0;
-		virtual auto write_cpu(address, std::uint8_t, cartridge&) -> void = 0;
-		virtual auto read_ppu(address, cartridge&, std::uint8_t const* vram) -> std::uint8_t = 0;
-		virtual auto write_ppu(address, std::uint8_t, cartridge&, std::uint8_t* vram) -> void = 0;
+		virtual auto read_cpu(address, cartridge&) -> u8 = 0;
+		virtual auto write_cpu(address, u8, cartridge&) -> void = 0;
+		virtual auto read_ppu(address, cartridge&, u8 const* vram) -> u8 = 0;
+		virtual auto write_ppu(address, u8, cartridge&, u8* vram) -> void = 0;
 
 	protected:
 		explicit mapper() = default;

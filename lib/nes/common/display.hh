@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nes/common/rgb.hh"
+#include "nes/common/types.hh"
 
 namespace nes
 {
@@ -10,8 +11,8 @@ namespace nes
 	class display
 	{
 	public:
-		static constexpr auto width = unsigned{ 256 };
-		static constexpr auto height = unsigned{ 240 };
+		static constexpr auto width = u32{ 256 };
+		static constexpr auto height = u32{ 240 };
 
 		virtual ~display() = default;
 
@@ -23,9 +24,9 @@ namespace nes
 		/// Switch between front and back buffers.
 		virtual auto switch_buffers() -> void = 0;
 		/// Update the pixel at the given position in the back buffer.
-		virtual auto set(unsigned x, unsigned y, rgb value) -> void = 0;
+		virtual auto set(u32 x, u32 y, rgb value) -> void = 0;
 		/// Load the pixel value at the given position in the back buffer.
-		virtual auto get(unsigned x, unsigned y) const -> rgb = 0;
+		virtual auto get(u32 x, u32 y) const -> rgb = 0;
 
 	protected:
 		explicit display() = default;

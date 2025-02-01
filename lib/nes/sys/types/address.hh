@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "nes/common/types.hh"
 
 namespace nes::sys
 {
@@ -8,40 +8,40 @@ namespace nes::sys
 	/// 14 bit addresses).
 	class address
 	{
-		std::uint16_t absolute_{ 0 };
+		u16 absolute_{ 0 };
 
 	public:
 		/// Create a zero address.
 		constexpr explicit address() = default;
 
 		/// Create an address from its absolute value.
-		constexpr explicit address(std::uint16_t const absolute)
+		constexpr explicit address(u16 const absolute)
 			: absolute_{ absolute }
 		{
 		}
 
 		/// Create an address from its page and offset combination.
-		constexpr explicit address(std::uint8_t const page, std::uint8_t const offset)
-			: address{ static_cast<std::uint16_t>((page << 8) | (offset << 0)) }
+		constexpr explicit address(u8 const page, u8 const offset)
+			: address{ static_cast<u16>((page << 8) | (offset << 0)) }
 		{
 		}
 
 		/// Get the absolute address value.
-		constexpr auto get_absolute() const -> std::uint16_t
+		constexpr auto get_absolute() const -> u16
 		{
 			return absolute_;
 		}
 
 		/// Get the address page (the first 8 bits).
-		constexpr auto get_page() const -> std::uint8_t
+		constexpr auto get_page() const -> u8
 		{
-			return static_cast<std::uint8_t>((get_absolute() & 0xFF00) >> 8);
+			return static_cast<u8>((get_absolute() & 0xFF00) >> 8);
 		}
 
 		/// Get the offset within the page (the last 8 bits).
-		constexpr auto get_offset() const -> std::uint8_t
+		constexpr auto get_offset() const -> u8
 		{
-			return static_cast<std::uint8_t>((get_absolute() & 0x00FF) >> 0);
+			return static_cast<u8>((get_absolute() & 0x00FF) >> 0);
 		}
 	};
 
@@ -52,23 +52,23 @@ namespace nes::sys
 	constexpr auto operator<=(address const a, address const b) -> bool { return a.get_absolute() <= b.get_absolute(); }
 	constexpr auto operator>=(address const a, address const b) -> bool { return a.get_absolute() >= b.get_absolute(); }
 
-	constexpr auto operator+(address const a, unsigned const b) -> address
+	constexpr auto operator+(address const a, u32 const b) -> address
 	{
-		return address{ static_cast<std::uint16_t>(a.get_absolute() + b) };
+		return address{ static_cast<u16>(a.get_absolute() + b) };
 	}
 
-	constexpr auto operator+(unsigned const a, address const b) -> address
+	constexpr auto operator+(u32 const a, address const b) -> address
 	{
-		return address{ static_cast<std::uint16_t>(a + b.get_absolute()) };
+		return address{ static_cast<u16>(a + b.get_absolute()) };
 	}
 
-	constexpr auto operator-(address const a, unsigned const b) -> address
+	constexpr auto operator-(address const a, u32 const b) -> address
 	{
-		return address{ static_cast<std::uint16_t>(a.get_absolute() - b) };
+		return address{ static_cast<u16>(a.get_absolute() - b) };
 	}
 
-	constexpr auto operator%(address const a, unsigned const b) -> address
+	constexpr auto operator%(address const a, u32 const b) -> address
 	{
-		return address{ static_cast<std::uint16_t>(a.get_absolute() % b) };
+		return address{ static_cast<u16>(a.get_absolute() % b) };
 	}
 } // namespace nes::sys

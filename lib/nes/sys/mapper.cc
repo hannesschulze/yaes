@@ -34,7 +34,7 @@ namespace nes::sys
 				return status::success;
 			}
 
-			auto read_cpu(address const addr, cartridge& cartridge) -> std::uint8_t override
+			auto read_cpu(address const addr, cartridge& cartridge) -> u8 override
 			{
 				if (addr <= address{ 0x5FFF })
 				{
@@ -59,7 +59,7 @@ namespace nes::sys
 				return 0x0;
 			}
 
-			auto write_cpu(address const addr, std::uint8_t const value, cartridge& cartridge) -> void override
+			auto write_cpu(address const addr, u8 const value, cartridge& cartridge) -> void override
 			{
 				if (addr <= address{ 0x5FFF })
 				{
@@ -72,7 +72,7 @@ namespace nes::sys
 				}
 			}
 
-			auto read_ppu(address const addr, cartridge& cartridge, std::uint8_t const* vram) -> std::uint8_t override
+			auto read_ppu(address const addr, cartridge& cartridge, u8 const* vram) -> u8 override
 			{
 				if (addr <= address{ 0x1FFF })
 				{
@@ -87,7 +87,7 @@ namespace nes::sys
 				return 0x0;
 			}
 
-			auto write_ppu(address const addr, std::uint8_t const value, cartridge& cartridge, std::uint8_t* vram) -> void override
+			auto write_ppu(address const addr, u8 const value, cartridge& cartridge, u8* vram) -> void override
 			{
 				if (addr <= address{ 0x1FFF })
 				{
@@ -101,7 +101,7 @@ namespace nes::sys
 			}
 
 		private:
-			static auto mirrored_vram_address(address const addr, cartridge const& cartridge) -> unsigned
+			static auto mirrored_vram_address(address const addr, cartridge const& cartridge) -> u32
 			{
 				auto const rel = addr.get_absolute() % 0x1000u;
 
@@ -137,10 +137,10 @@ namespace nes::sys
 			explicit mapper_invalid() = default;
 
 			auto validate(cartridge&) -> status override { return status::error_unsupported_mapper; }
-			auto read_cpu(address, cartridge&) -> std::uint8_t override { return 0; }
-			auto write_cpu(address, std::uint8_t, cartridge&) -> void override {}
-			auto read_ppu(address, cartridge&, std::uint8_t const*) -> std::uint8_t override { return 0; }
-			auto write_ppu(address, std::uint8_t, cartridge&, std::uint8_t*) -> void override {}
+			auto read_cpu(address, cartridge&) -> u8 override { return 0; }
+			auto write_cpu(address, u8, cartridge&) -> void override {}
+			auto read_ppu(address, cartridge&, u8 const*) -> u8 override { return 0; }
+			auto write_ppu(address, u8, cartridge&, u8*) -> void override {}
 		};
 	} // namespace
 
@@ -154,7 +154,7 @@ namespace nes::sys
 		return instance;
 	}
 
-	auto mapper::get(std::uint8_t const number) -> mapper&
+	auto mapper::get(u8 const number) -> mapper&
 	{
 		switch (number)
 		{

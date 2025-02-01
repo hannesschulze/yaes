@@ -1,8 +1,8 @@
 #pragma once
 
 #include "nes/sys/types/cycle-count.hh"
+#include "nes/common/types.hh"
 #include <vector>
-#include <cstdint>
 
 namespace nes::sys
 {
@@ -13,18 +13,18 @@ namespace nes::sys
 
 		cycle_count cpu_cycle;
 		cycle_count ppu_cycle;
-		std::vector<std::uint8_t> ram;
-		std::vector<std::uint8_t> sram;
-		std::vector<std::uint8_t> vram;
-		std::vector<std::uint8_t> oam;
+		std::vector<u8> ram;
+		std::vector<u8> sram;
+		std::vector<u8> vram;
+		std::vector<u8> oam;
 		struct
 		{
-			std::uint16_t pc{};
-			std::uint8_t sp{};
-			std::uint8_t a{};
-			std::uint8_t x{};
-			std::uint8_t y{};
-			std::uint8_t p{};
+			u16 pc{};
+			u8 sp{};
+			u8 a{};
+			u8 x{};
+			u8 y{};
+			u8 p{};
 			bool c{};
 			bool z{};
 			bool i{};

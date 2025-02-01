@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "nes/common/types.hh"
 
 namespace nes::app
 {
@@ -10,7 +10,7 @@ namespace nes::app
 	/// integer's row.
 	struct mask_tile
 	{
-		std::uint8_t data[8]{};
+		u8 data[8]{};
 	};
 
 	namespace tiles

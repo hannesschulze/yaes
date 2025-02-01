@@ -1,11 +1,9 @@
 #include "nes/sys/nes.hh"
 #include "nes/sys/types/snapshot.hh"
-#include "nes/common/display.hh"
-#include "nes/common/rgb.hh"
 
 namespace nes::sys
 {
-	nes::nes(cartridge cartridge, display& display)
+	nes::nes(cartridge const& cartridge, display& display)
 		: cartridge_{ std::move(cartridge) }
 		, display_{ display }
 		, ppu_{ cpu_, cartridge_, display_ }

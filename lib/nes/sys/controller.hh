@@ -1,13 +1,14 @@
 #pragma once
 
 #include "nes/sys/types/button-mask.hh"
+#include "nes/common/types.hh"
 
 namespace nes::sys
 {
 	class controller
 	{
 		button_mask pressed_;
-		unsigned index_{ 0 };
+		u32 index_{ 0 };
 		bool strobing_{ false };
 
 	public:
@@ -24,7 +25,7 @@ namespace nes::sys
 
 		// IO register
 
-		auto read() -> std::uint8_t;
-		auto write(std::uint8_t) -> void;
+		auto read() -> u8;
+		auto write(u8) -> void;
 	};
 } // namespace nes::sys

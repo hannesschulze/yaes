@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cstdint>
+#include "nes/common/types.hh"
 
 namespace nes::app
 {
 	/// One of the predefined colors in the color palette used for the UI.
-	enum class color : std::uint8_t
+	enum class color : u8
 	{
 		transparent,          ///< No color.
 		background_primary,   ///< The primary background color.

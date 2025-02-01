@@ -1,18 +1,18 @@
 #pragma once
 
-#include <cstdint>
+#include "nes/common/types.hh"
 
 namespace nes::sys
 {
 	/// Buttons pressed on a controller.
 	class button_mask
 	{
-		std::uint8_t raw_value_{ 0 };
+		u8 raw_value_{ 0 };
 
 	public:
 		constexpr explicit button_mask() = default;
 
-		static constexpr auto from_raw_value(std::uint8_t const raw_value) -> button_mask
+		static constexpr auto from_raw_value(u8 const raw_value) -> button_mask
 		{
 			return button_mask{ raw_value };
 		}
@@ -21,10 +21,10 @@ namespace nes::sys
 		constexpr auto remove(button_mask const other) -> void { raw_value_ ^= other.raw_value_; }
 		constexpr auto contains(button_mask const other) const -> bool { return (raw_value_ & other.raw_value_) == other.raw_value_; }
 		constexpr auto is_empty() const -> bool { return raw_value_ == 0; }
-		constexpr auto get_raw_value() const -> std::uint8_t { return raw_value_; }
+		constexpr auto get_raw_value() const -> u8 { return raw_value_; }
 
 	private:
-		constexpr explicit button_mask(std::uint8_t const raw_value)
+		constexpr explicit button_mask(u8 const raw_value)
 			: raw_value_{ raw_value }
 		{
 		}

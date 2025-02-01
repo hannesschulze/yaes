@@ -1,5 +1,7 @@
 #pragma once
 
+#include "nes/common/types.hh"
+
 namespace nes
 {
 	/// Wrapper around an object, allowing for it to be uninitialized or reassigned even if the object type doesn't
@@ -10,7 +12,7 @@ namespace nes
 	class box
 	{
 		bool initialized_{ false };
-		alignas(T) unsigned char buffer_[sizeof(T)];
+		alignas(T) u8 buffer_[sizeof(T)];
 
 	public:
 		/// Create an empty box.

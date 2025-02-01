@@ -42,7 +42,7 @@ namespace nes::app
 			{
 				// This controller was previously used and assigned an index -> replace the current device with this
 				// (known) controller.
-				auto const i = static_cast<std::size_t>(index);
+				auto const i = static_cast<u32>(index);
 				if (inputs_[i].controller)
 				{
 					inputs_[i].controller->set_index(input_device_controller::index::unused);
@@ -68,7 +68,7 @@ namespace nes::app
 		auto it = controllers_.begin();
 		input_device* fallback = keyboard_;
 
-		for (auto i = std::size_t{ 0 }; i < input_count; ++i)
+		for (auto i = u32{ 0 }; i < input_count; ++i)
 		{
 			if (inputs_[i].controller != nullptr) { continue; }
 

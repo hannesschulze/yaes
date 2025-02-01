@@ -1,6 +1,7 @@
 target_sources(
 	nes
 	PRIVATE
+		types.hh
 		debug.hh
 		rgb.hh
 		list.hh

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "nes/common/types.hh"
 
 namespace nes
 {
@@ -10,14 +10,14 @@ namespace nes
 	public:
 		explicit rgb() = default;
 
-		explicit rgb(std::uint8_t const r, std::uint8_t const g, std::uint8_t const b)
+		explicit rgb(u8 const r, u8 const g, u8 const b)
 			: r{ r }
 			, g{ g }
 			, b{ b }
 		{
 		}
 
-		static auto from_hex(std::uint32_t const hex) -> rgb
+		static auto from_hex(u32 const hex) -> rgb
 		{
 			auto res = rgb{};
 			res.r = (hex & 0x00FF0000) >> 16;
@@ -26,8 +26,8 @@ namespace nes
 			return res;
 		}
 
-		std::uint8_t r{ 0 };
-		std::uint8_t g{ 0 };
-		std::uint8_t b{ 0 };
+		u8 r{ 0 };
+		u8 g{ 0 };
+		u8 b{ 0 };
 	};
 } // namespace nes

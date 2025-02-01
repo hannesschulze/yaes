@@ -28,7 +28,8 @@ namespace nes::sys
 		status status_{ status::success };
 
 	public:
-		explicit nes(cartridge, display&);
+		// TODO: Don't copy cartridge
+		explicit nes(cartridge const&, display&);
 
 		nes(nes const&) = delete;
 		nes(nes&&) = delete;

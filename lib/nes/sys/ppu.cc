@@ -79,7 +79,7 @@ namespace nes::sys
 						// Load the tile palette for the background from the attribute table.
 						auto const addr =
 							address{ 0x23C0 } +
-							(static_cast<unsigned>(internal_.v.get_name_table()) * 0x400u) +
+							(static_cast<u32>(internal_.v.get_name_table()) * 0x400u) +
 							((internal_.v.get_coarse_y() & 0b11100u) << 1) +
 							((internal_.v.get_coarse_x() & 0b11100u) >> 2);
 						auto const shift =
@@ -190,11 +190,11 @@ namespace nes::sys
 		auto foreground_color = color_index{ 0 };
 		if (mask_.get_enable_sprites())
 		{
-			for (auto i = unsigned{ 0 }; i < sprite_count_; ++i)
+			for (auto i = u32{ 0 }; i < sprite_count_; ++i)
 			{
 				auto const s = sprites_[i];
 				auto const offset = static_cast<int>(x) - static_cast<int>(s.x);
-				if (offset < 0 || static_cast<unsigned>(offset) >= tile_size) { continue; }
+				if (offset < 0 || static_cast<u32>(offset) >= tile_size) { continue; }
 				auto const color = s.pattern.colors[offset];
 				if (color.get_color() == palette_color::_0) { continue; }
 
@@ -237,15 +237,15 @@ namespace nes::sys
 	{
 		auto const height = get_sprite_height();
 		sprite_count_ = 0;
-		for (auto i = unsigned{ 0 }; i < sprite_max_count; ++i)
+		for (auto i = u32{ 0 }; i < sprite_max_count; ++i)
 		{
 			auto const s = sprite{ &oam_[i * 4] };
 			auto const row = static_cast<int>(scanline_) - static_cast<int>(s.get_y());
-			if (row < 0 || static_cast<unsigned>(row) >= height) { continue; }
+			if (row < 0 || static_cast<u32>(row) >= height) { continue; }
 
 			if (sprite_count_ < 8)
 			{
-				sprites_[sprite_count_].pattern = fetch_sprite_pattern(s, static_cast<unsigned>(row));
+				sprites_[sprite_count_].pattern = fetch_sprite_pattern(s, static_cast<u32>(row));
 				sprites_[sprite_count_].x = s.get_x();
 				sprites_[sprite_count_].is_in_front = !s.get_behind_background();
 				sprites_[sprite_count_].is_sprite_zero = i == 0;
@@ -259,7 +259,7 @@ namespace nes::sys
 		}
 	}
 
-	auto ppu::fetch_sprite_pattern(sprite const s, unsigned row) -> tile_row
+	auto ppu::fetch_sprite_pattern(sprite const s, u32 row) -> tile_row
 	{
 		if (s.get_flip_vertical()) { row = get_sprite_height() - 1 - row; }
 		tile tile;
@@ -289,7 +289,7 @@ namespace nes::sys
 
 		if (s.get_flip_horizontal())
 		{
-			for (auto i = unsigned{ 0 }; i < tile_size / 2; ++i)
+			for (auto i = u32{ 0 }; i < tile_size / 2; ++i)
 			{
 				std::swap(res.colors[i], res.colors[tile_size - 1 - i]);
 			}
@@ -306,21 +306,21 @@ namespace nes::sys
 	// See: https://www.nesdev.org/wiki/PPU_memory_map
 	//
 
-	auto ppu::read8(address addr) -> std::uint8_t
+	auto ppu::read8(address addr) -> u8
 	{
 		addr = addr % 0x4000; // PPU only has 16 KiB addresses.
 		if (addr <= address{ 0x3EFF }) { return cartridge_.get_mapper().read_ppu(addr, cartridge_, vram_); }
 		if (addr <= address{ 0x3FFF })
 		{
-			auto const index = color_index{ static_cast<std::uint8_t>(addr.get_absolute() % 0x20) };
+			auto const index = color_index{ static_cast<u8>(addr.get_absolute() % 0x20) };
 			auto const color = ref_color(index);
-			return static_cast<std::uint8_t>(color);
+			return static_cast<u8>(color);
 		}
 
 		return 0x0;
 	}
 
-	auto ppu::write8(address addr, std::uint8_t const value) -> void
+	auto ppu::write8(address addr, u8 const value) -> void
 	{
 		addr = addr % 0x4000; // PPU only has 16 KiB addresses.
 		if (addr <= address{ 0x3EFF })
@@ -330,7 +330,7 @@ namespace nes::sys
 		}
 		if (addr <= address{ 0x3FFF })
 		{
-			auto const index = color_index{ static_cast<std::uint8_t>(addr.get_absolute() % 0x20) };
+			auto const index = color_index{ static_cast<u8>(addr.get_absolute() % 0x20) };
 			ref_color(index) = color{ value };
 			return;
 		}
@@ -344,12 +344,12 @@ namespace nes::sys
 	// See: https://www.nesdev.org/wiki/PPU_registers
 	//
 
-	auto ppu::read_latch() -> std::uint8_t
+	auto ppu::read_latch() -> u8
 	{
 		return latch_;
 	}
 
-	auto ppu::read_ppustatus() -> std::uint8_t
+	auto ppu::read_ppustatus() -> u8
 	{
 		auto res = status_;
 		res.set_remaining(latch_);
@@ -362,7 +362,7 @@ namespace nes::sys
 		return res.value;
 	}
 
-	auto ppu::read_oamdata() -> std::uint8_t
+	auto ppu::read_oamdata() -> u8
 	{
 		auto res = oam_[oamaddr_];
 		if ((oamaddr_ & 0x3) == 0x2)
@@ -374,7 +374,7 @@ namespace nes::sys
 		return res;
 	}
 
-	auto ppu::read_ppudata() -> std::uint8_t
+	auto ppu::read_ppudata() -> u8
 	{
 		auto const addr = address{ internal_.v.value };
 		auto res = read8(addr);
@@ -395,12 +395,12 @@ namespace nes::sys
 		return res;
 	}
 
-	auto ppu::write_latch(std::uint8_t const value) -> void
+	auto ppu::write_latch(u8 const value) -> void
 	{
 		latch_ = value;
 	}
 
-	auto ppu::write_ppuctrl(std::uint8_t const value) -> void
+	auto ppu::write_ppuctrl(u8 const value) -> void
 	{
 		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
@@ -412,7 +412,7 @@ namespace nes::sys
 		}
 	}
 
-	auto ppu::write_ppuscroll(std::uint8_t const value) -> void
+	auto ppu::write_ppuscroll(u8 const value) -> void
 	{
 		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
@@ -435,7 +435,7 @@ namespace nes::sys
 		}
 	}
 
-	auto ppu::write_ppumask(std::uint8_t const value) -> void
+	auto ppu::write_ppumask(u8 const value) -> void
 	{
 		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
@@ -445,7 +445,7 @@ namespace nes::sys
 		}
 	}
 
-	auto ppu::write_ppuaddr(std::uint8_t const value) -> void
+	auto ppu::write_ppuaddr(u8 const value) -> void
 	{
 		write_latch(value);
 		if (current_cycles_ > boot_up_cycles)
@@ -467,7 +467,7 @@ namespace nes::sys
 		}
 	}
 
-	auto ppu::write_ppudata(std::uint8_t const value) -> void
+	auto ppu::write_ppudata(u8 const value) -> void
 	{
 		NES_DEBUG_LOG(ppu, "PPUDATA <- {:#2x} (address: {:#4x})", value, internal_.v);
 		write_latch(value);
@@ -475,14 +475,14 @@ namespace nes::sys
 		increment_vram();
 	}
 
-	auto ppu::write_oamaddr(std::uint8_t const value) -> void
+	auto ppu::write_oamaddr(u8 const value) -> void
 	{
 		NES_DEBUG_LOG(ppu, "OAMADDR <- {:#2x}", value);
 		write_latch(value);
 		oamaddr_ = value;
 	}
 
-	auto ppu::write_oamdata(std::uint8_t const value) -> void
+	auto ppu::write_oamdata(u8 const value) -> void
 	{
 		NES_DEBUG_LOG(ppu, "OAMDATA <- {:#2x}", value);
 		write_latch(value);
@@ -490,11 +490,11 @@ namespace nes::sys
 		oamaddr_ += 1;
 	}
 
-	auto ppu::write_oamdma(std::uint8_t const value) -> void
+	auto ppu::write_oamdma(u8 const value) -> void
 	{
 		NES_DEBUG_LOG(ppu, "OAMDMA <- {:#2x}", value);
 		auto addr = address{ value, 0x00 };
-		for (auto i = unsigned{ 0 }; i < 256; ++i)
+		for (auto i = u32{ 0 }; i < 256; ++i)
 		{
 			oam_[oamaddr_] = cpu_.read8(addr);
 			oamaddr_ += 1;
@@ -574,7 +574,7 @@ namespace nes::sys
 		internal_.v.set_vertical_name_table(internal_.t.get_vertical_name_table());
 	}
 
-	auto ppu::get_sprite_height() const -> unsigned
+	auto ppu::get_sprite_height() const -> u32
 	{
 		switch (control_.get_sprite_size())
 		{
@@ -588,17 +588,17 @@ namespace nes::sys
 	}
 
 	auto ppu::get_tile_bitplane(
-		pattern_table const pattern_table, tile const tile, unsigned const row, bitplane const bitplane) -> std::uint8_t
+		pattern_table const pattern_table, tile const tile, u32 const row, bitplane const bitplane) -> u8
 	{
-		auto const addr = static_cast<std::uint16_t>(
-			0x1000 * static_cast<unsigned>(pattern_table) + 0x10 * static_cast<unsigned>(tile) + row);
-		return read8(address{ addr } + (static_cast<unsigned>(bitplane) * 8u));
+		auto const addr = static_cast<u16>(
+			0x1000 * static_cast<u32>(pattern_table) + 0x10 * static_cast<u32>(tile) + row);
+		return read8(address{ addr } + (static_cast<u32>(bitplane) * 8u));
 	}
 
-	auto ppu::get_tile_row(palette const palette, std::uint8_t bitplane_0, std::uint8_t bitplane_1) const -> tile_row
+	auto ppu::get_tile_row(palette const palette, u8 bitplane_0, u8 bitplane_1) const -> tile_row
 	{
 		auto res = tile_row{};
-		for (auto i = unsigned{ 0 }; i < tile_size; ++i)
+		for (auto i = u32{ 0 }; i < tile_size; ++i)
 		{
 			auto const bit_0 = (bitplane_0 & 0b10000000u) >> 7;
 			auto const bit_1 = (bitplane_1 & 0b10000000u) >> 7;
@@ -624,7 +624,7 @@ namespace nes::sys
 
 	auto ppu::resolve_color(color const color) const -> rgb
 	{
-		auto const index = static_cast<std::uint8_t>(color);
+		auto const index = static_cast<u8>(color);
 		switch (index & 0x3F)
 		{
 			case 0x00: return rgb::from_hex(0x666666);

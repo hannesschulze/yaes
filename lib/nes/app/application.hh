@@ -5,6 +5,7 @@
 #include "nes/sys/nes.hh"
 #include "nes/common/box.hh"
 #include "nes/common/display.hh"
+#include "nes/common/types.hh"
 #include <chrono>
 
 namespace nes::app
@@ -32,8 +33,8 @@ namespace nes::app
 			{
 			}
 
-			auto get(unsigned const x, unsigned const y) const -> rgb override { return base.get(x, y); }
-			auto set(unsigned const x, unsigned const y, rgb const value) -> void override { base.set(x, y, value); }
+			auto get(u32 const x, u32 const y) const -> rgb override { return base.get(x, y); }
+			auto set(u32 const x, u32 const y, rgb const value) -> void override { base.set(x, y, value); }
 			auto switch_buffers() -> void override;
 		};
 

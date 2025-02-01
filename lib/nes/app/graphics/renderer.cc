@@ -12,13 +12,13 @@ namespace nes::app
 	{
 	}
 
-	auto renderer::render_image_tile(unsigned const x, unsigned const y, image_tile const tile) -> void
+	auto renderer::render_image_tile(u32 const x, u32 const y, image_tile const& tile) -> void
 	{
 		if (x >= width || y >= height) { return; }
 
-		for (auto y_px = unsigned{ 0 }; y_px < 8; ++y_px)
+		for (auto y_px = u32{ 0 }; y_px < 8; ++y_px)
 		{
-			for (auto x_px = unsigned{ 0 }; x_px < 8; ++x_px)
+			for (auto x_px = u32{ 0 }; x_px < 8; ++x_px)
 			{
 				auto const c = tile.data[y_px * 8 + x_px];
 				if (c != color::transparent)
@@ -29,16 +29,16 @@ namespace nes::app
 		}
 	}
 
-	auto renderer::render_mask_tile(unsigned const x, unsigned const y, mask_tile const tile, color const c) -> void
+	auto renderer::render_mask_tile(u32 const x, u32 const y, mask_tile const tile, color const c) -> void
 	{
 		if (c == color::transparent) { return; }
 		if (x >= width || y >= height) { return; }
 
 		auto const resolved = resolve_color(c);
-		for (auto y_px = unsigned{ 0 }; y_px < 8; ++y_px)
+		for (auto y_px = u32{ 0 }; y_px < 8; ++y_px)
 		{
 			auto row = tile.data[y_px];
-			for (auto x_px = unsigned{ 0 }; x_px < 8; ++x_px)
+			for (auto x_px = u32{ 0 }; x_px < 8; ++x_px)
 			{
 				if (row & 0b10000000)
 				{
@@ -49,11 +49,11 @@ namespace nes::app
 		}
 	}
 
-	auto renderer::render_image(unsigned const x, unsigned const y, image_view const image) -> void
+	auto renderer::render_image(u32 const x, u32 const y, image_view const image) -> void
 	{
-		for (auto y_img = unsigned{ 0 }; y_img < image.get_height(); ++y_img)
+		for (auto y_img = u32{ 0 }; y_img < image.get_height(); ++y_img)
 		{
-			for (auto x_img = unsigned{ 0 }; x_img < image.get_width(); ++x_img)
+			for (auto x_img = u32{ 0 }; x_img < image.get_width(); ++x_img)
 			{
 				render_image_tile(x + x_img, y + y_img, image.get(x, y));
 			}
@@ -61,7 +61,7 @@ namespace nes::app
 	}
 
 	auto renderer::render_rect(
-		unsigned const x, unsigned const y, unsigned const width, unsigned const height, color const c) -> void
+		u32 const x, u32 const y, u32 const width, u32 const height, color const c) -> void
 	{
 		if (c == color::transparent) { return; }
 		if (x >= width || y >= height) { return; }
@@ -69,9 +69,9 @@ namespace nes::app
 		auto const resolved = resolve_color(c);
 		auto const x_stop = std::min(x + width, renderer::width);
 		auto const y_stop = std::min(y + height, renderer::height);
-		for (auto y_px = unsigned{ y * 8 }; y_px < y_stop * 8; ++y_px)
+		for (auto y_px = u32{ y * 8 }; y_px < y_stop * 8; ++y_px)
 		{
-			for (auto x_px = unsigned{ x * 8 }; x_px < x_stop * 8; ++x_px)
+			for (auto x_px = u32{ x * 8 }; x_px < x_stop * 8; ++x_px)
 			{
 				display_.set(x_px, y_px, resolved);
 			}

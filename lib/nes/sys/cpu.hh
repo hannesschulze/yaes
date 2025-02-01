@@ -3,6 +3,7 @@
 #include "nes/sys/types/cycle-count.hh"
 #include "nes/sys/types/address.hh"
 #include "nes/sys/types/status.hh"
+#include "nes/common/types.hh"
 
 namespace nes::sys
 {
@@ -13,7 +14,7 @@ namespace nes::sys
 
 	class cpu
 	{
-		static constexpr auto ram_size = std::size_t{ 0x800 };
+		static constexpr auto ram_size = u32{ 0x800 };
 		static constexpr auto stack_offset = address{ 0x100 };
 
 		cycle_count current_cycles_;
@@ -21,17 +22,17 @@ namespace nes::sys
 		cartridge& cartridge_;
 		controller& controller_1_;
 		controller& controller_2_;
-		std::uint8_t ram_[ram_size]{};
+		u8 ram_[ram_size]{};
 		bool nmi_pending_{ false };
 
 		// Registers
 		struct
 		{
-			std::uint16_t pc{ 0 };
-			std::uint8_t sp{ 0xFD };
-			std::uint8_t a{ 0 };
-			std::uint8_t x{ 0 };
-			std::uint8_t y{ 0 };
+			u16 pc{ 0 };
+			u8 sp{ 0xFD };
+			u8 a{ 0 };
+			u8 x{ 0 };
+			u8 y{ 0 };
 			struct
 			{
 				auto get_c() const -> bool { return value & 0b00000001; } // carry
@@ -50,7 +51,7 @@ namespace nes::sys
 				auto set_v(bool const v) -> void { value = (value & ~0b01000000) | (v ? 0b01000000 : 0); }
 				auto set_n(bool const v) -> void { value = (value & ~0b10000000) | (v ? 0b10000000 : 0); }
 
-				std::uint8_t value{ 0b00100100 };
+				u8 value{ 0b00100100 };
 			} p{};
 		} registers_{};
 
@@ -91,8 +92,8 @@ namespace nes::sys
 			{
 			}
 
-			auto read() -> std::uint8_t { return cpu_.read8(address_); }
-			auto write(std::uint8_t const value) -> void { cpu_.write8(address_, value); }
+			auto read() -> u8 { return cpu_.read8(address_); }
+			auto write(u8 const value) -> void { cpu_.write8(address_, value); }
 			auto get_address() -> address { return address_; }
 			auto get_cycles() -> cycle_count { return cycles_; }
 		};
@@ -108,23 +109,23 @@ namespace nes::sys
 			{
 			}
 
-			auto read() -> std::uint8_t { return cpu_.registers_.a; }
-			auto write(std::uint8_t const value) -> void { cpu_.registers_.a = value; }
+			auto read() -> u8 { return cpu_.registers_.a; }
+			auto write(u8 const value) -> void { cpu_.registers_.a = value; }
 			auto get_cycles() -> cycle_count { return cycle_count::from_cpu(2); }
 		};
 
 		template<>
 		class operand<addressing_mode::immediate>
 		{
-			std::uint8_t value_{ 0 };
+			u8 value_{ 0 };
 
 		public:
-			explicit operand(std::uint8_t const value)
+			explicit operand(u8 const value)
 				: value_{ value }
 			{
 			}
 
-			auto read() -> std::uint8_t { return value_; }
+			auto read() -> u8 { return value_; }
 			auto get_cycles() -> cycle_count { return cycle_count::from_cpu(2); }
 		};
 
@@ -145,10 +146,10 @@ namespace nes::sys
 
 		// Memory access
 
-		auto read8(address) -> std::uint8_t;
-		auto read16(address) -> std::uint16_t;
-		auto write8(address, std::uint8_t) -> void;
-		auto write16(address, std::uint16_t) -> void;
+		auto read8(address) -> u8;
+		auto read16(address) -> u16;
+		auto write8(address, u8) -> void;
+		auto write16(address, u16) -> void;
 
 	private:
 		// Instructions
@@ -240,26 +241,26 @@ namespace nes::sys
 
 		// Helpers
 
-		auto advance_pc8() -> std::uint8_t;
-		auto advance_pc16() -> std::uint16_t;
-		auto push_stack8(std::uint8_t) -> void;
-		auto push_stack16(std::uint16_t) -> void;
-		auto pop_stack8() -> std::uint8_t;
-		auto pop_stack16() -> std::uint16_t;
-		auto update_zn(std::uint8_t value) -> void;
+		auto advance_pc8() -> u8;
+		auto advance_pc16() -> u16;
+		auto push_stack8(u8) -> void;
+		auto push_stack16(u16) -> void;
+		auto pop_stack8() -> u8;
+		auto pop_stack16() -> u16;
+		auto update_zn(u8 value) -> void;
 		template<addressing_mode Mode>
 		auto branch(bool condition) -> void;
 		auto execute_interrupt(address) -> void;
 
-		auto eval_ror(std::uint8_t arg) -> std::uint8_t;
-		auto eval_rol(std::uint8_t arg) -> std::uint8_t;
-		auto eval_asl(std::uint8_t arg) -> std::uint8_t;
-		auto eval_lsr(std::uint8_t arg) -> std::uint8_t;
-		auto eval_adc(std::uint8_t arg) -> void;
-		auto eval_and(std::uint8_t arg) -> void;
-		auto eval_ora(std::uint8_t arg) -> void;
-		auto eval_eor(std::uint8_t arg) -> void;
-		auto eval_cmp(std::uint8_t a, std::uint8_t b) -> void;
+		auto eval_ror(u8 arg) -> u8;
+		auto eval_rol(u8 arg) -> u8;
+		auto eval_asl(u8 arg) -> u8;
+		auto eval_lsr(u8 arg) -> u8;
+		auto eval_adc(u8 arg) -> void;
+		auto eval_and(u8 arg) -> void;
+		auto eval_ora(u8 arg) -> void;
+		auto eval_eor(u8 arg) -> void;
+		auto eval_cmp(u8 a, u8 b) -> void;
 		auto eval_plp() -> void;
 		auto eval_php() -> void;
 

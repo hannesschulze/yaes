@@ -13,14 +13,14 @@ namespace
         SKSpriteNode* node_;
         NSMutableData* buffer_front_;
         NSMutableData* buffer_back_;
-        std::uint8_t* bytes_back_;
+        nes::u8* bytes_back_;
 
     public:
         explicit display_impl(SKSpriteNode* node)
             : node_{ node }
             , buffer_front_{ make_buffer() }
             , buffer_back_{ make_buffer() }
-            , bytes_back_{ static_cast<std::uint8_t*>([buffer_back_ mutableBytes]) }
+            , bytes_back_{ static_cast<nes::u8*>([buffer_back_ mutableBytes]) }
         {
         }
 
@@ -31,14 +31,14 @@ namespace
             auto tmp = buffer_back_;
             buffer_back_ = buffer_front_;
             buffer_front_ = tmp;
-            bytes_back_ = static_cast<std::uint8_t*>([buffer_back_ mutableBytes]);
+            bytes_back_ = static_cast<nes::u8*>([buffer_back_ mutableBytes]);
 
 			auto texture = [SKTexture textureWithData:buffer_front_ size:CGSizeMake(width, height) flipped:YES];
 			[texture setFilteringMode:SKTextureFilteringNearest];
 			[node_ setTexture:texture];
         }
 
-		virtual auto set(unsigned x, unsigned y, nes::rgb value) -> void override
+		virtual auto set(nes::u32 x, nes::u32 y, nes::rgb value) -> void override
         {
             auto const offset = (y * width + x) * 4;
             bytes_back_[offset + 0] = value.r;
@@ -47,7 +47,7 @@ namespace
             bytes_back_[offset + 3] = 255;
         }
 
-		virtual auto get(unsigned x, unsigned y) const -> nes::rgb override
+		virtual auto get(nes::u32 x, nes::u32 y) const -> nes::rgb override
         {
             auto const offset = (y * width + x) * 4;
             auto res = nes::rgb{};
@@ -216,8 +216,8 @@ namespace
 {
     auto const lastTimestamp = _lastTimestamp.value_or(currentTime);
     _lastTimestamp = currentTime;
-    auto deltaMicroseconds = static_cast<std::uint64_t>((currentTime - lastTimestamp) * 1000. * 1000.);
-	deltaMicroseconds = std::min(deltaMicroseconds, std::uint64_t{ 50000 });
+    auto deltaMicroseconds = static_cast<nes::u64>((currentTime - lastTimestamp) * 1000. * 1000.);
+	deltaMicroseconds = std::min(deltaMicroseconds, nes::u64{ 50000 });
     _app->frame(std::chrono::microseconds{ deltaMicroseconds });
 }
 

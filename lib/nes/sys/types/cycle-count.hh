@@ -1,5 +1,6 @@
 #pragma once
 
+#include "nes/common/types.hh"
 #include <chrono>
 
 namespace nes::sys
@@ -12,11 +13,11 @@ namespace nes::sys
 	{
 		friend constexpr auto operator+(cycle_count, cycle_count) -> cycle_count;
 		friend constexpr auto operator-(cycle_count, cycle_count) -> cycle_count;
-		friend constexpr auto operator*(std::uint64_t, cycle_count) -> cycle_count;
-		friend constexpr auto operator*(cycle_count, std::uint64_t) -> cycle_count;
-		friend constexpr auto operator/(cycle_count, cycle_count) -> std::uint64_t;
+		friend constexpr auto operator*(u64, cycle_count) -> cycle_count;
+		friend constexpr auto operator*(cycle_count, u64) -> cycle_count;
+		friend constexpr auto operator/(cycle_count, cycle_count) -> u64;
 
-		std::uint64_t units_{ 0 }; // The most fine-granular cycle count (here: PPU cycles).
+		u64 units_{ 0 }; // The most fine-granular cycle count (here: PPU cycles).
 
 		static constexpr auto ppu_cycle() -> cycle_count { return cycle_count{ 1 }; }
 		static constexpr auto cpu_cycle() -> cycle_count { return cycle_count{ 3 }; }
@@ -26,48 +27,48 @@ namespace nes::sys
 		constexpr explicit cycle_count() = default;
 
 		constexpr auto operator+=(cycle_count const other) -> cycle_count& { return *this = *this + other; }
-		constexpr auto operator*=(std::uint64_t const other) -> cycle_count& { return *this = *this * other; }
+		constexpr auto operator*=(u64 const other) -> cycle_count& { return *this = *this * other; }
 
-		static constexpr auto from_units(std::uint64_t const units) -> cycle_count
+		static constexpr auto from_units(u64 const units) -> cycle_count
 		{
 			return cycle_count{ units };
 		}
 
 		static constexpr auto from_duration(std::chrono::microseconds const duration) -> cycle_count
 		{
-			return from_units(static_cast<std::uint64_t>(duration.count()) * second().get_units() / (1000 * 1000));
+			return from_units(static_cast<u64>(duration.count()) * second().get_units() / (1000 * 1000));
 		}
 
-		static constexpr auto from_cpu(std::uint64_t const cpu_cycles) -> cycle_count
+		static constexpr auto from_cpu(u64 const cpu_cycles) -> cycle_count
 		{
 			return cpu_cycles * cpu_cycle();
 		}
 
-		static constexpr auto from_ppu(std::uint64_t const ppu_cycles) -> cycle_count
+		static constexpr auto from_ppu(u64 const ppu_cycles) -> cycle_count
 		{
 			return ppu_cycles * ppu_cycle();
 		}
 
 		/// Value in implementation-defined units.
-		constexpr auto get_units() const -> std::uint64_t { return units_; }
+		constexpr auto get_units() const -> u64 { return units_; }
 
 		constexpr auto to_duration() const -> std::chrono::microseconds
 		{
 			return std::chrono::microseconds{ get_units() * 1000 * 1000 / second().get_units() };
 		}
 
-		constexpr auto to_cpu() const -> std::uint64_t
+		constexpr auto to_cpu() const -> u64
 		{
 			return *this / cpu_cycle();
 		}
 
-		constexpr auto to_ppu() const -> std::uint64_t
+		constexpr auto to_ppu() const -> u64
 		{
 			return *this / ppu_cycle();
 		}
 
 	private:
-		constexpr explicit cycle_count(std::uint64_t const units)
+		constexpr explicit cycle_count(u64 const units)
 			: units_{ units }
 		{
 		}
@@ -81,7 +82,7 @@ namespace nes::sys
 	constexpr auto operator>=(cycle_count const a, cycle_count const b) -> bool { return a.get_units() >= b.get_units(); }
 	constexpr auto operator+(cycle_count const a, cycle_count const b) -> cycle_count { return cycle_count{ a.get_units() + b.get_units() }; }
 	constexpr auto operator-(cycle_count const a, cycle_count const b) -> cycle_count { return cycle_count{ a.get_units() - b.get_units() }; }
-	constexpr auto operator*(std::uint64_t const a, cycle_count const b) -> cycle_count { return cycle_count{ a * b.get_units() }; }
-	constexpr auto operator*(cycle_count const a, std::uint64_t const b) -> cycle_count { return cycle_count{ a.get_units() * b }; }
-	constexpr auto operator/(cycle_count const a, cycle_count const b) -> std::uint64_t { return a.get_units() / b.get_units(); }
+	constexpr auto operator*(u64 const a, cycle_count const b) -> cycle_count { return cycle_count{ a * b.get_units() }; }
+	constexpr auto operator*(cycle_count const a, u64 const b) -> cycle_count { return cycle_count{ a.get_units() * b }; }
+	constexpr auto operator/(cycle_count const a, cycle_count const b) -> u64 { return a.get_units() / b.get_units(); }
 } // namespace nes::sys

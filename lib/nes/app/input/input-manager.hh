@@ -3,6 +3,7 @@
 #include "nes/app/input/input-device-keyboard.hh"
 #include "nes/app/input/input-device-controller.hh"
 #include "nes/common/list.hh"
+#include "nes/common/types.hh"
 
 namespace nes::app
 {
@@ -12,7 +13,7 @@ namespace nes::app
 	/// back to the keyboard if needed.
 	class input_manager
 	{
-		static constexpr auto input_count = std::size_t{ 2 };
+		static constexpr auto input_count = u32{ 2 };
 
 		input_device_keyboard* keyboard_;
 		list<input_device_controller> controllers_;
