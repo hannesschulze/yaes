@@ -1,6 +1,12 @@
 target_sources(
 	nes
 	PRIVATE
+		key.hh
+		key.cc
+		modifier-mask.hh
+		input-event.hh
+		input-buffer.hh
+		input-buffer.cc
 		input-device.hh
 		input-device-keyboard.hh
 		input-device-controller.hh

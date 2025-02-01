@@ -11,7 +11,15 @@ namespace nes::app
 	/// Presents options to load games, adjust settings, and more.
 	class screen_title final : public screen
 	{
+		enum class item
+		{
+			load_game,
+			settings,
+			help,
+		};
+
 		input_manager& input_manager_;
+		item selected_item_{ item::load_game };
 
 	public:
 		explicit screen_title(input_manager&);

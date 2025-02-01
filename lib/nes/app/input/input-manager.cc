@@ -15,14 +15,7 @@ namespace nes::app
 				return res;
 			}
 
-			auto read_key_up() -> bool override { return false; }
-			auto read_key_down() -> bool override { return false; }
-			auto read_key_left() -> bool override { return false; }
-			auto read_key_right() -> bool override { return false; }
-			auto read_key_a() -> bool override { return false; }
-			auto read_key_b() -> bool override { return false; }
-			auto read_key_select() -> bool override { return false; }
-			auto read_key_start() -> bool override { return false; }
+			auto read_buttons() -> sys::button_mask override { return sys::button_mask{}; }
 		};
 	} // namespace
 

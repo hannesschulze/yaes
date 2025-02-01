@@ -106,10 +106,10 @@ namespace nes
 		}
 
 		/// Remove an item from the list.
-		auto remove(T& item) -> void
+		auto remove(T& item) -> bool
 		{
 			node& item_node = item;
-			if (!item_node.list_) { return; }
+			if (!item_node.list_) { return false; }
 
 			if (head_ == &item) { head_ = item_node.next_; }
 			if (tail_ == &item) { tail_ = item_node.prev_; }
@@ -119,12 +119,15 @@ namespace nes
 			item_node.next_ = nullptr;
 			item_node.prev_ = nullptr;
 			item_node.list_ = nullptr;
+
+			return true;
 		}
 
 		/// Remove an item from the list by its iterator.
-		auto remove(iterator it) -> void
+		auto remove(iterator it) -> bool
 		{
-			if (it != end()) { remove(**it); }
+			if (it != end()) { return remove(**it); }
+			return false;
 		}
 	};
 } // namespace nes

@@ -43,8 +43,8 @@ namespace nes::app
 
 		if (console_)
 		{
-			console_->ref_controller_1().set_pressed(input_manager_.get_input_1().read_mask());
-			console_->ref_controller_2().set_pressed(input_manager_.get_input_2().read_mask());
+			console_->ref_controller_1().set_pressed(input_manager_.get_input_1().read_buttons());
+			console_->ref_controller_2().set_pressed(input_manager_.get_input_2().read_buttons());
 
 			// The scene is rendered by the console after the PPU requests a new frame (thus calling
 			// display_proxy::switch_buffers).
