@@ -3,6 +3,7 @@
 #include "nes/app/graphics/mask-tile.hh"
 #include "nes/app/graphics/image-tile.hh"
 #include "nes/app/graphics/image-view.hh"
+#include "nes/app/graphics/tiles/characters.hh"
 #include "nes/common/display.hh"
 
 namespace nes::app
@@ -55,8 +56,17 @@ namespace nes::app
 		{
 			for (auto x_img = u32{ 0 }; x_img < image.get_width(); ++x_img)
 			{
-				render_image_tile(x + x_img, y + y_img, image.get(x, y));
+				render_image_tile(x + x_img, y + y_img, image.get(x_img, y_img));
 			}
+		}
+	}
+
+	auto renderer::render_text(u32 const x, u32 const y, std::string_view const str, color const c) -> void
+	{
+		for (auto i = u32{ 0 }; i < str.size(); ++i)
+		{
+			auto const character = str[i];
+			render_mask_tile(x + i, y, resolve_character(str[i]), c);
 		}
 	}
 
@@ -100,5 +110,73 @@ namespace nes::app
 		}
 
 		return rgb::from_hex(0x000000);
+	}
+
+	auto renderer::resolve_character(u32 const c) const -> mask_tile
+	{
+		switch (c)
+		{
+			case ' ': return mask_tile{};
+			case 'a': case 'A': return tiles::letter_a;
+			case 'b': case 'B': return tiles::letter_b;
+			case 'c': case 'C': return tiles::letter_c;
+			case 'd': case 'D': return tiles::letter_d;
+			case 'e': case 'E': return tiles::letter_e;
+			case 'f': case 'F': return tiles::letter_f;
+			case 'g': case 'G': return tiles::letter_g;
+			case 'h': case 'H': return tiles::letter_h;
+			case 'i': case 'I': return tiles::letter_i;
+			case 'j': case 'J': return tiles::letter_j;
+			case 'k': case 'K': return tiles::letter_k;
+			case 'l': case 'L': return tiles::letter_l;
+			case 'm': case 'M': return tiles::letter_m;
+			case 'n': case 'N': return tiles::letter_n;
+			case 'o': case 'O': return tiles::letter_o;
+			case 'p': case 'P': return tiles::letter_p;
+			case 'q': case 'Q': return tiles::letter_q;
+			case 'r': case 'R': return tiles::letter_r;
+			case 's': case 'S': return tiles::letter_s;
+			case 't': case 'T': return tiles::letter_t;
+			case 'u': case 'U': return tiles::letter_u;
+			case 'v': case 'V': return tiles::letter_v;
+			case 'w': case 'W': return tiles::letter_w;
+			case 'x': case 'X': return tiles::letter_x;
+			case 'y': case 'Y': return tiles::letter_y;
+			case 'z': case 'Z': return tiles::letter_z;
+			case '0': return tiles::digit_0;
+			case '1': return tiles::digit_1;
+			case '2': return tiles::digit_2;
+			case '3': return tiles::digit_3;
+			case '4': return tiles::digit_4;
+			case '5': return tiles::digit_5;
+			case '6': return tiles::digit_6;
+			case '7': return tiles::digit_7;
+			case '8': return tiles::digit_8;
+			case '9': return tiles::digit_9;
+			case '&': return tiles::symbol_ampersand;
+			case '\'': return tiles::symbol_apostrophe;
+			case '[': return tiles::symbol_bracket_open;
+			case ']': return tiles::symbol_bracket_close;
+			case ':': return tiles::symbol_colon;
+			case ',': return tiles::symbol_comma;
+			case '$': return tiles::symbol_dollar;
+			case '=': return tiles::symbol_equal;
+			case '!': return tiles::symbol_exclamation_mark;
+			case '>': return tiles::symbol_greater;
+			case '#': return tiles::symbol_hashtag;
+			case '<': return tiles::symbol_less;
+			case '-': return tiles::symbol_minus;
+			case '(': return tiles::symbol_paren_open;
+			case ')': return tiles::symbol_paren_close;
+			case '%': return tiles::symbol_percent;
+			case '.': return tiles::symbol_period;
+			case '+': return tiles::symbol_plus;
+			case '?': return tiles::symbol_question_mark;
+			case '"': return tiles::symbol_quotation_mark;
+			case ';': return tiles::symbol_semicolon;
+			case '/': return tiles::symbol_slash;
+			case '*': return tiles::symbol_star;
+			default: return tiles::symbol_unknown;
+		}
 	}
 } // namespace nes::app

@@ -12,19 +12,4 @@ namespace nes::app
 	{
 		u8 data[8]{};
 	};
-
-	namespace tiles
-	{
-		inline constexpr auto letter_a = mask_tile
-		{
-			0b00111000,
-			0b01101100,
-			0b11000110,
-			0b11000110,
-			0b11111110,
-			0b11000110,
-			0b11000110,
-			0b00000000,
-		};
-	} // namespace tiles
 } // namespace nes::app

@@ -7,3 +7,5 @@ target_sources(
 		image-tile.hh
 		renderer.hh
 		renderer.cc)
+
+add_subdirectory(tiles)

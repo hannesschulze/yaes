@@ -47,5 +47,6 @@ if(NES_ENABLE_DEBUG_OUTPUT)
     FetchContent_MakeAvailable(spdlog)
 endif()
 
+add_subdirectory(tools)
 add_subdirectory(lib)
 add_subdirectory(app)

@@ -1,0 +1,79 @@
+nes_generate_tiles(
+	nes
+	characters
+	TYPE mask
+	FILES
+		letter_a.png
+		letter_b.png
+		letter_c.png
+		letter_d.png
+		letter_e.png
+		letter_f.png
+		letter_g.png
+		letter_h.png
+		letter_i.png
+		letter_j.png
+		letter_k.png
+		letter_l.png
+		letter_m.png
+		letter_n.png
+		letter_o.png
+		letter_p.png
+		letter_q.png
+		letter_r.png
+		letter_s.png
+		letter_t.png
+		letter_u.png
+		letter_v.png
+		letter_w.png
+		letter_x.png
+		letter_y.png
+		letter_z.png
+		digit_0.png
+		digit_1.png
+		digit_2.png
+		digit_3.png
+		digit_4.png
+		digit_5.png
+		digit_6.png
+		digit_7.png
+		digit_8.png
+		digit_9.png
+		symbol_ampersand.png
+		symbol_apostrophe.png
+		symbol_bracket_open.png
+		symbol_bracket_close.png
+		symbol_colon.png
+		symbol_comma.png
+		symbol_dollar.png
+		symbol_equal.png
+		symbol_exclamation_mark.png
+		symbol_greater.png
+		symbol_hashtag.png
+		symbol_less.png
+		symbol_minus.png
+		symbol_paren_open.png
+		symbol_paren_close.png
+		symbol_percent.png
+		symbol_period.png
+		symbol_plus.png
+		symbol_question_mark.png
+		symbol_quotation_mark.png
+		symbol_semicolon.png
+		symbol_slash.png
+		symbol_star.png
+		symbol_unknown.png)
+
+nes_generate_tiles(
+	nes
+	icons
+	TYPE mask
+	FILES
+		icon_directory.png
+		icon_cartridge.png)
+
+nes_generate_tiles(
+	nes
+	banner
+	TYPE image
+	FILES banner.png)

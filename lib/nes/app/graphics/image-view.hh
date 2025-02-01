@@ -28,6 +28,6 @@ namespace nes::app
 		auto get_data() const -> image_tile const* { return data_; }
 		auto get_width() const -> u32 { return width_; }
 		auto get_height() const -> u32 { return height_; }
-		auto get(u32 const x, u32 const y) const -> image_tile const& { return data_[y * height_ + x]; }
+		auto get(u32 const x, u32 const y) const -> image_tile const& { return data_[y * width_ + x]; }
 	};
 } // namespace nes::app

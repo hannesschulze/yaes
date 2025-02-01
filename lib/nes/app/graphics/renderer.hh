@@ -58,5 +58,6 @@ namespace nes::app
 
 	private:
 		auto resolve_color(color) const -> rgb;
+		auto resolve_character(u32) const -> mask_tile;
 	};
 } // namespace nes::app

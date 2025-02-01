@@ -1,7 +1,8 @@
 #include "nes/app/ui/screen-title.hh"
 #include "nes/app/graphics/renderer.hh"
 #include "nes/app/graphics/color.hh"
-#include "nes/app/graphics/mask-tile.hh"
+#include "nes/app/graphics/tiles/banner.hh"
+#include "nes/app/graphics/tiles/icons.hh"
 #include "nes/app/input/input-manager.hh"
 
 namespace nes::app
@@ -14,8 +15,10 @@ namespace nes::app
 	auto screen_title::render(renderer& renderer) -> void
 	{
 		renderer.render_fill(color::background_primary);
-		renderer.render_rect(2, 4, 28, 8, color::accent_primary);
-		renderer.render_mask_tile(10, 16, tiles::letter_a, color::foreground_primary);
+		renderer.render_text(10, 16, "Hello, world!", color::foreground_primary);
+		renderer.render_mask_tile(14, 18, tiles::icon_directory, color::accent_primary);
+		renderer.render_mask_tile(16, 18, tiles::icon_cartridge, color::accent_primary);
+		renderer.render_image(2, 4, tiles::banner);
 	}
 
 	auto screen_title::process_events() -> action
