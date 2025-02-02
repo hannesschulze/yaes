@@ -4,6 +4,7 @@
 
 namespace nes::app
 {
+	/// A keyboard input event which can be polled.
 	class input_event
 	{
 	public:

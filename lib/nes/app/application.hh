@@ -2,6 +2,7 @@
 
 #include "nes/app/input/input-manager.hh"
 #include "nes/app/ui/screen-title.hh"
+#include "nes/app/ui/screen-browser.hh"
 #include "nes/sys/nes.hh"
 #include "nes/common/box.hh"
 #include "nes/common/display.hh"
@@ -40,8 +41,9 @@ namespace nes::app
 
 		display_proxy display_;
 		input_manager input_manager_;
-		box<sys::nes> console_;
+		box<sys::nes> console_{};
 		screen_title screen_title_;
+		screen_browser screen_browser_;
 
 	public:
 		explicit application(display&, input_device_keyboard&);

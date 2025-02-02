@@ -6,6 +6,10 @@
 #import "nes/common/display.hh"
 #import <memory>
 #import <optional>
+#import <fcntl.h>
+#import <unistd.h>
+#import <termios.h>
+#import <sys/ioctl.h>
 
 namespace
 {
@@ -252,12 +256,108 @@ namespace
 			return res;
 		}
 	};
+
+	class input_device_controller_serial : public nes::app::input_device_controller
+	{
+		char const* path_;
+		int fd_{ 0 };
+		nes::sys::button_mask current_{};
+		index index_{ index::unused };
+
+	public:
+		explicit input_device_controller_serial(char const* path)
+			: path_{ path }
+		{
+			fd_ = open(path, O_RDONLY | O_NOCTTY | O_NDELAY | O_NONBLOCK);
+			if (fd_ == -1)
+			{
+				perror("open controller");
+				return;
+			}
+
+			if (!setup()) { close(); }
+		}
+
+		~input_device_controller_serial() override
+		{
+			close();
+		}
+
+		auto read_buttons() -> nes::sys::button_mask override
+		{
+			if (fd_ == -1) { return nes::sys::button_mask{}; }
+
+			// Poll for any updates until we can't read anymore.
+			while (true)
+			{
+				auto buf = nes::u8{};
+				auto res = read(fd_, &buf, 1);
+				if (res == -1)
+				{
+					if (errno == EAGAIN || errno == EWOULDBLOCK) { break; }
+
+					perror("read from controller");
+					close();
+					break;
+				}
+
+				current_ = nes::sys::button_mask::from_raw_value(buf);
+			}
+
+			return current_;
+		}
+
+		auto is_reliable() const -> bool override { return fd_ != -1; }
+		auto get_name() const -> std::string_view override { return path_; }
+		auto set_index(index const index) -> void override { index_ = index; }
+		auto get_index() const -> index override { return index_; }
+
+	private:
+		auto close() -> void
+		{
+			if (fd_ != -1)
+			{
+				::close(fd_);
+				fd_ = -1;
+			}
+		}
+
+		auto setup() -> bool
+		{
+			if (ioctl(fd_, TIOCEXCL) == -1)
+			{
+				perror("ioctl for controller");
+				return false;
+			}
+
+			auto attr = termios{};
+			if (tcgetattr(fd_, &attr) == -1)
+			{
+				perror("tcgetattr for controller");
+				return false;
+			}
+
+			cfsetispeed(&attr, B57600);
+			cfsetospeed(&attr, B57600);
+			attr.c_cflag = attr.c_cflag | CLOCAL | CREAD;
+			attr.c_cflag = (attr.c_cflag & static_cast<tcflag_t>(~CSIZE)) | CS8;
+
+			if (tcsetattr(fd_, TCSANOW, &attr) == -1)
+			{
+				perror("tcsetattr for controller");
+				return false;
+			}
+
+			return true;
+		}
+	};
 } // namespace
 
 @implementation Scene
 {
 	std::unique_ptr<display_impl> _display;
 	std::unique_ptr<input_device_keyboard_impl> _keyboard;
+    std::unique_ptr<input_device_controller_serial> _serialController;
 	std::vector<std::unique_ptr<input_device_controller_impl>> _controllers;
 	std::unique_ptr<nes::app::application> _app;
     std::optional<NSTimeInterval> _lastTimestamp;
@@ -277,7 +377,10 @@ namespace
 
         _display = std::make_unique<display_impl>(node);
 		_keyboard = std::make_unique<input_device_keyboard_impl>([[GCKeyboard coalescedKeyboard] keyboardInput]);
+        _serialController = std::make_unique<input_device_controller_serial>("/dev/cu.usbserial-FTB6SPL3");
         _app = std::make_unique<nes::app::application>(*_display, *_keyboard);
+
+        _app->add_controller(*_serialController);
 
 		for (GCController* controller in [GCController controllers])
 		{

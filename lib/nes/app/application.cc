@@ -28,7 +28,8 @@ namespace nes::app
 	application::application(display& display, input_device_keyboard& keyboard)
 		: display_{ display }
 		, input_manager_{ keyboard }
-		, screen_title_{ input_manager_ }
+		, screen_title_{ keyboard }
+		, screen_browser_{ keyboard }
 	{
 		display_.screen = &screen_title_;
 	}
@@ -72,7 +73,19 @@ namespace nes::app
 			{
 				break;
 			}
-			case action::load_game:
+			case action::go_to_title:
+			{
+				console_.clear();
+				display_.screen = &screen_title_;
+				break;
+			}
+			case action::go_to_browser:
+			{
+				console_.clear();
+				display_.screen = &screen_browser_;
+				break;
+			}
+			case action::launch_game:
 			{
 				auto stream = std::ifstream{ file, std::ios::binary };
 				if (!stream.good())

@@ -6,6 +6,10 @@ namespace nes::app
 	enum class action
 	{
 		none,
-		load_game,
+		go_to_title,
+		go_to_browser,
+		go_to_settings,
+		go_to_help,
+		launch_game,
 	};
 } // namespace nes::app

@@ -6,4 +6,6 @@ target_sources(
 		rgb.hh
 		list.hh
 		box.hh
-		display.hh)
+		display.hh
+		string-builder.hh
+		string-builder.cc)

@@ -3,6 +3,7 @@
 #include "nes/app/graphics/mask-tile.hh"
 #include "nes/app/graphics/image-tile.hh"
 #include "nes/app/graphics/image-view.hh"
+#include "nes/app/graphics/text-attributes.hh"
 #include "nes/app/graphics/tiles/characters.hh"
 #include "nes/common/display.hh"
 
@@ -13,9 +14,9 @@ namespace nes::app
 	{
 	}
 
-	auto renderer::render_image_tile(u32 const x, u32 const y, image_tile const& tile) -> void
+	auto renderer::render_image_tile(i32 const x, i32 const y, image_tile const& tile) -> void
 	{
-		if (x >= width || y >= height) { return; }
+		if (x < 0 || y < 0 || x >= static_cast<i32>(width) || y >= static_cast<i32>(height)) { return; }
 
 		for (auto y_px = u32{ 0 }; y_px < 8; ++y_px)
 		{
@@ -24,16 +25,16 @@ namespace nes::app
 				auto const c = tile.data[y_px * 8 + x_px];
 				if (c != color::transparent)
 				{
-					display_.set(8 * x + x_px, 8 * y + y_px, resolve_color(c));
+					display_.set(8 * static_cast<u32>(x) + x_px, 8 * static_cast<u32>(y) + y_px, resolve_color(c));
 				}
 			}
 		}
 	}
 
-	auto renderer::render_mask_tile(u32 const x, u32 const y, mask_tile const tile, color const c) -> void
+	auto renderer::render_mask_tile(i32 const x, i32 const y, mask_tile const tile, color const c) -> void
 	{
 		if (c == color::transparent) { return; }
-		if (x >= width || y >= height) { return; }
+		if (x < 0 || y < 0 || x >= static_cast<i32>(width) || y >= static_cast<i32>(height)) { return; }
 
 		auto const resolved = resolve_color(c);
 		for (auto y_px = u32{ 0 }; y_px < 8; ++y_px)
@@ -43,47 +44,103 @@ namespace nes::app
 			{
 				if (row & 0b10000000)
 				{
-					display_.set(8 * x + x_px, 8 * y + y_px, resolved);
+					display_.set(8 * static_cast<u32>(x) + x_px, 8 * static_cast<u32>(y) + y_px, resolved);
 				}
 				row <<= 1;
 			}
 		}
 	}
 
-	auto renderer::render_image(u32 const x, u32 const y, image_view const image) -> void
+	auto renderer::render_image(i32 const x, i32 const y, image_view const image) -> void
 	{
 		for (auto y_img = u32{ 0 }; y_img < image.get_height(); ++y_img)
 		{
 			for (auto x_img = u32{ 0 }; x_img < image.get_width(); ++x_img)
 			{
-				render_image_tile(x + x_img, y + y_img, image.get(x_img, y_img));
+				render_image_tile(x + static_cast<i32>(x_img), y + static_cast<i32>(y_img), image.get(x_img, y_img));
 			}
 		}
 	}
 
-	auto renderer::render_text(u32 const x, u32 const y, std::string_view const str, color const c) -> void
+	auto renderer::render_text(
+		i32 x, i32 const y, std::string_view const str, color const c, text_attributes const attributes) -> void
 	{
-		for (auto i = u32{ 0 }; i < str.size(); ++i)
+		// Enforce max length
+		char buffer[width];
+		auto const length = std::min(static_cast<u32>(str.length()), std::min(width, attributes.get_max_width()));
+		auto const ellipsize_dots = std::min(length, u32{ 3 });
+
+		// Enforce ellipsize mode
+		if (str.length() > length)
 		{
-			auto const character = str[i];
-			render_mask_tile(x + i, y, resolve_character(str[i]), c);
+			switch (attributes.get_ellipsize_mode())
+			{
+				case ellipsize_mode::clip:
+				{
+					std::copy_n(str.begin(), length, buffer);
+					break;
+				}
+				case ellipsize_mode::end:
+				{
+					std::copy_n(str.begin(), length, buffer);
+					for (auto i = u32{ 0 }; i < ellipsize_dots; ++i) { buffer[length - 1 - i] = '.'; }
+					break;
+				}
+				case ellipsize_mode::start:
+				{
+					std::copy_n(str.begin() + str.length() - length, length, buffer);
+					for (auto i = u32{ 0 }; i < ellipsize_dots; ++i) { buffer[i] = '.'; }
+					break;
+				}
+				case ellipsize_mode::middle:
+				{
+					auto const visible = length - ellipsize_dots;
+					auto const start = visible / 2;
+					auto const end = visible - start;
+					std::copy_n(str.begin(), start, buffer);
+					for (auto i = u32{ 0 }; i < ellipsize_dots; ++i) { buffer[start + i] = '.'; }
+					std::copy_n(str.begin() + str.length() - end, end, buffer + start + ellipsize_dots);
+					break;
+				}
+			}
+		}
+		else
+		{
+			std::copy_n(str.begin(), length, buffer);
+		}
+
+		// Enforce alignment
+		switch (attributes.get_alignment())
+		{
+			case text_alignment::left: break;
+			case text_alignment::center: x -= length / 2; break;
+			case text_alignment::right: x -= length; break;
+		}
+
+		// Draw the text
+		for (auto i = u32{ 0 }; i < length; ++i)
+		{
+			auto const character = static_cast<u32>(buffer[i]);
+			render_mask_tile(x + static_cast<i32>(i), y, resolve_character(character), c);
 		}
 	}
 
 	auto renderer::render_rect(
-		u32 const x, u32 const y, u32 const width, u32 const height, color const c) -> void
+		i32 const x, i32 const y, u32 const width, u32 const height, color const c) -> void
 	{
 		if (c == color::transparent) { return; }
-		if (x >= width || y >= height) { return; }
+		if (x >= static_cast<i32>(width) || y >= static_cast<i32>(height)) { return; }
 
 		auto const resolved = resolve_color(c);
-		auto const x_stop = std::min(x + width, renderer::width);
-		auto const y_stop = std::min(y + height, renderer::height);
-		for (auto y_px = u32{ y * 8 }; y_px < y_stop * 8; ++y_px)
+		auto const x_stop = std::min(x + static_cast<i32>(width), static_cast<i32>(renderer::width));
+		auto const y_stop = std::min(y + static_cast<i32>(height), static_cast<i32>(renderer::height));
+		auto const x_start = std::max(x, 0);
+		auto const y_start = std::max(y, 0);
+		for (auto y_px = i32{ y_start * 8 }; y_px < y_stop * 8; ++y_px)
 		{
-			for (auto x_px = u32{ x * 8 }; x_px < x_stop * 8; ++x_px)
+			for (auto x_px = i32{ x_start * 8 }; x_px < x_stop * 8; ++x_px)
 			{
-				display_.set(x_px, y_px, resolved);
+				display_.set(static_cast<u32>(x_px), static_cast<u32>(y_px), resolved);
 			}
 		}
 	}

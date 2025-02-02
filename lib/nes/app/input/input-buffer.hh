@@ -7,6 +7,7 @@ namespace nes::app
 {
 	class input_event;
 
+	/// A buffer which stores the "pressed" state for each key and a queue of key-down and key-up events.
 	class input_buffer
 	{
 		struct event final : list<event>::node

@@ -2,13 +2,35 @@
 #include "nes/app/graphics/renderer.hh"
 #include "nes/app/graphics/color.hh"
 #include "nes/app/graphics/tiles/banner.hh"
-#include "nes/app/input/input-manager.hh"
+#include "nes/app/input/input-device-keyboard.hh"
 
 namespace nes::app
 {
-	screen_title::screen_title(input_manager& input_manager)
-		: input_manager_{ input_manager }
+	auto screen_title::selection_impl::render_item(
+		renderer& renderer, item const& item, i32 const x, i32 const y, u32 const width, color const color) const -> void
 	{
+		auto const attrs = text_attributes{}
+			.set_max_width(width);
+		switch (item)
+		{
+			case item::load_game: renderer.render_text(x, y, "Load Game", color, attrs); break;
+			case item::settings: renderer.render_text(x, y, "Settings", color, attrs); break;
+			case item::help: renderer.render_text(x, y, "Help", color, attrs); break;
+		}
+	}
+
+	auto screen_title::selection_impl::load_page(item (&items)[3], u32) -> u32
+	{
+		items[0] = item::load_game;
+		items[1] = item::settings;
+		items[2] = item::help;
+		return 3;
+	}
+
+	screen_title::screen_title(input_device_keyboard& keyboard)
+		: keyboard_{ keyboard }
+	{
+		selection_.set_page_count(1);
 	}
 
 	auto screen_title::render(renderer& renderer) -> void
@@ -16,32 +38,33 @@ namespace nes::app
 		renderer.render_fill(color::background_primary);
 		renderer.render_image(2, 4, tiles::banner);
 
-		if (selected_item_ == item::load_game) { renderer.render_text(10, 16, ">", color::accent_primary); }
-		renderer.render_text(12, 16, "Load Game", selected_item_ == item::load_game ? color::accent_primary : color::foreground_primary);
-
-		if (selected_item_ == item::settings) { renderer.render_text(10, 19, ">", color::accent_primary); }
-		renderer.render_text(12, 19, "Settings", selected_item_ == item::settings ? color::accent_primary : color::foreground_primary);
-
-		if (selected_item_ == item::help) { renderer.render_text(10, 22, ">", color::accent_primary); }
-		renderer.render_text(12, 22, "Help", selected_item_ == item::help ? color::accent_primary : color::foreground_primary);
+		selection_.render(renderer);
 	}
 
 	auto screen_title::process_events() -> action
 	{
-		while (auto event = input_manager_.get_keyboard().poll_event())
+		while (auto const event = keyboard_.poll_event())
 		{
 			if (event == input_event::key_down(key::space))
 			{
-				switch (selected_item_)
-				{
-					case item::load_game: selected_item_ = item::settings; break;
-					case item::settings: selected_item_ = item::help; break;
-					case item::help: selected_item_ = item::load_game; break;
-				}
+				selection_.go_next();
+			}
+			else if (event == input_event::key_down(key::arrow_up))
+			{
+				selection_.go_up();
+			}
+			else if (event == input_event::key_down(key::arrow_down))
+			{
+				selection_.go_down();
 			}
 			else if (event == input_event::key_down(key::enter))
 			{
-				return action::load_game;
+				switch (*selection_.get_selected())
+				{
+					case item::load_game: return action::go_to_browser;
+					case item::settings: return action::go_to_settings;
+					case item::help: return action::go_to_help;
+				}
 			}
 		}
 
