@@ -61,13 +61,13 @@ namespace nes::app
 			{
 				switch (*selection_.get_selected())
 				{
-					case item::load_game: return action::go_to_browser;
-					case item::settings: return action::go_to_settings;
-					case item::help: return action::go_to_help;
+					case item::load_game: return action::go_to_browser();
+					case item::settings: return action::go_to_settings();
+					case item::help: return action::go_to_help();
 				}
 			}
 		}
 
-		return action::none;
+		return action{};
 	}
 } // namespace nes::app

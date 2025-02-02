@@ -41,12 +41,13 @@ namespace nes::app
 
 		display_proxy display_;
 		input_manager input_manager_;
+		file_browser& file_browser_;
 		box<sys::nes> console_{};
 		screen_title screen_title_;
 		screen_browser screen_browser_;
 
 	public:
-		explicit application(display&, input_device_keyboard&);
+		explicit application(display&, input_device_keyboard&, file_browser& file_browser);
 
 		application(application const&) = delete;
 		application(application&&) = delete;

@@ -54,18 +54,19 @@ namespace nes::app
 		template<typename... Args>
 		auto render_text_format(
 			i32 const x, i32 const y, color const c, text_attributes const attrs, std::string_view const fmt,
-			Args... args) -> void
+			Args... args) -> u32
 		{
 			char buffer[width];
 			auto const str = string_builder{ buffer, sizeof(buffer) }.append_format(fmt, args...).get_result();
 			render_text(x, y, str, c, attrs);
+			return static_cast<u32>(str.length());
 		}
 
 		template<typename... Args>
 		auto render_text_format(
-			i32 const x, i32 const y, color const c, std::string_view const fmt, Args... args) -> void
+			i32 const x, i32 const y, color const c, std::string_view const fmt, Args... args) -> u32
 		{
-			render_text_format(x, y, c, text_attributes{}, fmt, args...);
+			return render_text_format(x, y, c, text_attributes{}, fmt, args...);
 		}
 
 		/// Render a rectangle at the given tile coordinates with a given size (measured in tiles).

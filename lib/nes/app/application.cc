@@ -4,16 +4,10 @@
 #include "nes/app/ui/screen.hh"
 #include "nes/app/graphics/renderer.hh"
 #include "ui/action.hh"
-#include <fstream>
 #include <iostream>
 
 namespace nes::app
 {
-	namespace
-	{
-		constexpr auto file = std::string_view{ "/Users/hannes/Documents/temp/supermario.nes" };
-	} // namespace
-
 	auto application::display_proxy::switch_buffers() -> void
 	{
 		if (screen)
@@ -25,11 +19,12 @@ namespace nes::app
 		base.switch_buffers();
 	}
 
-	application::application(display& display, input_device_keyboard& keyboard)
+	application::application(display& display, input_device_keyboard& keyboard, file_browser& file_browser)
 		: display_{ display }
 		, input_manager_{ keyboard }
+		, file_browser_{ file_browser }
 		, screen_title_{ keyboard }
-		, screen_browser_{ keyboard }
+		, screen_browser_{ keyboard, file_browser }
 	{
 		display_.screen = &screen_title_;
 	}
@@ -67,40 +62,40 @@ namespace nes::app
 
 	auto application::handle_action(action const a) -> void
 	{
-		switch (a)
+		switch (a.get_type())
 		{
-			case action::none:
+			case action::type::none:
 			{
 				break;
 			}
-			case action::go_to_title:
+			case action::type::go_to_title:
 			{
 				console_.clear();
 				display_.screen = &screen_title_;
 				break;
 			}
-			case action::go_to_browser:
+			case action::type::go_to_browser:
 			{
 				console_.clear();
 				display_.screen = &screen_browser_;
 				break;
 			}
-			case action::launch_game:
+			case action::type::go_to_settings:
 			{
-				auto stream = std::ifstream{ file, std::ios::binary };
-				if (!stream.good())
-				{
-					std::cerr << "Unable to open cartridge file!" << std::endl;
-					std::abort();
-				}
+				// TODO
+				break;
+			}
+			case action::type::go_to_help:
+			{
+				// TODO
+				break;
+			}
+			case action::type::launch_game:
+			{
+				nes::u8 buffer[sys::cartridge::max_file_size];
+				auto const length = file_browser_.load(a.get_file_name(), buffer, sizeof(buffer));
 
-				stream.seekg(0, std::ios::end);
-				auto const length = stream.tellg();
-				stream.seekg(0, std::ios::beg);
-				auto data = std::vector<u8>(static_cast<u32>(length));
-				stream.read(reinterpret_cast<char*>(data.data()), length);
-
-				console_.emplace(display_, data.data(), static_cast<u32>(length));
+				console_.emplace(display_, buffer, length);
 				if (console_->get_status() != sys::status::success)
 				{
 					std::cerr << "Unable to load cartridge: " << to_string(console_->get_status()) << std::endl;

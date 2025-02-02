@@ -62,6 +62,8 @@ namespace nes::sys
 		mapper* mapper_{ &mapper::invalid() };
 
 	public:
+		static constexpr auto max_file_size = u32{ max_prg_rom_size + max_chr_rom_size + 512 + header_length };
+
 		explicit cartridge(u8 const* data, u32 length);
 
 		auto get_status() const -> status { return status_; }

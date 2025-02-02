@@ -3,12 +3,16 @@
 #import "nes/app/input/input-device-keyboard.hh"
 #import "nes/app/input/input-device-controller.hh"
 #import "nes/app/input/input-buffer.hh"
+#import "nes/app/file-browser.hh"
 #import "nes/common/display.hh"
+#import "nes/common/path-view.hh"
 #import <memory>
+#import <iostream>
 #import <optional>
 #import <fcntl.h>
 #import <unistd.h>
 #import <termios.h>
+#import <dirent.h>
 #import <sys/ioctl.h>
 
 namespace
@@ -351,11 +355,195 @@ namespace
 			return true;
 		}
 	};
+
+    class file_browser_impl final : public nes::app::file_browser
+    {
+		std::vector<std::string> components_;
+		std::vector<std::string_view> component_views_;
+		DIR* it_{ nullptr };
+		nes::u32 it_pos_{ 0 };
+
+	public:
+		explicit file_browser_impl()
+		{
+			if (chdir("/") == -1)
+			{
+				perror("chdir");
+				std::abort();
+			}
+
+			it_ = opendir(".");
+			if (!it_)
+			{
+				perror("opendir");
+				std::abort();
+			}
+		}
+
+		~file_browser_impl() override
+		{
+			closedir(it_);
+		}
+
+		auto get_path() const -> nes::path_view override
+		{
+			return nes::path_view{ component_views_.data(), static_cast<nes::u32>(component_views_.size()) };
+		}
+
+		auto read_item_count() -> nes::u32 override
+		{
+			while (read_next())
+				;
+			return it_pos_;
+		}
+
+		auto read_items(nes::u32 offset, item* buffer, nes::u32 buffer_size) -> nes::u32 override
+		{
+			seek(offset);
+			auto count = nes::u32{ 0 };
+			for (auto i = nes::u32{ 0 }; i < buffer_size; ++i)
+			{
+				auto item = read_next();
+				if (!item) { break; }
+				buffer[count++] = *item;
+			}
+
+			return count;
+		}
+
+		auto navigate_up() -> void override
+		{
+			if (components_.empty()) { return; }
+
+			components_.erase(components_.begin() + static_cast<std::ptrdiff_t>(components_.size() - 1));
+			component_views_.erase(component_views_.begin() + static_cast<std::ptrdiff_t>(component_views_.size() - 1));
+			auto path = std::string{};
+			for (auto const component : get_path())
+			{
+				path += "/";
+				path += component;
+			}
+			path += "/";
+
+			if (chdir(path.c_str()) == -1)
+			{
+				perror("chdir");
+				std::abort();
+			}
+
+			reopen_dir();
+		}
+
+		auto navigate(std::string_view const item) -> void override
+		{
+			auto item_copy = std::string{ item };
+			if (chdir(item_copy.c_str()) == -1)
+			{
+				perror("chdir");
+				std::abort();
+			}
+
+			components_.emplace_back(std::move(item_copy));
+			component_views_.clear();
+			for (auto& str : components_) { component_views_.emplace_back(str); }
+
+			reopen_dir();
+		}
+
+		auto load(std::string_view const item, nes::u8* buffer, nes::u32 const buffer_size) -> nes::u32 override
+		{
+			auto item_copy = std::string{ item };
+			auto const fd = open(item_copy.c_str(), O_RDONLY | O_NOCTTY | O_NDELAY | O_NONBLOCK);
+			if (fd == -1)
+			{
+				perror("open");
+				std::abort();
+			}
+
+			auto const res = read(fd, buffer, buffer_size);
+			if (res < 0)
+			{
+				perror("read");
+				std::abort();
+			}
+
+			auto remaining = char{};
+			if (read(fd, &remaining, 1) != 0)
+			{
+				std::cerr << "Expected EOF" << std::endl;
+				std::abort();
+			}
+
+			close(fd);
+
+			return static_cast<nes::u32>(res);
+		}
+
+	private:
+		auto reopen_dir() -> void
+		{
+			closedir(it_);
+			it_ = opendir(".");
+			if (!it_)
+			{
+				perror("opendir");
+				std::abort();
+			}
+			it_pos_ = 0;
+		}
+
+		auto seek(nes::u32 const position) -> void
+		{
+			if (it_pos_ > position)
+			{
+				reopen_dir();
+			}
+
+			while (it_pos_ < position)
+			{
+				if (!read_next()) { break; }
+			}
+		}
+
+		auto read_next() -> std::optional<item>
+		{
+			if (!it_) { return std::nullopt; }
+
+			while (true)
+			{
+				errno = 0;
+				auto entry = readdir(it_);
+				if (!entry)
+				{
+					if (errno)
+					{
+						perror("readdir");
+						std::abort();
+					}
+
+					return std::nullopt;
+				}
+
+				auto const name = std::string_view{ entry->d_name };
+				if (name.length() > max_name_length) { continue; }
+				if (name[0] == '.') { continue; }
+
+				auto type = item_type::directory;
+				if (entry->d_type == DT_DIR) { type = item_type::directory; }
+				else if (entry->d_type == DT_REG) { type = item_type::file; }
+				else { continue; }
+
+				it_pos_ += 1;
+				return item{ type, name };
+			}
+		}
+    };
 } // namespace
 
 @implementation Scene
 {
 	std::unique_ptr<display_impl> _display;
+    std::unique_ptr<file_browser_impl> _fileBrowser;
 	std::unique_ptr<input_device_keyboard_impl> _keyboard;
     std::unique_ptr<input_device_controller_serial> _serialController;
 	std::vector<std::unique_ptr<input_device_controller_impl>> _controllers;
@@ -376,9 +564,10 @@ namespace
         [self addChild:node];
 
         _display = std::make_unique<display_impl>(node);
+        _fileBrowser = std::make_unique<file_browser_impl>();
 		_keyboard = std::make_unique<input_device_keyboard_impl>([[GCKeyboard coalescedKeyboard] keyboardInput]);
         _serialController = std::make_unique<input_device_controller_serial>("/dev/cu.usbserial-FTB6SPL3");
-        _app = std::make_unique<nes::app::application>(*_display, *_keyboard);
+        _app = std::make_unique<nes::app::application>(*_display, *_keyboard, *_fileBrowser);
 
         _app->add_controller(*_serialController);
 

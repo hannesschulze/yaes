@@ -2,7 +2,8 @@ target_sources(
 	nes
 	PRIVATE
 		application.hh
-		application.cc)
+		application.cc
+		file-browser.hh)
 
 add_subdirectory(input)
 add_subdirectory(graphics)
