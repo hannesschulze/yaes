@@ -3,8 +3,7 @@
 #include "nes/sys/types/status.hh"
 #include "nes/sys/mapper.hh"
 #include "nes/common/types.hh"
-#include <vector>
-#include <string_view>
+#include "nes/common/span.hh"
 
 namespace nes::sys
 {
@@ -42,7 +41,7 @@ namespace nes::sys
 
 			u8 value[header_length]{};
 
-			explicit header(u8 const* v)
+			explicit header(span<u8 const, header_length> const v)
 			{
 				for (auto i = u32{ 0 }; i < header_length; ++i)
 				{
@@ -64,16 +63,13 @@ namespace nes::sys
 	public:
 		static constexpr auto max_file_size = u32{ max_prg_rom_size + max_chr_rom_size + 512 + header_length };
 
-		explicit cartridge(u8 const* data, u32 length);
+		explicit cartridge(span<u8 const>);
 
 		auto get_status() const -> status { return status_; }
-		auto get_prg_rom() const -> u8 const* { return prg_rom_; }
-		auto get_prg_rom_length() const -> u32 { return prg_rom_size_; }
-		auto get_chr_rom() const -> u8 const* { return chr_rom_; }
-		auto get_chr_rom_length() const -> u32 { return chr_rom_size_; }
-		auto get_ram() const -> u8 const* { return ram_; }
-		auto get_ram_mut() -> u8* { return ram_; }
-		auto get_ram_length() const -> u32 { return ram_size_; }
+		auto get_prg_rom() const -> span<u8 const> { return span{ prg_rom_, prg_rom_size_ }; }
+		auto get_chr_rom() const -> span<u8 const> { return span{ chr_rom_, chr_rom_size_ }; }
+		auto get_ram() const -> span<u8 const> { return span{ ram_, ram_size_ }; }
+		auto ref_ram() -> span<u8> { return span{ ram_, ram_size_ }; }
 		auto get_mapper() const -> mapper& { return *mapper_; }
 		auto get_name_table_arrangement() const -> name_table_arrangement { return name_table_arrangement_; }
 	};

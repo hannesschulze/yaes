@@ -92,10 +92,10 @@ namespace nes::app
 			}
 			case action::type::launch_game:
 			{
-				nes::u8 buffer[sys::cartridge::max_file_size];
-				auto const length = file_browser_.load(a.get_file_name(), buffer, sizeof(buffer));
+				u8 buffer[sys::cartridge::max_file_size];
+				auto const length = file_browser_.load(a.get_file_name(), buffer);
 
-				console_.emplace(display_, buffer, length);
+				console_.emplace(display_, span<u8 const>{ buffer, length });
 				if (console_->get_status() != sys::status::success)
 				{
 					std::cerr << "Unable to load cartridge: " << to_string(console_->get_status()) << std::endl;

@@ -239,7 +239,7 @@ namespace nes::sys
 		sprite_count_ = 0;
 		for (auto i = u32{ 0 }; i < sprite_max_count; ++i)
 		{
-			auto const s = sprite{ &oam_[i * 4] };
+			auto const s = sprite{ span{ oam_ }.subspan<4>(i * 4) };
 			auto const row = static_cast<int>(scanline_) - static_cast<int>(s.get_y());
 			if (row < 0 || static_cast<u32>(row) >= height) { continue; }
 

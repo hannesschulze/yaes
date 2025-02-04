@@ -3,8 +3,8 @@
 
 namespace nes::sys
 {
-	nes::nes(display& display, u8 const* rom_data, u32 rom_length)
-		: cartridge_{ rom_data, rom_length }
+	nes::nes(display& display, span<u8 const> const rom_data)
+		: cartridge_{ rom_data }
 		, display_{ display }
 		, ppu_{ cpu_, cartridge_, display_ }
 		, cpu_{ ppu_, cartridge_, controller_1_, controller_2_ }
@@ -52,7 +52,7 @@ namespace nes::sys
 	auto nes::get_snapshot() -> snapshot
 	{
 		auto res = snapshot{};
-		res.sram = std::vector(cartridge_.get_ram(), cartridge_.get_ram() + cartridge_.get_ram_length());
+		res.sram = std::vector(cartridge_.get_ram().begin(), cartridge_.get_ram().end());
 		cpu_.build_snapshot(res);
 		ppu_.build_snapshot(res);
 		return res;

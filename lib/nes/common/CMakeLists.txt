@@ -12,4 +12,5 @@ target_sources(
 		path-view.hh
 		path-view.cc
 		path-builder.hh
-		path-builder.cc)
+		path-builder.cc
+		span.hh)

@@ -3,6 +3,7 @@
 #include "nes/sys/types/address.hh"
 #include "nes/sys/types/status.hh"
 #include "nes/common/types.hh"
+#include "nes/common/span.hh"
 
 namespace nes::sys
 {
@@ -24,8 +25,8 @@ namespace nes::sys
 		virtual auto validate(cartridge&) -> status = 0;
 		virtual auto read_cpu(address, cartridge&) -> u8 = 0;
 		virtual auto write_cpu(address, u8, cartridge&) -> void = 0;
-		virtual auto read_ppu(address, cartridge&, u8 const* vram) -> u8 = 0;
-		virtual auto write_ppu(address, u8, cartridge&, u8* vram) -> void = 0;
+		virtual auto read_ppu(address, cartridge&, span<u8 const> vram) -> u8 = 0;
+		virtual auto write_ppu(address, u8, cartridge&, span<u8> vram) -> void = 0;
 
 	protected:
 		explicit mapper() = default;

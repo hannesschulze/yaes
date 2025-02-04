@@ -440,7 +440,7 @@ namespace
             reopen_dir();
 		}
 
-		auto load(std::string_view const item, nes::u8* buffer, nes::u32 const buffer_size) -> nes::u32 override
+		auto load(std::string_view const item, nes::span<nes::u8> const buffer) -> nes::u32 override
 		{
             auto file_path = path_;
             if (!file_path.push(item)) { std::abort(); }
@@ -453,7 +453,7 @@ namespace
 				std::abort();
 			}
 
-			auto const res = read(fd, buffer, buffer_size);
+			auto const res = read(fd, buffer.get_data(), buffer.get_length());
 			if (res < 0)
 			{
 				perror("read");

@@ -2,22 +2,21 @@
 
 namespace nes
 {
-	string_builder::string_builder(char* buffer, u32 buffer_length)
+	string_builder::string_builder(span<char> const buffer)
 		: buffer_{ buffer }
-		, buffer_length_{ buffer_length }
 	{
 	}
 
 	auto string_builder::append_char(char const value) -> string_builder&
 	{
-		if (actual_length_ == buffer_length_)
+		if (length_ == buffer_.get_length())
 		{
 			is_good_ = false;
 			return *this;
 		}
 
-		buffer_[actual_length_] = value;
-		actual_length_ += 1;
+		buffer_[length_] = value;
+		length_ += 1;
 		return *this;
 	}
 

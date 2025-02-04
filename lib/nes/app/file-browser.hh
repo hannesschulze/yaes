@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nes/common/types.hh"
+#include "nes/common/span.hh"
 
 namespace nes
 {
@@ -50,7 +51,7 @@ namespace nes::app
 		virtual auto read_next(item* out_item) -> bool = 0;
 		virtual auto navigate_up() -> void = 0;
 		virtual auto navigate(std::string_view) -> void = 0;
-		virtual auto load(std::string_view, u8* buffer, u32 buffer_size) -> u32 = 0;
+		virtual auto load(std::string_view, span<u8>) -> u32 = 0;
 
 	protected:
 		explicit file_browser() = default;

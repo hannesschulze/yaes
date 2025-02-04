@@ -2,6 +2,7 @@
 
 #include "nes/sys/types/cycle-count.hh"
 #include "nes/common/types.hh"
+#include "nes/common/span.hh"
 
 namespace nes
 {
@@ -96,7 +97,7 @@ namespace nes::sys
 
 			explicit sprite() = default;
 
-			explicit sprite(u8 const* data)
+			explicit sprite(span<u8 const, 4> const data)
 				: value{ data[0], data[1], data[2], data[3] }
 			{
 			}

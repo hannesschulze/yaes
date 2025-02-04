@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nes/common/types.hh"
+#include "nes/common/span.hh"
 #include <string_view>
 
 namespace nes
@@ -16,9 +17,8 @@ namespace nes
 	/// Builds a string into a fixed-length buffer.
 	class string_builder
 	{
-		char* buffer_{ nullptr };
-		u32 buffer_length_{ 0 };
-		u32 actual_length_{ 0 };
+		span<char> buffer_;
+		u32 length_{ 0 };
 		bool is_good_{ true };
 
 		enum class format_arg_type
@@ -60,10 +60,10 @@ namespace nes
 		};
 
 	public:
-		explicit string_builder(char* buffer, u32 buffer_length);
+		explicit string_builder(span<char>);
 
 		/// Get the resulting string.
-		auto get_result() const -> std::string_view { return std::string_view{ buffer_, actual_length_ }; }
+		auto get_result() const -> std::string_view { return std::string_view{ buffer_.get_data(), length_ }; }
 
 		/// Returns false after an invalid format string or buffer overflow.
 		auto is_good() const -> bool { return is_good_; }
@@ -104,7 +104,7 @@ namespace nes
 
 	public:
 		explicit string_buffer()
-			: string_builder{ buffer_, Capacity }
+			: string_builder{ buffer_ }
 		{
 		}
 	};

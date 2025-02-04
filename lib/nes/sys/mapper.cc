@@ -16,17 +16,17 @@ namespace nes::sys
 
 			auto validate(cartridge& cartridge) -> status override
 			{
-				if (cartridge.get_ram_length() != 0x2000)
+				if (cartridge.get_ram().get_length() != 0x2000)
 				{
 					return status::error_invalid_ines_data;
 				}
 
-				if (cartridge.get_prg_rom_length() != 0x4000 && cartridge.get_prg_rom_length() != 0x8000)
+				if (cartridge.get_prg_rom().get_length() != 0x4000 && cartridge.get_prg_rom().get_length() != 0x8000)
 				{
 					return status::error_invalid_ines_data;
 				}
 
-				if (cartridge.get_chr_rom_length() != 0x2000)
+				if (cartridge.get_chr_rom().get_length() != 0x2000)
 				{
 					return status::error_invalid_ines_data;
 				}
@@ -52,7 +52,7 @@ namespace nes::sys
 				if (addr <= address{ 0xFFFF })
 				{
 					auto rel = addr.get_absolute() - 0xC000u;
-					if (cartridge.get_prg_rom_length() > 0x4000) { rel += 0x4000; }
+					if (cartridge.get_prg_rom().get_length() > 0x4000) { rel += 0x4000; }
 					return cartridge.get_prg_rom()[rel];
 				}
 
@@ -67,12 +67,12 @@ namespace nes::sys
 				}
 				if (addr <= address{ 0x7FFF })
 				{
-					cartridge.get_ram_mut()[addr.get_absolute() - 0x6000] = value;
+					cartridge.ref_ram()[addr.get_absolute() - 0x6000] = value;
 					return;
 				}
 			}
 
-			auto read_ppu(address const addr, cartridge& cartridge, u8 const* vram) -> u8 override
+			auto read_ppu(address const addr, cartridge& cartridge, span<u8 const> const vram) -> u8 override
 			{
 				if (addr <= address{ 0x1FFF })
 				{
@@ -87,7 +87,7 @@ namespace nes::sys
 				return 0x0;
 			}
 
-			auto write_ppu(address const addr, u8 const value, cartridge& cartridge, u8* vram) -> void override
+			auto write_ppu(address const addr, u8 const value, cartridge& cartridge, span<u8> const vram) -> void override
 			{
 				if (addr <= address{ 0x1FFF })
 				{
@@ -139,8 +139,8 @@ namespace nes::sys
 			auto validate(cartridge&) -> status override { return status::error_unsupported_mapper; }
 			auto read_cpu(address, cartridge&) -> u8 override { return 0; }
 			auto write_cpu(address, u8, cartridge&) -> void override {}
-			auto read_ppu(address, cartridge&, u8 const*) -> u8 override { return 0; }
-			auto write_ppu(address, u8, cartridge&, u8*) -> void override {}
+			auto read_ppu(address, cartridge&, span<u8 const>) -> u8 override { return 0; }
+			auto write_ppu(address, u8, cartridge&, span<u8>) -> void override {}
 		};
 	} // namespace
 

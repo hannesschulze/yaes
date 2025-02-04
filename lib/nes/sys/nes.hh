@@ -5,7 +5,7 @@
 #include "nes/sys/controller.hh"
 #include "nes/sys/cpu.hh"
 #include "nes/sys/ppu.hh"
-#include <string_view>
+#include "nes/common/span.hh"
 
 namespace nes
 {
@@ -29,7 +29,7 @@ namespace nes::sys
 		status status_{ status::error_invalid_ines_data };
 
 	public:
-		explicit nes(display&, u8 const* rom_data, u32 rom_length);
+		explicit nes(display&, span<u8 const> rom_data);
 
 		nes(nes const&) = delete;
 		nes(nes&&) = delete;
