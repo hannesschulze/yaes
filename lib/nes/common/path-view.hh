@@ -5,13 +5,10 @@
 
 namespace nes
 {
-	/// Non-owning copy of a path, consisting of multiple path components stored as string views.
-	///
-	/// This is similar in spirit to a string_view, but for collections of string_views instead of characters.
+	/// Non-owning copy of a path, useful for iterating over its components.
 	class path_view
 	{
-		std::string_view const* components_{ nullptr };
-		u32 component_count_{ 0 };
+		std::string_view path_;
 
 	public:
 		/// An iterator for the path components.
@@ -19,54 +16,37 @@ namespace nes
 		{
 			friend path_view;
 
-			std::string_view const* current_{ nullptr };
-			u32 remaining_{ 0 };
+			char const* current_{ nullptr }; // Start of the current component
+			u32 component_length_{ 0 }; // Length of the current component
+			u32 remaining_{ 0 }; // Number of characters remaining in the buffer, including the current component.
 
 		public:
 			auto operator==(iterator const& other) -> bool { return current_ == other.current_; }
 			auto operator!=(iterator const& other) -> bool { return current_ != other.current_; }
 
-			auto operator*() const -> std::string_view { return current_ ? *current_ : ""; }
-
-			auto operator++() -> iterator&
-			{
-				if (remaining_ > 0)
-				{
-					current_ += 1;
-					remaining_ -= 1;
-				}
-				return *this;
-			}
-
-			auto operator++(int) -> iterator
-			{
-				auto res = *this;
-				++*this;
-				return res;
-			}
+			auto operator*() const -> std::string_view;
+			auto operator++() -> iterator&;
+			auto operator++(int) -> iterator;
 
 		private:
-			explicit iterator() = default;
-			explicit iterator(std::string_view const* current, u32 const remaining)
+			explicit iterator(char const* current, u32 const component_length, u32 const remaining)
 				: current_{ current }
+				, component_length_{ component_length }
 				, remaining_{ remaining }
 			{
 			}
 		};
 
 		explicit path_view() = default;
-
-		explicit path_view(std::string_view const* components, u32 const component_count)
-			: components_{ components }
-			, component_count_{ component_count }
+		explicit path_view(std::string_view const path)
+			: path_{ path }
 		{
 		}
 
-		auto get_components() const -> std::string_view const* { return components_; }
-		auto get_component_count() const -> u32 { return component_count_; }
-		auto get_component(u32 const index) const -> std::string_view { return components_[index]; }
+		auto get_path() const -> std::string_view { return path_; }
 
-		auto begin() const -> iterator { return iterator{ components_, component_count_ }; }
-		auto end() const -> iterator { return iterator{ components_ + component_count_, 0 }; }
+		auto begin() const -> iterator;
+		auto end() const -> iterator;
+		auto is_empty() const -> bool { return begin() == end(); }
 	};
 } // namespace nes::app

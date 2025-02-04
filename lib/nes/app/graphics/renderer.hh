@@ -56,10 +56,10 @@ namespace nes::app
 			i32 const x, i32 const y, color const c, text_attributes const attrs, std::string_view const fmt,
 			Args... args) -> u32
 		{
-			char buffer[width];
-			auto const str = string_builder{ buffer, sizeof(buffer) }.append_format(fmt, args...).get_result();
-			render_text(x, y, str, c, attrs);
-			return static_cast<u32>(str.length());
+			string_buffer<width> buffer{};
+			buffer.append_format(fmt, args...);
+			render_text(x, y, buffer.get_result(), c, attrs);
+			return static_cast<u32>(buffer.get_result().length());
 		}
 
 		template<typename... Args>

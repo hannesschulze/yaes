@@ -6,6 +6,7 @@
 #import "nes/app/file-browser.hh"
 #import "nes/common/display.hh"
 #import "nes/common/path-view.hh"
+#import "nes/common/path-builder.hh"
 #import <memory>
 #import <iostream>
 #import <optional>
@@ -358,26 +359,14 @@ namespace
 
     class file_browser_impl final : public nes::app::file_browser
     {
-		std::vector<std::string> components_;
-		std::vector<std::string_view> component_views_;
+        nes::path_buffer<256> path_;
 		DIR* it_{ nullptr };
 		nes::u32 it_pos_{ 0 };
 
 	public:
 		explicit file_browser_impl()
 		{
-			if (chdir("/") == -1)
-			{
-				perror("chdir");
-				std::abort();
-			}
-
-			it_ = opendir(".");
-			if (!it_)
-			{
-				perror("opendir");
-				std::abort();
-			}
+            reopen_dir();
 		}
 
 		~file_browser_impl() override
@@ -387,73 +376,77 @@ namespace
 
 		auto get_path() const -> nes::path_view override
 		{
-			return nes::path_view{ component_views_.data(), static_cast<nes::u32>(component_views_.size()) };
+			return path_.get_components();
 		}
 
-		auto read_item_count() -> nes::u32 override
+        auto seek(nes::u32 const position) -> void override
 		{
-			while (read_next())
-				;
-			return it_pos_;
-		}
-
-		auto read_items(nes::u32 offset, item* buffer, nes::u32 buffer_size) -> nes::u32 override
-		{
-			seek(offset);
-			auto count = nes::u32{ 0 };
-			for (auto i = nes::u32{ 0 }; i < buffer_size; ++i)
+			if (it_pos_ > position)
 			{
-				auto item = read_next();
-				if (!item) { break; }
-				buffer[count++] = *item;
+				reopen_dir();
 			}
 
-			return count;
+			while (it_pos_ < position)
+			{
+				if (!read_next(nullptr)) { break; }
+			}
+		}
+
+		auto read_next(item* out_item) -> bool override
+		{
+			if (!it_) { return false; }
+
+			while (true)
+			{
+				errno = 0;
+				auto entry = readdir(it_);
+				if (!entry)
+				{
+					if (errno)
+					{
+						perror("readdir");
+						std::abort();
+					}
+
+					return false;
+				}
+
+				auto const name = std::string_view{ entry->d_name };
+				if (name.length() > max_name_length) { continue; }
+				if (name[0] == '.') { continue; }
+
+				auto type = item_type::directory;
+				if (entry->d_type == DT_DIR) { type = item_type::directory; }
+				else if (entry->d_type == DT_REG) { type = item_type::file; }
+				else { continue; }
+
+				it_pos_ += 1;
+                if (out_item) { *out_item = item{ type, name }; }
+				return true;
+			}
 		}
 
 		auto navigate_up() -> void override
 		{
-			if (components_.empty()) { return; }
+            if (!path_.pop()) { return; }
 
-			components_.erase(components_.begin() + static_cast<std::ptrdiff_t>(components_.size() - 1));
-			component_views_.erase(component_views_.begin() + static_cast<std::ptrdiff_t>(component_views_.size() - 1));
-			auto path = std::string{};
-			for (auto const component : get_path())
-			{
-				path += "/";
-				path += component;
-			}
-			path += "/";
-
-			if (chdir(path.c_str()) == -1)
-			{
-				perror("chdir");
-				std::abort();
-			}
-
-			reopen_dir();
+            reopen_dir();
 		}
 
 		auto navigate(std::string_view const item) -> void override
 		{
-			auto item_copy = std::string{ item };
-			if (chdir(item_copy.c_str()) == -1)
-			{
-				perror("chdir");
-				std::abort();
-			}
+            if (!path_.push(item)) { std::abort(); }
 
-			components_.emplace_back(std::move(item_copy));
-			component_views_.clear();
-			for (auto& str : components_) { component_views_.emplace_back(str); }
-
-			reopen_dir();
+            reopen_dir();
 		}
 
 		auto load(std::string_view const item, nes::u8* buffer, nes::u32 const buffer_size) -> nes::u32 override
 		{
-			auto item_copy = std::string{ item };
-			auto const fd = open(item_copy.c_str(), O_RDONLY | O_NOCTTY | O_NDELAY | O_NONBLOCK);
+            auto file_path = path_;
+            if (!file_path.push(item)) { std::abort(); }
+
+            auto const path = std::string{ file_path.get_path() };
+			auto const fd = open(path.c_str(), O_RDONLY);
 			if (fd == -1)
 			{
 				perror("open");
@@ -482,60 +475,16 @@ namespace
 	private:
 		auto reopen_dir() -> void
 		{
-			closedir(it_);
-			it_ = opendir(".");
+			if (it_) { closedir(it_); }
+
+            auto const path = std::string{ path_.get_path() };
+			it_ = opendir(path.c_str());
 			if (!it_)
 			{
 				perror("opendir");
 				std::abort();
 			}
 			it_pos_ = 0;
-		}
-
-		auto seek(nes::u32 const position) -> void
-		{
-			if (it_pos_ > position)
-			{
-				reopen_dir();
-			}
-
-			while (it_pos_ < position)
-			{
-				if (!read_next()) { break; }
-			}
-		}
-
-		auto read_next() -> std::optional<item>
-		{
-			if (!it_) { return std::nullopt; }
-
-			while (true)
-			{
-				errno = 0;
-				auto entry = readdir(it_);
-				if (!entry)
-				{
-					if (errno)
-					{
-						perror("readdir");
-						std::abort();
-					}
-
-					return std::nullopt;
-				}
-
-				auto const name = std::string_view{ entry->d_name };
-				if (name.length() > max_name_length) { continue; }
-				if (name[0] == '.') { continue; }
-
-				auto type = item_type::directory;
-				if (entry->d_type == DT_DIR) { type = item_type::directory; }
-				else if (entry->d_type == DT_REG) { type = item_type::file; }
-				else { continue; }
-
-				it_pos_ += 1;
-				return item{ type, name };
-			}
 		}
     };
 } // namespace

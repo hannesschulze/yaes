@@ -95,4 +95,17 @@ namespace nes
 		auto append_format(std::string_view fmt, format_arg const* args, u32 arg_count) -> string_builder&;
 		auto append_format_arg(format_arg, std::string_view params) -> string_builder&;
 	};
+
+	/// A string builder with a buffer embedded into it.
+	template<u32 Capacity>
+	class string_buffer : public string_builder
+	{
+		char buffer_[Capacity];
+
+	public:
+		explicit string_buffer()
+			: string_builder{ buffer_, Capacity }
+		{
+		}
+	};
 } // namespace nes

@@ -8,4 +8,8 @@ target_sources(
 		box.hh
 		display.hh
 		string-builder.hh
-		string-builder.cc)
+		string-builder.cc
+		path-view.hh
+		path-view.cc
+		path-builder.hh
+		path-builder.cc)

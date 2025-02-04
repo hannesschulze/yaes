@@ -46,8 +46,8 @@ namespace nes::app
 		auto operator=(file_browser&&) -> file_browser& = delete;
 
 		virtual auto get_path() const -> path_view = 0;
-		virtual auto read_item_count() -> u32 = 0;
-		virtual auto read_items(u32 offset, item* buffer, u32 buffer_size) -> u32 = 0;
+		virtual auto seek(u32) -> void = 0;
+		virtual auto read_next(item* out_item) -> bool = 0;
 		virtual auto navigate_up() -> void = 0;
 		virtual auto navigate(std::string_view) -> void = 0;
 		virtual auto load(std::string_view, u8* buffer, u32 buffer_size) -> u32 = 0;
