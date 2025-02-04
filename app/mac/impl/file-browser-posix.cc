@@ -3,11 +3,21 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
 namespace nes::app::mac
 {
 	file_browser_posix::file_browser_posix()
 	{
+		auto const initial_path = getenv("HOME");
+		if (initial_path)
+		{
+			for (auto const component : path_view{ initial_path })
+			{
+				if (path_.push(component) != status::success) { break; }
+			}
+		}
+
 		reopen_directory(path_.get_path());
 	}
 

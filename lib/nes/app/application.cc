@@ -3,17 +3,23 @@
 #include "nes/app/input/input-device-controller.hh"
 #include "nes/app/ui/screen.hh"
 #include "nes/app/graphics/renderer.hh"
-#include "ui/action.hh"
+#include "nes/app/action.hh"
 #include <iostream>
 
 namespace nes::app
 {
 	auto application::display_proxy::switch_buffers() -> void
 	{
+		auto r = renderer{ base };
+
 		if (screen)
 		{
-			auto r = renderer{ base };
 			screen->render(r);
+		}
+
+		if (popup)
+		{
+			popup->render(r);
 		}
 
 		base.switch_buffers();
@@ -25,13 +31,19 @@ namespace nes::app
 		, file_browser_{ file_browser }
 		, screen_title_{ keyboard }
 		, screen_browser_{ keyboard, file_browser }
+		, screen_error_{ keyboard }
 	{
 		display_.screen = &screen_title_;
 	}
 
 	auto application::frame(std::chrono::microseconds const elapsed_time) -> void
 	{
-		if (display_.screen)
+		if (display_.popup)
+		{
+			auto const a = display_.popup->process_events();
+			handle_action(a);
+		}
+		else if (display_.screen)
 		{
 			auto const a = display_.screen->process_events();
 			handle_action(a);
@@ -48,9 +60,12 @@ namespace nes::app
 
 			if (console_->get_status() != status::success)
 			{
+				// TODO: Present as error popup
 				std::cerr << "Invalid state: " << to_string(console_->get_status()) << std::endl;
 				std::abort();
 			}
+
+			// TODO: Handle escape key
 		}
 		else
 		{
@@ -72,12 +87,14 @@ namespace nes::app
 			{
 				console_.clear();
 				display_.screen = &screen_title_;
+				display_.popup = nullptr;
 				break;
 			}
 			case action::type::go_to_browser:
 			{
 				console_.clear();
 				display_.screen = &screen_browser_;
+				display_.popup = nullptr;
 				break;
 			}
 			case action::type::go_to_settings:
@@ -90,31 +107,46 @@ namespace nes::app
 				// TODO
 				break;
 			}
+			case action::type::close_popup:
+			{
+				display_.popup = nullptr;
+				break;
+			}
 			case action::type::launch_game:
 			{
 				u8 buffer[sys::cartridge::max_file_size];
 				auto length = u32{ 0 };
 				if (auto const s = file_browser_.load(a.get_file_name(), buffer, &length); s != status::success)
 				{
-					std::cerr << "Unable to open cartridge file: " << to_string(console_->get_status()) << std::endl;
-					std::abort();
+					show_error("Unable to open file", s);
+					break;
 				}
 
 				console_.emplace(display_, span{ buffer, length });
 				if (console_->get_status() != status::success)
 				{
-					std::cerr << "Unable to load cartridge: " << to_string(console_->get_status()) << std::endl;
-					std::abort();
+					show_error("Unable to load cartridge", console_->get_status());
+					console_.clear();
+					break;
 				}
 
 				display_.screen = nullptr;
+				display_.popup = nullptr;
 				break;
 			}
 			case action::type::show_error:
 			{
-				// TODO
+				show_error(a.get_message(), a.get_error());
 				break;
 			}
 		}
 	}
+
+	auto application::show_error(std::string_view const message, status const error) -> void
+	{
+		screen_error_.set_message(message);
+		screen_error_.set_error(error);
+		display_.popup = &screen_error_;
+	}
+
 } // namespace nes::app

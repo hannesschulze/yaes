@@ -3,6 +3,7 @@ target_sources(
 	PRIVATE
 		application.hh
 		application.cc
+		action.hh
 		file-browser.hh)
 
 add_subdirectory(input)

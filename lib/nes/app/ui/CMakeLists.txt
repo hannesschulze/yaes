@@ -1,10 +1,11 @@
 target_sources(
 	nes
 	PRIVATE
-		action.hh
 		selection.hh
 		screen.hh
 		screen-title.hh
 		screen-title.cc
 		screen-browser.hh
-		screen-browser.cc)
+		screen-browser.cc
+		screen-error.hh
+		screen-error.cc)

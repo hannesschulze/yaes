@@ -129,7 +129,7 @@ namespace nes::app
 		i32 const x, i32 const y, u32 const width, u32 const height, color const c) -> void
 	{
 		if (c == color::transparent) { return; }
-		if (x >= static_cast<i32>(width) || y >= static_cast<i32>(height)) { return; }
+		if (x >= static_cast<i32>(renderer::width) || y >= static_cast<i32>(renderer::height)) { return; }
 
 		auto const resolved = resolve_color(c);
 		auto const x_stop = std::min(x + static_cast<i32>(width), static_cast<i32>(renderer::width));

@@ -3,6 +3,7 @@
 #include "nes/app/input/input-manager.hh"
 #include "nes/app/ui/screen-title.hh"
 #include "nes/app/ui/screen-browser.hh"
+#include "nes/app/ui/screen-error.hh"
 #include "nes/sys/nes.hh"
 #include "nes/common/box.hh"
 #include "nes/common/display.hh"
@@ -27,6 +28,7 @@ namespace nes::app
 		{
 		public:
 			display& base;
+			screen* popup{ nullptr };
 			screen* screen{ nullptr };
 
 			explicit display_proxy(display& base)
@@ -45,6 +47,7 @@ namespace nes::app
 		box<sys::nes> console_{};
 		screen_title screen_title_;
 		screen_browser screen_browser_;
+		screen_error screen_error_;
 
 	public:
 		explicit application(display&, input_device_keyboard&, file_browser& file_browser);
@@ -62,5 +65,6 @@ namespace nes::app
 
 	private:
 		auto handle_action(action) -> void;
+		auto show_error(std::string_view message, status error) -> void;
 	};
 } // namespace nes::app

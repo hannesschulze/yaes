@@ -1,6 +1,6 @@
 #pragma once
 
-#include "nes/app/ui/action.hh"
+#include "nes/app/action.hh"
 
 namespace nes::app
 {

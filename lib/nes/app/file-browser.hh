@@ -30,7 +30,7 @@ namespace nes::app
 			char name_[max_name_length + 1]{};
 
 		public:
-			item() = default;
+			explicit item() = default;
 
 			explicit item(item_type const type, std::string_view const name)
 				: type_{ type }

@@ -20,8 +20,8 @@ namespace nes::app
 
 	/// Renders tiles and other primitive shapes onto a display.
 	///
-	/// The renderer sees the display as a canvas divided into 8x8 tiles. All elements (except shadows and borders) must
-	/// be arranged  on this 8x8 grid.
+	/// The renderer sees the display as a canvas divided into 8x8 tiles. All elements must be arranged  on this 8x8
+	/// grid.
 	class renderer
 	{
 		display& display_;
@@ -36,11 +36,6 @@ namespace nes::app
 		renderer(renderer&&) = delete;
 		auto operator=(renderer const&) -> renderer& = delete;
 		auto operator=(renderer&&) -> renderer& = delete;
-
-		/// If set, add a drop shadow behind newly drawn opaque elements.
-		auto set_shadow(u32 x_px, u32 y_px, color) -> void;
-		/// If set, add an inner border inside newly drawn opaque elements.
-		auto set_border(u32 px, color) -> void;
 
 		/// Render a colored tile at the given tile coordinates.
 		auto render_image_tile(i32 x, i32 y, image_tile const&) -> void;
