@@ -2,6 +2,8 @@
 
 #include "nes/common/types.hh"
 #include "nes/common/span.hh"
+#include "nes/common/status.hh"
+#include <string_view>
 
 namespace nes
 {
@@ -10,6 +12,7 @@ namespace nes
 
 namespace nes::app
 {
+	/// A file browser that has a current directory whose items are iterated.
 	class file_browser
 	{
 	public:
@@ -46,12 +49,23 @@ namespace nes::app
 		auto operator=(file_browser const&) -> file_browser& = delete;
 		auto operator=(file_browser&&) -> file_browser& = delete;
 
+		/// Get the path components of the current working directory.
 		virtual auto get_path() const -> path_view = 0;
+
+		/// Go to directory entry at the given index.
 		virtual auto seek(u32) -> void = 0;
+
+		/// Read the directory entry at the current index.
 		virtual auto read_next(item* out_item) -> bool = 0;
-		virtual auto navigate_up() -> void = 0;
-		virtual auto navigate(std::string_view) -> void = 0;
-		virtual auto load(std::string_view, span<u8>) -> u32 = 0;
+
+		/// Change the current working directory to the parent directory.
+		virtual auto navigate_up() -> status = 0;
+
+		/// Change the current working directory to an item.
+		virtual auto navigate(std::string_view) -> status = 0;
+
+		/// Load a file in the current working directory into memory.
+		virtual auto load(std::string_view, span<u8>, u32* out_length) -> status = 0;
 
 	protected:
 		explicit file_browser() = default;

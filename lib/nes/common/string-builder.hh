@@ -2,6 +2,7 @@
 
 #include "nes/common/types.hh"
 #include "nes/common/span.hh"
+#include "nes/common/status.hh"
 #include <string_view>
 
 namespace nes
@@ -17,9 +18,11 @@ namespace nes
 	/// Builds a string into a fixed-length buffer.
 	class string_builder
 	{
+		template<u32 Capacity>
+		friend class string_buffer;
+
 		span<char> buffer_;
 		u32 length_{ 0 };
-		bool is_good_{ true };
 
 		enum class format_arg_type
 		{
@@ -65,14 +68,11 @@ namespace nes
 		/// Get the resulting string.
 		auto get_result() const -> std::string_view { return std::string_view{ buffer_.get_data(), length_ }; }
 
-		/// Returns false after an invalid format string or buffer overflow.
-		auto is_good() const -> bool { return is_good_; }
-
-		auto append_char(char) -> string_builder&;
-		auto append_string(std::string_view) -> string_builder&;
-		auto append_int(i64, number_format = number_format::decimal) -> string_builder&;
-		auto append_int(u64, number_format = number_format::decimal) -> string_builder&;
-		auto append_bool(bool) -> string_builder&;
+		auto append_char(char) -> status;
+		auto append_string(std::string_view) -> status;
+		auto append_int(i64, number_format = number_format::decimal) -> status;
+		auto append_int(u64, number_format = number_format::decimal) -> status;
+		auto append_bool(bool) -> status;
 
 		/// Print a templated string.
 		///
@@ -82,7 +82,7 @@ namespace nes
 		///
 		/// Curly braces can be escaped by repeating them twice like {{this}}.
 		template<typename... Args>
-		auto append_format(std::string_view const fmt, Args... args) -> string_builder&
+		auto append_format(std::string_view const fmt, Args... args) -> status
 		{
 			constexpr u32 arg_count = sizeof...(Args);
 			// Add another argument at the end so we don't have an empty array expression.
@@ -92,8 +92,8 @@ namespace nes
 		}
 
 	private:
-		auto append_format(std::string_view fmt, format_arg const* args, u32 arg_count) -> string_builder&;
-		auto append_format_arg(format_arg, std::string_view params) -> string_builder&;
+		auto append_format(std::string_view fmt, format_arg const* args, u32 arg_count) -> status;
+		auto append_format_arg(format_arg, std::string_view params) -> status;
 	};
 
 	/// A string builder with a buffer embedded into it.
@@ -106,6 +106,19 @@ namespace nes
 		explicit string_buffer()
 			: string_builder{ buffer_ }
 		{
+		}
+
+		string_buffer(string_buffer const& other)
+			: string_builder{ buffer_ }
+		{
+			std::copy_n(other.buffer_, Capacity, buffer_);
+			length_ = other.length_;
+		}
+
+		auto operator=(string_buffer const& other)
+		{
+			std::copy_n(other.buffer_, Capacity, buffer_);
+			length_ = other.length_;
 		}
 	};
 } // namespace nes

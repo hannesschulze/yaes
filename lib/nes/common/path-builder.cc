@@ -9,28 +9,28 @@ namespace nes
 		if (buffer_.get_length() > 0) { buffer_[length_++] = '/'; }
 	}
 
-	auto path_builder::push(std::string_view component) -> bool
+	auto path_builder::push(std::string_view component) -> status
 	{
 		// Trim leading and trailing slashes
 		while (!component.empty() && component[0] == '/') { component = component.substr(1); }
 		while (!component.empty() && component[component.length() - 1] == '/') { component = component.substr(0, component.length() - 1); }
-		if (component.empty() || std::find(component.begin(), component.end(), '/') != component.end()) { return false; }
+		if (component.empty() || std::find(component.begin(), component.end(), '/') != component.end()) { return status::error_invalid_path; }
 
 		// Check if there is enough remaining capacity for "/<component>"
 		auto const add_leading_slash = length_ == 0 || buffer_[length_ - 1] != '/';
 		auto const length = component.length() + (add_leading_slash ? 1 : 0);
-		if (length_ + length > buffer_.get_length()) { return false; }
+		if (length_ + length > buffer_.get_length()) { return status::error_buffer_overflow; }
 
 		// Append "/<component>"
 		if (add_leading_slash) { buffer_[length_++] = '/'; }
 		for (auto i = u32{ 0 }; i < component.length(); ++i) { buffer_[length_++] = component[i]; }
 
-		return true;
+		return status::success;
 	}
 
-	auto path_builder::pop() -> bool
+	auto path_builder::pop() -> status
 	{
-		if (length_ == 0 || buffer_[length_ - 1] == '/') { return false; }
+		if (length_ == 0 || buffer_[length_ - 1] == '/') { return status::error_invalid_path; }
 
 		// Find the start of the last component.
 		auto last_start = length_ - 1;
@@ -41,6 +41,6 @@ namespace nes
 
 		// Drop everything including the trailing slash.
 		length_ = last_start;
-		return true;
+		return status::success;
 	}
 } // namespace nes

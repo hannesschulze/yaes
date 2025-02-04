@@ -23,7 +23,7 @@ namespace nes::app
 		auto it = event_queue_.begin();
 		if (it == event_queue_.end()) { return input_event{}; }
 
-		auto const event = *it;
+		auto const event = it;
 		auto const k = get_key(*event);
 		auto const pressed = event->pressed;
 		event_queue_.remove(it);

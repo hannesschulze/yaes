@@ -1,10 +1,12 @@
 #include "nes/common/path-view.hh"
+#include "nes/common/debug.hh"
 
 namespace nes
 {
 	auto path_view::iterator::operator*() const -> std::string_view
 	{
-		return current_ ? std::string_view{ current_, component_length_ } : "";
+		NES_ASSERT(current_ != nullptr && component_length_ > 0 && "invalid iterator");
+		return std::string_view{ current_, component_length_ };
 	}
 
 	auto path_view::iterator::operator++() -> iterator&

@@ -7,70 +7,73 @@ namespace nes
 	{
 	}
 
-	auto string_builder::append_char(char const value) -> string_builder&
+	auto string_builder::append_char(char const value) -> status
 	{
-		if (length_ == buffer_.get_length())
-		{
-			is_good_ = false;
-			return *this;
-		}
+		if (length_ == buffer_.get_length()) { return status::error_buffer_overflow; }
 
 		buffer_[length_] = value;
 		length_ += 1;
-		return *this;
+		return status::success;
 	}
 
-	auto string_builder::append_string(std::string_view const value) -> string_builder&
+	auto string_builder::append_string(std::string_view const value) -> status
 	{
+		auto copy = *this;
 		for (auto const c : value)
 		{
-			append_char(c);
+			if (auto const s = copy.append_char(c); s != status::success) { return s; }
 		}
 
-		return *this;
+		*this = copy;
+		return status::success;
 	}
 
-	auto string_builder::append_int(i64 value, number_format const format) -> string_builder&
+	auto string_builder::append_int(i64 value, number_format const format) -> status
 	{
+		auto copy = *this;
 		if (value < 0)
 		{
-			append_char('-');
+			if (auto const s = copy.append_char('-'); s != status::success) { return s; }
 			value += 1; // to prevent lossy conversion to unsigned
 			auto abs_value = static_cast<u64>(-value);
 			abs_value += 1; // to correct the previous offset
-			append_int(abs_value, format);
+			if (auto const s = copy.append_int(abs_value, format); s != status::success) { return s; }
 		}
 		else
 		{
-			append_int(static_cast<u64>(value), format);
+			if (auto const s = copy.append_int(static_cast<u64>(value), format); s != status::success) { return s; }
 		}
 
-		return *this;
+		*this = copy;
+		return status::success;
 	}
 
-	auto string_builder::append_int(u64 value, number_format const format) -> string_builder&
+	auto string_builder::append_int(u64 value, number_format const format) -> status
 	{
 		constexpr auto max_string_length = u32{ 64 }; // worst case is a 64-bit integer in binary representation
 		constexpr auto digits = "0123456789abcdef";
 
+		auto copy = *this;
 		auto base = u64{ 10 };
+		auto prefix = "";
 		switch (format)
 		{
 			case number_format::binary:
-				append_string("0b");
+				prefix = "0b";
 				base = 2;
 				break;
 			case number_format::octal:
-				append_string("0");
+				prefix = "0";
 				base = 8;
 				break;
 			case number_format::decimal:
 				break;
 			case number_format::hexadecimal:
-				append_string("0x");
+				prefix = "0x";
 				base = 16;
 				break;
 		}
+		if (auto const s = copy.append_string(prefix); s != status::success) { return s; }
 
 		char buf[max_string_length + 1] = {}; // null-terminated
 		auto pos = max_string_length;
@@ -89,19 +92,21 @@ namespace nes
 			buf[pos] = '0';
 		}
 
-		append_string(&buf[pos]);
-		return *this;
+		if (const auto s = copy.append_string(&buf[pos]); s != status::success) { return s; }
+
+		*this = copy;
+		return status::success;
 	}
 
-	auto string_builder::append_bool(bool const value) -> string_builder&
+	auto string_builder::append_bool(bool const value) -> status
 	{
-		append_string(value ? "true" : "false");
-		return *this;
+		return append_string(value ? "true" : "false");
 	}
 
-	auto string_builder::append_format(
-		std::string_view const fmt, format_arg const* args, u32 const arg_count) -> string_builder&
+	auto string_builder::append_format(std::string_view const fmt, format_arg const* args, u32 const arg_count) -> status
 	{
+		auto copy = *this;
+
 		// Go through the format string, inserting the arguments for the templates as necessary.
 		auto current_arg = u32{ 0 };
 		for (auto i = u32{ 0 }; i < fmt.length(); ++i)
@@ -112,7 +117,7 @@ namespace nes
 
 				if (fmt[i] == '{') {
 					// escaped '{'
-					append_char('{');
+					if (auto const s = copy.append_char('{'); s != status::success) { return s; }
 				}
 				else
 				{
@@ -128,21 +133,20 @@ namespace nes
 					if (fmt[i] != '}')
 					{
 						// unmatched '{'
-						is_good_ = false;
-						break;
+						return status::error_invalid_format_string;
 					}
 
 					// end of template
 					auto const p = std::string_view{ params, params_length };
 					if (current_arg < arg_count)
 					{
-						append_format_arg(args[current_arg], p);
+						if (auto const s = copy.append_format_arg(args[current_arg], p); s != status::success) { return s; }
 						current_arg += 1;
 					}
 					else
 					{
 						// missing argument in parameter pack
-						is_good_ = false;
+						return status::error_invalid_format_string;
 					}
 				}
 			}
@@ -153,39 +157,41 @@ namespace nes
 				if (fmt[i] == '}')
 				{
 					// escaped '}'
-					append_char('}');
+					if (auto const s = copy.append_char('}'); s != status::success) { return s; }
 				}
 				else
 				{
 					// unmatched '}'
-					is_good_ = false;
-					break;
+					return status::error_invalid_format_string;
 				}
 			}
 			else
 			{
 				// normal character in the template string
-				append_char(fmt[i]);
+				if (auto const s = copy.append_char(fmt[i]); s != status::success) { return s; }
 			}
 		}
 
 		if (current_arg < arg_count)
 		{
 			// not all supplied arguments were used
-			is_good_ = false;
+			return status::error_invalid_format_string;
 		}
 
-		return *this;
+		*this = copy;
+		return status::success;
 	}
 
-	auto string_builder::append_format_arg(format_arg const arg, std::string_view const params) -> string_builder&
+	auto string_builder::append_format_arg(format_arg const arg, std::string_view const params) -> status
 	{
 		auto const parse_params = [&]
 		{
 			if (!params.empty())
 			{
-				is_good_ = false;
+				return status::error_invalid_format_string;
 			}
+
+			return status::success;
 		};
 
 		auto const parse_params_integer = [&](number_format& out_format)
@@ -208,47 +214,43 @@ namespace nes
 			}
 			else
 			{
-				out_format = number_format::decimal;
-				is_good_ = false;
+				return status::error_invalid_format_string;
 			}
+
+			return status::success;
 		};
 
 		switch (arg.type)
 		{
 			case format_arg_type::string:
 			{
-				parse_params();
-				append_string(arg.string);
-				break;
+				if (auto const s = parse_params(); s != status::success) { return s; }
+				return append_string(arg.string);
 			}
 			case format_arg_type::character:
 			{
-				parse_params();
-				append_char(arg.character);
-				break;
+				if (auto const s = parse_params(); s != status::success) { return s; }
+				return append_char(arg.character);
 			}
 			case format_arg_type::signed_integer:
 			{
 				auto format = number_format{};
-				parse_params_integer(format);
-				append_int(arg.signed_integer, format);
-				break;
+				if (auto const s = parse_params_integer(format); s != status::success) { return s; }
+				return append_int(arg.signed_integer, format);
 			}
 			case format_arg_type::unsigned_integer:
 			{
 				auto format = number_format{};
-				parse_params_integer(format);
-				append_int(arg.unsigned_integer, format);
-				break;
+				if (auto const s = parse_params_integer(format); s != status::success) { return s; }
+				return append_int(arg.unsigned_integer, format);
 			}
 			case format_arg_type::boolean:
 			{
-				parse_params();
-				append_bool(arg.character);
-				break;
+				if (auto const s = parse_params(); s != status::success) { return s; }
+				return append_bool(arg.character);
 			}
 		}
 
-		return *this;
+		return status::error_invalid_format_string;
 	}
 } // namespace nes

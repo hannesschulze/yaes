@@ -2,7 +2,7 @@
 
 #include "nes/sys/types/cycle-count.hh"
 #include "nes/sys/types/address.hh"
-#include "nes/sys/types/status.hh"
+#include "nes/common/status.hh"
 #include "nes/common/types.hh"
 
 namespace nes::sys

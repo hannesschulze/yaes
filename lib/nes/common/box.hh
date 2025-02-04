@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nes/common/types.hh"
+#include "nes/common/debug.hh"
 
 namespace nes
 {
@@ -28,10 +29,30 @@ namespace nes
 		auto operator=(box const&) -> box& = delete;
 		auto operator=(box&&) -> box& = delete;
 
-		auto operator*() -> T& { return *get(); }
-		auto operator*() const -> T const& { return *get(); }
-		auto operator->() -> T* { return get(); }
-		auto operator->() const -> T const* { return get(); }
+		auto operator*() -> T&
+		{
+			NES_ASSERT(has_value() && "expected box to be non-empty");
+			return *get();
+		}
+
+		auto operator*() const -> T const&
+		{
+			NES_ASSERT(has_value() && "expected box to be non-empty");
+			return *get();
+		}
+
+		auto operator->() -> T*
+		{
+			NES_ASSERT(has_value() && "expected box to be non-empty");
+			return get();
+		}
+
+		auto operator->() const -> T const*
+		{
+			NES_ASSERT(has_value() && "expected box to be non-empty");
+			return get();
+		}
+
 		operator bool() const { return has_value(); }
 
 		auto has_value() const -> bool { return initialized_; }

@@ -99,7 +99,10 @@ namespace nes::app
 			{
 				if (navigation_steps_ > 0)
 				{
-					file_browser_.navigate_up();
+					if (auto const s = file_browser_.navigate_up(); s != status::success)
+					{
+						return action::show_error(s);
+					}
 					refresh();
 					navigation_steps_ -= 1;
 				}
@@ -115,22 +118,25 @@ namespace nes::app
 				{
 					if (selected->is_parent)
 					{
-						file_browser_.navigate_up();
+						if (auto const s = file_browser_.navigate_up(); s != status::success)
+						{
+							return action::show_error(s);
+						}
 						refresh();
 						if (navigation_steps_ > 0) { navigation_steps_ -= 1; }
 					}
-					else
+					else if (selected->data.get_type() == file_browser::item_type::directory)
 					{
-						switch (selected->data.get_type())
+						if (auto const s = file_browser_.navigate(selected->data.get_name()); s != status::success)
 						{
-							case file_browser::item_type::directory:
-								file_browser_.navigate(selected->data.get_name());
-								refresh();
-								navigation_steps_ += 1;
-								break;
-							case file_browser::item_type::file:
-								return action::launch_game(selected->data.get_name());
+							return action::show_error(s);
 						}
+						refresh();
+						navigation_steps_ += 1;
+					}
+					else if (selected->data.get_type() == file_browser::item_type::file)
+					{
+						return action::launch_game(selected->data.get_name());
 					}
 				}
 			}

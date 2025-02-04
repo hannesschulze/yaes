@@ -68,8 +68,7 @@ namespace nes::app
 			// This input is not assigned -> use the next available controller if available.
 			while (it != controllers_.end())
 			{
-				auto controller = *it;
-				if (controller->is_reliable() && controller->get_index() == input_device_controller::index::unused)
+				if (it->is_reliable() && it->get_index() == input_device_controller::index::unused)
 				{
 					break;
 				}
@@ -79,9 +78,9 @@ namespace nes::app
 			if (it != controllers_.end())
 			{
 				// We've found an unused controller -> assign it.
-				inputs_[i].controller = *it;
+				inputs_[i].controller = &*it;
 				inputs_[i].controller->set_index(static_cast<input_device_controller::index>(i));
-				inputs_[i].device = *it;
+				inputs_[i].device = &*it;
 			}
 			else
 			{

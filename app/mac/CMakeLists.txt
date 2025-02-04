@@ -22,3 +22,5 @@ target_sources(
 		scene.mm
 		view-controller.hh
 		view-controller.mm)
+
+add_subdirectory(impl)

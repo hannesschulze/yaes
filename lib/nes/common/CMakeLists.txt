@@ -13,4 +13,5 @@ target_sources(
 		path-view.cc
 		path-builder.hh
 		path-builder.cc
-		span.hh)
+		span.hh
+		status.hh)

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace nes::sys
+namespace nes
 {
 	/// A status code.
 	enum class status
@@ -10,6 +10,9 @@ namespace nes::sys
 		error_invalid_ines_data,
 		error_unsupported_mapper,
 		error_unsupported_instruction,
+		error_buffer_overflow,
+		error_invalid_path,
+		error_invalid_format_string,
 	};
 
 	constexpr auto to_string(status const status) -> char const*
@@ -26,8 +29,14 @@ namespace nes::sys
 				return "Unsupported mapper";
 			case status::error_unsupported_instruction:
 				return "Unsupported instruction";
+			case status::error_buffer_overflow:
+				return "Buffer overflow";
+			case status::error_invalid_path:
+				return "Invalid path";
+			case status::error_invalid_format_string:
+				return "Invalid format string";
 		}
 
 		return "(invalid)";
 	}
-} // namespace nes::sys
+} // namespace nes

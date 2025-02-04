@@ -1,0 +1,13 @@
+target_sources(
+	nes_app_mac
+	PRIVATE
+		display-spritekit.hh
+		display-spritekit.mm
+		input-device-gc-gamepad.hh
+		input-device-gc-gamepad.mm
+		input-device-gc-keyboard.hh
+		input-device-gc-keyboard.mm
+		input-device-serial-controller.hh
+		input-device-serial-controller.cc
+		file-browser-posix.hh
+		file-browser-posix.cc)

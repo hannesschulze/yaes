@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nes/common/types.hh"
+#include "nes/common/debug.hh"
 
 namespace nes
 {
@@ -21,6 +22,9 @@ namespace nes
 		{
 			using type = T;
 		};
+
+		template<typename T>
+		using remove_const_type = typename remove_const<T>::type;
 	} // namespace detail
 
 	/// Implementation of a container similar to std::span in C++20.
@@ -54,7 +58,7 @@ namespace nes
 			static_assert(Length == ActualLength || Length == detail::span_dynamic_length);
 		}
 
-		span(span<typename detail::remove_const<T>::type, Length> const other)
+		span(span<detail::remove_const_type<T>, Length> const other)
 			: span{ other.data_, other.length_, {} }
 		{
 		}
@@ -65,12 +69,31 @@ namespace nes
 		auto begin() const -> iterator { return data_; }
 		auto end() const -> iterator { return data_ + length_; }
 
-		auto subspan(u32 const first, u32 const length) const -> span<T> { return span{ data_ + first, length }; }
-		auto subspan(u32 const first) const -> span<T> { return subspan(length_ - first); }
-		template<u32 OtherLength>
-		auto subspan(u32 const first) const -> span<T, OtherLength> { return span<T, OtherLength>{ data_ + first, OtherLength, {} }; }
+		auto subspan(u32 const first, u32 const length) const -> span<T>
+		{
+			NES_ASSERT(first + length <= get_length() && "subspan out of bounds");
+			return span{ data_ + first, length };
+		}
 
-		auto operator[](u32 const index) const -> T& { return data_[index]; }
+		auto subspan(u32 const first) const -> span<T>
+		{
+			NES_ASSERT(first <= get_length() && "subspan out of bounds");
+			return subspan(length_ - first);
+		}
+
+		template<u32 OtherLength>
+		auto subspan(u32 const first) const -> span<T, OtherLength>
+		{
+			static_assert(OtherLength < Length);
+			NES_ASSERT(first + OtherLength <= get_length() && "subspan out of bounds");
+			return span<T, OtherLength>{ data_ + first, OtherLength, {} };
+		}
+
+		auto operator[](u32 const index) const -> T&
+		{
+			NES_ASSERT(index < get_length() && "index out of bounds");
+			return data_[index];
+		}
 
 	private:
 		explicit span(T* data, u32 const length, detail::span_unchecked)

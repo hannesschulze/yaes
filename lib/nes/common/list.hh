@@ -1,5 +1,7 @@
 #pragma once
 
+#include "nes/common/debug.hh"
+
 namespace nes
 {
 	/// An intrusive doubly-linked list.
@@ -39,15 +41,23 @@ namespace nes
 			auto operator==(iterator const& other) -> bool { return current_ == other.current_; }
 			auto operator!=(iterator const& other) -> bool { return current_ != other.current_; }
 
-			auto operator*() const -> T* { return current_; }
+			auto operator*() const -> T&
+			{
+				NES_ASSERT(current_ != nullptr && "invalid iterator");
+				return *current_;
+			}
+
+			auto operator->() const -> T*
+			{
+				NES_ASSERT(current_ != nullptr && "invalid iterator");
+				return current_;
+			}
 
 			auto operator++() -> iterator&
 			{
-				if (current_)
-				{
-					node& current_node = *current_;
-					current_ = current_node.next_;
-				}
+				NES_ASSERT(current_ != nullptr && "invalid iterator");
+				node& current_node = *current_;
+				current_ = current_node.next_;
 				return *this;
 			}
 
@@ -126,7 +136,7 @@ namespace nes
 		/// Remove an item from the list by its iterator.
 		auto remove(iterator it) -> bool
 		{
-			if (it != end()) { return remove(**it); }
+			if (it != end()) { return remove(*it); }
 			return false;
 		}
 	};
