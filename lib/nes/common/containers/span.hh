@@ -79,7 +79,7 @@ namespace nes
 		auto subspan(u32 const first) const -> span<T>
 		{
 			NES_ASSERT(first <= get_length() && "subspan out of bounds");
-			return subspan(length_ - first);
+			return subspan(first, length_ - first);
 		}
 
 		template<u32 OtherLength>
