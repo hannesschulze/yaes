@@ -9,11 +9,47 @@
 namespace nes::sys
 {
 	class ppu;
+	class cpu;
 	class controller;
 	class cartridge;
 
+	namespace detail
+	{
+		enum class addressing_mode
+		{
+			accumulator,          // A
+			immediate,            // #v
+			zero_page,            // d
+			absolute,             // a
+			relative,             // *+d
+			indirect,             // (a)
+			zero_page_indexed_x,  // d,x
+			zero_page_indexed_y,  // d,y
+			absolute_indexed_x,   // a,x
+			absolute_indexed_y,   // a,y
+			indexed_indirect,     // (d,x)
+			indirect_indexed,     // (d),y
+		};
+
+		enum class force_page_crossing
+		{
+			no,
+			yes,
+		};
+
+		template<detail::addressing_mode Mode>
+		class operand;
+		template<detail::addressing_mode Mode>
+		auto fetch_operand(cpu&, force_page_crossing = force_page_crossing::no) -> operand<Mode>;
+	} // namespace detail
+
 	class cpu
 	{
+		template<detail::addressing_mode Mode>
+		friend class detail::operand;
+		template<detail::addressing_mode Mode>
+		friend auto detail::fetch_operand(cpu&, detail::force_page_crossing) -> detail::operand<Mode>;
+
 		static constexpr auto ram_size = u32{ 0x800 };
 		static constexpr auto stack_offset = address{ 0x100 };
 
@@ -55,80 +91,6 @@ namespace nes::sys
 			} p{};
 		} registers_{};
 
-		enum class addressing_mode
-		{
-			accumulator,          // A
-			immediate,            // #v
-			zero_page,            // d
-			absolute,             // a
-			relative,             // *+d
-			indirect,             // (a)
-			zero_page_indexed_x,  // d,x
-			zero_page_indexed_y,  // d,y
-			absolute_indexed_x,   // a,x
-			absolute_indexed_y,   // a,y
-			indexed_indirect,     // (d,x)
-			indirect_indexed,     // (d),y
-		};
-
-		enum class force_page_crossing
-		{
-			no,
-			yes,
-		};
-
-		template<addressing_mode>
-		class operand
-		{
-			cpu& cpu_;
-			address address_;
-			cycle_count cycles_;
-
-		public:
-			explicit operand(cpu& cpu, address const address, cycle_count const cycles)
-				: cpu_{ cpu }
-				, address_{ address }
-				, cycles_{ cycles }
-			{
-			}
-
-			auto read() -> u8 { return cpu_.read8(address_); }
-			auto write(u8 const value) -> void { cpu_.write8(address_, value); }
-			auto get_address() -> address { return address_; }
-			auto get_cycles() -> cycle_count { return cycles_; }
-		};
-
-		template<>
-		class operand<addressing_mode::accumulator>
-		{
-			cpu& cpu_;
-
-		public:
-			explicit operand(cpu& cpu)
-				: cpu_{ cpu }
-			{
-			}
-
-			auto read() -> u8 { return cpu_.registers_.a; }
-			auto write(u8 const value) -> void { cpu_.registers_.a = value; }
-			auto get_cycles() -> cycle_count { return cycle_count::from_cpu(2); }
-		};
-
-		template<>
-		class operand<addressing_mode::immediate>
-		{
-			u8 value_{ 0 };
-
-		public:
-			explicit operand(u8 const value)
-				: value_{ value }
-			{
-			}
-
-			auto read() -> u8 { return value_; }
-			auto get_cycles() -> cycle_count { return cycle_count::from_cpu(2); }
-		};
-
 	public:
 		explicit cpu(ppu&, cartridge&, controller& controller_1, controller& controller_2);
 
@@ -159,7 +121,7 @@ namespace nes::sys
 #define DEFINE_SIMPLE_INSTRUCTION(name) \
 	auto run_##name() -> status;
 #define DEFINE_OPERAND_INSTRUCTION(name) \
-	template<addressing_mode Mode> auto run_##name() -> status;
+	template<detail::addressing_mode Mode> auto run_##name() -> status;
 
 		DEFINE_OPERAND_INSTRUCTION(brk)
 		DEFINE_OPERAND_INSTRUCTION(ora)
@@ -250,7 +212,7 @@ namespace nes::sys
 		auto pop_stack8() -> u8;
 		auto pop_stack16() -> u16;
 		auto update_zn(u8 value) -> void;
-		template<addressing_mode Mode>
+		template<detail::addressing_mode Mode>
 		auto branch(bool condition) -> void;
 		auto execute_interrupt(address) -> void;
 
@@ -265,9 +227,69 @@ namespace nes::sys
 		auto eval_cmp(u8 a, u8 b) -> void;
 		auto eval_plp() -> void;
 		auto eval_php() -> void;
+	};
 
-		// Operands
+	namespace detail
+	{
+		template<addressing_mode>
+		class operand
+		{
+			cpu& cpu_;
+			address address_;
+			cycle_count cycles_;
 
+		public:
+			explicit operand(cpu& cpu, address const address, cycle_count const cycles)
+				: cpu_{ cpu }
+				, address_{ address }
+				, cycles_{ cycles }
+			{
+			}
+
+			auto read() -> u8 { return cpu_.read8(address_); }
+			auto write(u8 const value) -> void { cpu_.write8(address_, value); }
+			auto get_address() -> address { return address_; }
+			auto get_cycles() -> cycle_count { return cycles_; }
+		};
+
+		template<>
+		class operand<addressing_mode::accumulator>
+		{
+			cpu& cpu_;
+
+		public:
+			explicit operand(cpu& cpu)
+				: cpu_{ cpu }
+			{
+			}
+
+			auto read() -> u8 { return cpu_.registers_.a; }
+			auto write(u8 const value) -> void { cpu_.registers_.a = value; }
+			auto get_cycles() -> cycle_count { return cycle_count::from_cpu(2); }
+		};
+
+		template<>
+		class operand<addressing_mode::immediate>
+		{
+			u8 value_{ 0 };
+
+		public:
+			explicit operand(u8 const value)
+				: value_{ value }
+			{
+			}
+
+			auto read() -> u8 { return value_; }
+			auto get_cycles() -> cycle_count { return cycle_count::from_cpu(2); }
+		};
+
+		template<addressing_mode Mode>
+		auto fetch_operand(cpu&, force_page_crossing) -> operand<Mode>;
+		template<>
+		auto fetch_operand<addressing_mode::accumulator>(cpu&, force_page_crossing) -> operand<addressing_mode::accumulator>;
+		template<>
+		auto fetch_operand<addressing_mode::immediate>(cpu&, force_page_crossing) -> operand<addressing_mode::immediate>;
+		
 #define DEFINE_CYCLE_COUNT(name) \
 	template<addressing_mode Mode> static auto name##_cycle_count() -> cycle_count;
 #define DEFINE_CYCLE_COUNT_INSTANCE(name, mode, value) \
@@ -292,12 +314,5 @@ namespace nes::sys
 
 #undef DEFINE_CYCLE_COUNT
 #undef DEFINE_CYCLE_COUNT_INSTANCE
-
-		template<addressing_mode Mode>
-		auto fetch_operand(force_page_crossing = force_page_crossing::no) -> operand<Mode>;
-		template<>
-		auto fetch_operand<addressing_mode::accumulator>(force_page_crossing) -> operand<addressing_mode::accumulator>;
-		template<>
-		auto fetch_operand<addressing_mode::immediate>(force_page_crossing) -> operand<addressing_mode::immediate>;
-	};
+	} // namespace detail
 } // namespace nes::sys

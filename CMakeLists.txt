@@ -17,13 +17,13 @@ target_compile_options(nes_options
     INTERFACE
         -Wall
         -Wextra
+        -Wno-changes-meaning # fuck off, gcc
+        -Wno-unused-function # fr
         -Wnon-virtual-dtor
         -Wcast-align
         -Wunused
         -Woverloaded-virtual
         -Wpedantic
-        -Wconversion
-        -Wsign-conversion
         -Wdouble-promotion
         -Wformat=2
         -Wswitch-enum)
