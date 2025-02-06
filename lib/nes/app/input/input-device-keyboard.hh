@@ -43,6 +43,8 @@ namespace nes::app
 			return res;
 		}
 
+		auto get_name() const -> std::string_view final { return "Keyboard"; }
+
 	protected:
 		explicit input_device_keyboard() = default;
 	};

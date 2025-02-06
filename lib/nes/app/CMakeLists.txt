@@ -4,7 +4,8 @@ target_sources(
 		application.hh
 		application.cc
 		action.hh
-		file-browser.hh)
+		file-browser.hh
+		preferences.hh)
 
 add_subdirectory(input)
 add_subdirectory(graphics)

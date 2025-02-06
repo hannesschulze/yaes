@@ -5,6 +5,8 @@ target_sources(
 		debug.hh
 		rgb.hh
 		display.hh
-		status.hh)
+		status.hh
+		fps-counter.hh
+		fps-counter.cc)
 
 add_subdirectory(containers)

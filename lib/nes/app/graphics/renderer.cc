@@ -64,7 +64,7 @@ namespace nes::app
 	}
 
 	auto renderer::render_text(
-		i32 x, i32 const y, std::string_view const str, color const c, text_attributes const attributes) -> void
+		i32 x, i32 const y, std::string_view const str, color const c, text_attributes const attributes) -> u32
 	{
 		// Enforce max length
 		char buffer[width];
@@ -121,9 +121,10 @@ namespace nes::app
 		// Draw the text
 		for (auto i = u32{ 0 }; i < length; ++i)
 		{
-			auto const character = static_cast<u32>(buffer[i]);
-			render_mask_tile(x + static_cast<i32>(i), y, resolve_character(character), c);
+			render_mask_tile(x + static_cast<i32>(i), y, resolve_character(buffer[i]), c);
 		}
+
+		return length;
 	}
 
 	auto renderer::render_rect(i32 const x, i32 const y, u32 const width, u32 const height, color const c) -> void
@@ -217,7 +218,7 @@ namespace nes::app
 		return rgb::from_hex(0x000000);
 	}
 
-	auto renderer::resolve_character(u32 const c) const -> mask_tile
+	auto renderer::resolve_character(char const c) const -> mask_tile
 	{
 		switch (c)
 		{
@@ -260,6 +261,10 @@ namespace nes::app
 			case '9': return tiles::digit_9;
 			case '&': return tiles::symbol_ampersand;
 			case '\'': return tiles::symbol_apostrophe;
+			case '@': return tiles::symbol_at;
+			case '\\': return tiles::symbol_backslash;
+			case '{': return tiles::symbol_brace_open;
+			case '}': return tiles::symbol_brace_close;
 			case '[': return tiles::symbol_bracket_open;
 			case ']': return tiles::symbol_bracket_close;
 			case ':': return tiles::symbol_colon;
@@ -269,18 +274,21 @@ namespace nes::app
 			case '!': return tiles::symbol_exclamation_mark;
 			case '>': return tiles::symbol_greater;
 			case '#': return tiles::symbol_hashtag;
+			case '^': return tiles::symbol_hat;
 			case '<': return tiles::symbol_less;
 			case '-': return tiles::symbol_minus;
 			case '(': return tiles::symbol_paren_open;
 			case ')': return tiles::symbol_paren_close;
 			case '%': return tiles::symbol_percent;
 			case '.': return tiles::symbol_period;
+			case '|': return tiles::symbol_pipe;
 			case '+': return tiles::symbol_plus;
 			case '?': return tiles::symbol_question_mark;
 			case '"': return tiles::symbol_quotation_mark;
 			case ';': return tiles::symbol_semicolon;
 			case '/': return tiles::symbol_slash;
 			case '*': return tiles::symbol_star;
+			case '_': return tiles::symbol_underscore;
 			default: return tiles::symbol_unknown;
 		}
 	}

@@ -21,15 +21,25 @@ namespace nes::app
 			popup->render(r);
 		}
 
+		if (preferences_.get_fps_counter())
+		{
+			r.render_rect(30, 29, 2, 1, color::fixed_black);
+			auto const attrs = text_attributes{}
+				.set_max_width(2)
+				.set_alignment(text_alignment::right);
+			r.render_text_format(32, 29, color::fixed_white, attrs, "{}", fps_counter.get_fps());
+		}
+
 		base.switch_buffers();
 	}
 
 	application::application(display& display, input_device_keyboard& keyboard, file_browser& file_browser)
-		: display_{ display }
-		, input_manager_{ keyboard }
+		: input_manager_{ keyboard }
 		, file_browser_{ file_browser }
+		, display_{ preferences_, display }
 		, screen_title_{ keyboard }
 		, screen_browser_{ keyboard, file_browser }
+		, screen_settings_{ input_manager_, preferences_ }
 		, screen_error_{ keyboard }
 		, screen_confirm_quit_{ keyboard }
 	{
@@ -38,6 +48,8 @@ namespace nes::app
 
 	auto application::frame(std::chrono::microseconds const elapsed_time) -> void
 	{
+		display_.fps_counter.frame(elapsed_time);
+
 		if (display_.popup)
 		{
 			auto const a = display_.popup->process_events();
@@ -99,21 +111,18 @@ namespace nes::app
 			}
 			case action::type::go_to_title:
 			{
-				console_.clear();
-				display_.screen = &screen_title_;
-				display_.popup = nullptr;
+				go_to_screen(&screen_title_);
 				break;
 			}
 			case action::type::go_to_browser:
+			case action::type::confirm_quit:
 			{
-				console_.clear();
-				display_.screen = &screen_browser_;
-				display_.popup = nullptr;
+				go_to_screen(&screen_browser_);
 				break;
 			}
 			case action::type::go_to_settings:
 			{
-				// TODO
+				go_to_screen(&screen_settings_);
 				break;
 			}
 			case action::type::go_to_help:
@@ -130,13 +139,6 @@ namespace nes::app
 			{
 				display_.popup = nullptr;
 				display_.screen = nullptr;
-				break;
-			}
-			case action::type::confirm_quit:
-			{
-				display_.popup = nullptr;
-				display_.screen = &screen_browser_;
-				console_.clear();
 				break;
 			}
 			case action::type::launch_game:
@@ -175,5 +177,12 @@ namespace nes::app
 		screen_error_.set_error(error);
 		screen_error_.set_action(action);
 		display_.popup = &screen_error_;
+	}
+
+	auto application::go_to_screen(screen* screen) -> void
+	{
+		console_.clear();
+		display_.screen = screen;
+		display_.popup = nullptr;
 	}
 } // namespace nes::app

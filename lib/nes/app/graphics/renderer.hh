@@ -46,7 +46,7 @@ namespace nes::app
 		/// Render an image at the given tile coordinates.
 		auto render_image(i32 x, i32 y, image_view) -> void;
 		/// Render a string of text at the given tile coordinates (one tile per character).
-		auto render_text(i32 x, i32 y, std::string_view, color, text_attributes = text_attributes{}) -> void;
+		auto render_text(i32 x, i32 y, std::string_view, color, text_attributes = text_attributes{}) -> u32;
 
 		template<typename... Args>
 		auto render_text_format(
@@ -55,8 +55,7 @@ namespace nes::app
 		{
 			string_buffer<width> buffer{};
 			buffer.append_format(fmt, args...);
-			render_text(x, y, buffer.get_result(), c, attrs);
-			return static_cast<u32>(buffer.get_result().length());
+			return render_text(x, y, buffer.get_result(), c, attrs);
 		}
 
 		template<typename... Args>
@@ -75,6 +74,6 @@ namespace nes::app
 
 	private:
 		auto resolve_color(color) const -> rgb;
-		auto resolve_character(u32) const -> mask_tile;
+		auto resolve_character(char) const -> mask_tile;
 	};
 } // namespace nes::app

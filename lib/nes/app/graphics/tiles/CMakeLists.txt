@@ -40,6 +40,10 @@ nes_generate_tiles(
 		digit_8.png
 		digit_9.png
 		symbol_ampersand.png
+		symbol_at.png
+		symbol_backslash.png
+		symbol_brace_open.png
+		symbol_brace_close.png
 		symbol_apostrophe.png
 		symbol_bracket_open.png
 		symbol_bracket_close.png
@@ -50,18 +54,21 @@ nes_generate_tiles(
 		symbol_exclamation_mark.png
 		symbol_greater.png
 		symbol_hashtag.png
+		symbol_hat.png
 		symbol_less.png
 		symbol_minus.png
 		symbol_paren_open.png
 		symbol_paren_close.png
 		symbol_percent.png
 		symbol_period.png
+		symbol_pipe.png
 		symbol_plus.png
 		symbol_question_mark.png
 		symbol_quotation_mark.png
 		symbol_semicolon.png
 		symbol_slash.png
 		symbol_star.png
+		symbol_underscore.png
 		symbol_unknown.png)
 
 nes_generate_tiles(

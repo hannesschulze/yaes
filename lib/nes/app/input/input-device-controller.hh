@@ -2,7 +2,6 @@
 
 #include "nes/app/input/input-device.hh"
 #include "nes/common/containers/list.hh"
-#include <string_view>
 
 namespace nes::app
 {
@@ -22,9 +21,6 @@ namespace nes::app
 		/// If this returns false, the controller is not automatically selected on startup if there is no other
 		/// controller already selected.
 		virtual auto is_reliable() const -> bool = 0;
-
-		/// Human-readable name for the controller.
-		virtual auto get_name() const -> std::string_view = 0;
 
 		/// Get the (persistent) player index for the controller, if already set before.
 		virtual auto get_index() const -> index = 0;

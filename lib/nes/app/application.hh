@@ -3,12 +3,15 @@
 #include "nes/app/input/input-manager.hh"
 #include "nes/app/ui/screen-title.hh"
 #include "nes/app/ui/screen-browser.hh"
+#include "nes/app/ui/screen-settings.hh"
 #include "nes/app/ui/screen-freeze.hh"
 #include "nes/app/ui/screen-error.hh"
 #include "nes/app/ui/screen-confirm-quit.hh"
+#include "nes/app/preferences.hh"
 #include "nes/sys/nes.hh"
 #include "nes/common/containers/box.hh"
 #include "nes/common/display.hh"
+#include "nes/common/fps-counter.hh"
 #include "nes/common/types.hh"
 #include <chrono>
 
@@ -28,13 +31,17 @@ namespace nes::app
 		/// buffers.
 		class display_proxy final : public display
 		{
+			preferences& preferences_;
+
 		public:
+			fps_counter fps_counter;
 			display& base;
 			screen* popup{ nullptr };
 			screen* screen{ nullptr };
 
-			explicit display_proxy(display& base)
-				: base{ base }
+			explicit display_proxy(preferences& preferences, display& base)
+				: preferences_{ preferences }
+				, base{ base }
 			{
 			}
 
@@ -43,18 +50,20 @@ namespace nes::app
 			auto switch_buffers() -> void override;
 		};
 
-		display_proxy display_;
 		input_manager input_manager_;
+		preferences preferences_;
 		file_browser& file_browser_;
+		display_proxy display_;
 		box<sys::nes> console_{};
 		screen_title screen_title_;
 		screen_browser screen_browser_;
+		screen_settings screen_settings_;
 		screen_freeze screen_freeze_;
 		screen_error screen_error_;
 		screen_confirm_quit screen_confirm_quit_;
 
 	public:
-		explicit application(display&, input_device_keyboard&, file_browser& file_browser);
+		explicit application(display&, input_device_keyboard&, file_browser&);
 
 		application(application const&) = delete;
 		application(application&&) = delete;
@@ -70,5 +79,6 @@ namespace nes::app
 	private:
 		auto handle_action(action const&) -> void;
 		auto show_error(std::string_view message, status error, action const& action = action::close_popup()) -> void;
+		auto go_to_screen(screen*) -> void;
 	};
 } // namespace nes::app

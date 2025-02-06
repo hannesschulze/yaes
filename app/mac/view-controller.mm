@@ -22,7 +22,6 @@
 {
 	auto view = [[SKView alloc] init];
 	[view setIgnoresSiblingOrder:YES];
-	[view setShowsFPS:YES];
 	[view presentScene:_scene];
 
 	[self setView:view];
