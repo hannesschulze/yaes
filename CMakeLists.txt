@@ -8,7 +8,6 @@ option(NES_ENABLE_SANITIZER_ADDRESS "Enable address sanitizer." OFF)
 option(NES_ENABLE_SANITIZER_UNDEFINED_BEHAVIOR "Enable undefined behavior sanitizer." OFF)
 option(NES_ENABLE_DEBUG_OUTPUT "Enable debug output." OFF)
 option(NES_ENABLE_SNAPSHOTS "Enable snapshot functionality for debugging purposes." OFF)
-option(NES_ENABLE_PPU "Enable Picture Processing Unit." ON)
 
 add_library(nes_options INTERFACE)
 add_library(nes::options ALIAS nes_options)

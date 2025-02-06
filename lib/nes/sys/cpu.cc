@@ -50,13 +50,11 @@ namespace nes::sys
 	{
 		// See https://www.nesdev.org/wiki/CPU_unofficial_opcodes
 
-#ifdef NES_ENABLE_PPU
 		if (nmi_pending_)
 		{
 			execute_interrupt(address{ 0xFFFA });
 			nmi_pending_ = false;
 		}
-#endif
 
 		auto const opcode = advance_pc8();
 		switch (opcode)
@@ -1349,7 +1347,6 @@ namespace nes::sys
 		if (addr <= address{ 0x1FFF }) { return ram_[addr.get_absolute() % ram_size]; }
 		if (addr <= address{ 0x3FFF })
 		{
-#ifdef NES_ENABLE_PPU
 			switch (addr.get_absolute() % 8)
 			{
 				case 0: return ppu_.read_latch();
@@ -1363,16 +1360,9 @@ namespace nes::sys
 				default: return 0x0;
 		
 			}
-#else
-			return 0x0;
-#endif
 		}
 		if (addr <= address{ 0x4013 }) { return 0x0; } // TODO: APU registers
-#ifdef NES_ENABLE_PPU
 		if (addr == address{ 0x4014 }) { return ppu_.read_latch(); }
-#else
-		if (addr == address{ 0x4014 }) { return 0x0; }
-#endif
 		if (addr == address{ 0x4015 }) { return 0x0; } // TODO: APU registers
 		if (addr == address{ 0x4016 }) { return controller_1_.read(); }
 		if (addr == address{ 0x4017 }) { return controller_2_.read(); }
@@ -1392,7 +1382,6 @@ namespace nes::sys
 		if (addr <= address{ 0x1FFF }) { ram_[addr.get_absolute() % ram_size] = value; return; }
 		if (addr <= address{ 0x3FFF })
 		{
-#ifdef NES_ENABLE_PPU
 			switch (addr.get_absolute() % 8)
 			{
 				case 0: ppu_.write_ppuctrl(value); return;
@@ -1405,16 +1394,9 @@ namespace nes::sys
 				case 7: ppu_.write_ppudata(value); return;
 				default: return;
 			}
-#else
-			return;
-#endif
 		}
 		if (addr <= address{ 0x4013 }) { return; } // TODO: APU registers
-#ifdef NES_ENABLE_PPU
 		if (addr == address{ 0x4014 }) { ppu_.write_oamdma(value); return; }
-#else
-		if (addr == address{ 0x4014 }) { return; }
-#endif
 		if (addr == address{ 0x4015 }) { return; } // TODO: APU registers
 		if (addr == address{ 0x4016 }) { controller_1_.write(value); return; }
 		if (addr == address{ 0x4017 }) { controller_2_.write(value); return; }
