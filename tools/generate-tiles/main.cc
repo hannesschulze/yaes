@@ -38,10 +38,10 @@ namespace
 		static auto from_hex(std::uint32_t const hex) -> rgba
 		{
 			auto res = rgba{};
-			res.r = (hex & 0xFF000000) >> 24;
-			res.g = (hex & 0x00FF0000) >> 16;
-			res.b = (hex & 0x0000FF00) >> 8;
-			res.a = (hex & 0x000000FF) >> 0;
+			res.r = static_cast<std::uint8_t>((hex & 0xFF000000) >> 24);
+			res.g = static_cast<std::uint8_t>((hex & 0x00FF0000) >> 16);
+			res.b = static_cast<std::uint8_t>((hex & 0x0000FF00) >> 8);
+			res.a = static_cast<std::uint8_t>((hex & 0x000000FF) >> 0);
 			return res;
 		}
 
@@ -285,11 +285,11 @@ int main(int const argc, char** const argv)
 
 	source << "} // namespace nes::app::tiles\n";
 
-	auto header_file = std::ofstream{ output_header };
+	auto header_file = std::ofstream{ std::string{ output_header } };
 	header_file << header.str();
 	header_file.flush();
 
-	auto source_file = std::ofstream{ output_source };
+	auto source_file = std::ofstream{ std::string{ output_source } };
 	source_file << source.str();
 	source_file.flush();
 
