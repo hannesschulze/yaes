@@ -16,7 +16,7 @@ namespace nes::app
 		struct item
 		{
 			bool is_parent{ false };
-			file_browser::item base{};
+			file_browser::entry entry{};
 		};
 
 		class selection_impl final : public selection<item, page_size>

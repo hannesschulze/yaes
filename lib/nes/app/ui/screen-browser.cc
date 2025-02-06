@@ -8,16 +8,15 @@
 namespace nes::app
 {
 	auto screen_browser::selection_impl::render_item(
-		renderer& renderer, item const& item, i32 const x, i32 const y, u32 const width,
-		color const color) const -> void
+		renderer& renderer, item const& item, i32 const x, i32 const y, u32 const width, color const c) const -> void
 	{
-		switch (item.base.get_type())
+		switch (item.entry.get_type())
 		{
-			case file_browser::item_type::file: renderer.render_mask_tile(x, y, tiles::icon_cartridge, color); break;
-			case file_browser::item_type::directory: renderer.render_mask_tile(x, y, tiles::icon_directory, color); break;
+			case file_browser::entry_type::file: renderer.render_mask_tile(x, y, tiles::icon_cartridge, c); break;
+			case file_browser::entry_type::directory: renderer.render_mask_tile(x, y, tiles::icon_directory, c); break;
 		}
 
-		renderer.render_text(x + 2, y, item.base.get_name(), color, text_attributes{}
+		renderer.render_text(x + 2, y, item.entry.get_name(), c, text_attributes{}
 			.set_ellipsize_mode(ellipsize_mode::end)
 			.set_max_width(width - 2));
 	}
@@ -31,7 +30,7 @@ namespace nes::app
 			if (page == 0)
 			{
 				items[count].is_parent = true;
-				items[count].base = file_browser::item{ file_browser::item_type::directory, "[Parent Directory]" };
+				items[count].entry = file_browser::entry{ file_browser::entry_type::directory, "[Parent Directory]" };
 				count += 1;
 			}
 			else
@@ -44,11 +43,11 @@ namespace nes::app
 		file_browser_.seek(position);
 		while (count < page_size)
 		{
-			auto item = file_browser::item{};
-			if (!file_browser_.read_next(&item)) { break; }
+			auto entry = file_browser::entry{};
+			if (!file_browser_.read_next(&entry)) { break; }
 
 			items[count].is_parent = false;
-			items[count].base = item;
+			items[count].entry = entry;
 			count += 1;
 		}
 
@@ -125,18 +124,18 @@ namespace nes::app
 						refresh();
 						if (navigation_steps_ > 0) { navigation_steps_ -= 1; }
 					}
-					else if (selected->base.get_type() == file_browser::item_type::directory)
+					else if (selected->entry.get_type() == file_browser::entry_type::directory)
 					{
-						if (auto const s = file_browser_.navigate(selected->base.get_name()); s != status::success)
+						if (auto const s = file_browser_.navigate(selected->entry.get_name()); s != status::success)
 						{
 							return action::show_error("Unable to navigate to directory", s);
 						}
 						refresh();
 						navigation_steps_ += 1;
 					}
-					else if (selected->base.get_type() == file_browser::item_type::file)
+					else if (selected->entry.get_type() == file_browser::entry_type::file)
 					{
-						return action::launch_game(selected->base.get_name());
+						return action::launch_game(selected->entry.get_name());
 					}
 				}
 			}

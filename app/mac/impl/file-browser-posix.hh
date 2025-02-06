@@ -19,7 +19,7 @@ namespace nes::app::mac
 
 		auto get_path() const -> path_view override { return path_.get_components(); }
 		auto seek(u32) -> void override;
-		auto read_next(item* out_item) -> bool override;
+		auto read_next(entry* out_entry) -> bool override;
 		auto navigate_up() -> status override;
 		auto navigate(std::string_view) -> status override;
 		auto load(std::string_view, span<u8>, u32* out_length) -> status override;

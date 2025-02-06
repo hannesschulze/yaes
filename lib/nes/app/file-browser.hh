@@ -18,27 +18,28 @@ namespace nes::app
 	public:
 		static constexpr auto max_name_length = u32{ 64 };
 
-		enum class item_type
+		enum class entry_type
 		{
 			directory,
 			file,
 		};
 
-		class item
+		/// An entry in a directory.
+		class entry
 		{
-			item_type type_{ item_type::directory };
+			entry_type type_{ entry_type::directory };
 			char name_[max_name_length + 1]{};
 
 		public:
-			explicit item() = default;
+			explicit entry() = default;
 
-			explicit item(item_type const type, std::string_view const name)
+			explicit entry(entry_type const type, std::string_view const name)
 				: type_{ type }
 			{
 				std::copy_n(name.begin(), std::min(static_cast<u32>(name.length()), max_name_length), name_);
 			}
 
-			auto get_type() const -> item_type { return type_; }
+			auto get_type() const -> entry_type { return type_; }
 			auto get_name() const -> std::string_view { return name_; }
 		};
 
@@ -55,8 +56,8 @@ namespace nes::app
 		/// Go to directory entry at the given index.
 		virtual auto seek(u32) -> void = 0;
 
-		/// Read the directory entry at the current index.
-		virtual auto read_next(item* out_item) -> bool = 0;
+		/// Read the directory entry at the current index and move the index forward by 1.
+		virtual auto read_next(entry* out_entry) -> bool = 0;
 
 		/// Change the current working directory to the parent directory.
 		virtual auto navigate_up() -> status = 0;

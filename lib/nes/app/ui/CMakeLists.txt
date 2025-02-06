@@ -9,6 +9,8 @@ target_sources(
 		screen-browser.cc
 		screen-freeze.hh
 		screen-freeze.cc
+		screen-settings.hh
+		screen-settings.cc
 		screen-error.hh
 		screen-error.cc
 		screen-confirm-quit.hh

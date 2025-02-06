@@ -39,31 +39,31 @@ namespace nes::app::mac
 		}
 	}
 
-	auto file_browser_posix::read_next(item* out_item) -> bool
+	auto file_browser_posix::read_next(entry* out_entry) -> bool
 	{
 		if (!it_) { return false; }
 
 		while (true)
 		{
 			errno = 0;
-			auto const entry = readdir(it_);
-			if (!entry)
+			auto const ent = readdir(it_);
+			if (!ent)
 			{
 				if (errno) { perror("file_browser_posix: readdir"); }
 				return false;
 			}
 
-			auto const name = std::string_view{ entry->d_name };
+			auto const name = std::string_view{ ent->d_name };
 			if (name.length() > max_name_length) { continue; }
 			if (name[0] == '.') { continue; }
 
-			auto type = item_type::directory;
-			if (entry->d_type == DT_DIR) { type = item_type::directory; }
-			else if (entry->d_type == DT_REG) { type = item_type::file; }
+			auto type = entry_type{};
+			if (ent->d_type == DT_DIR) { type = entry_type::directory; }
+			else if (ent->d_type == DT_REG) { type = entry_type::file; }
 			else { continue; }
 
 			it_pos_ += 1;
-			if (out_item) { *out_item = item{ type, name }; }
+			if (out_entry) { *out_entry = entry{ type, name }; }
 			return true;
 		}
 	}
