@@ -58,11 +58,6 @@ namespace nes
 			static_assert(Length == ActualLength || Length == detail::span_dynamic_length);
 		}
 
-		span(span<detail::remove_const_type<T>, Length> const other)
-			: span{ other.data_, other.length_, {} }
-		{
-		}
-
 		auto get_data() const -> T* { return data_; }
 		auto get_length() const -> u32 { return length_; }
 		auto is_empty() const -> bool { return length_ == 0; }

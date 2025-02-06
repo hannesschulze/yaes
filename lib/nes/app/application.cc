@@ -151,7 +151,7 @@ namespace nes::app
 					break;
 				}
 
-				console_.emplace(display_, span{ buffer, length });
+				console_.emplace(display_, span<u8 const>{ buffer, length });
 				if (console_->get_status() != status::success)
 				{
 					show_error("Unable to load cartridge", console_->get_status());
