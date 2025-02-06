@@ -21,10 +21,10 @@ namespace nes::app::mac
 		auto seek(u32) -> void override;
 		auto read_next(entry* out_entry) -> bool override;
 		auto navigate_up() -> status override;
-		auto navigate(std::string_view) -> status override;
-		auto load(std::string_view, span<u8>, u32* out_length) -> status override;
+		auto navigate(string_view) -> status override;
+		auto load(string_view, span<u8>, u32* out_length) -> status override;
 
 	private:
-		auto reopen_directory(std::string_view path) -> status;
+		auto reopen_directory(string_view path) -> status;
 	};
 } // namespace nes::app::mac

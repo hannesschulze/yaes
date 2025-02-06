@@ -7,6 +7,7 @@
 #include "nes/app/graphics/tiles/characters.hh"
 #include "nes/app/graphics/tiles/borders.hh"
 #include "nes/common/display.hh"
+#include "nes/common/utils.hh"
 
 namespace nes::app
 {
@@ -64,32 +65,32 @@ namespace nes::app
 	}
 
 	auto renderer::render_text(
-		i32 x, i32 const y, std::string_view const str, color const c, text_attributes const attributes) -> u32
+		i32 x, i32 const y, string_view const str, color const c, text_attributes const attributes) -> u32
 	{
 		// Enforce max length
 		char buffer[width];
-		auto const length = std::min(static_cast<u32>(str.length()), std::min(width, attributes.get_max_width()));
-		auto const ellipsize_dots = std::min(length, u32{ 3 });
+		auto const length = min(str.get_length(), min(width, attributes.get_max_width()));
+		auto const ellipsize_dots = min(length, u32{ 3 });
 
 		// Enforce ellipsize mode
-		if (str.length() > length)
+		if (str.get_length() > length)
 		{
 			switch (attributes.get_ellipsize_mode())
 			{
 				case ellipsize_mode::clip:
 				{
-					std::copy_n(str.begin(), length, buffer);
+					copy(str.get_data(), buffer, length);
 					break;
 				}
 				case ellipsize_mode::end:
 				{
-					std::copy_n(str.begin(), length, buffer);
+					copy(str.get_data(), buffer, length);
 					for (auto i = u32{ 0 }; i < ellipsize_dots; ++i) { buffer[length - 1 - i] = '.'; }
 					break;
 				}
 				case ellipsize_mode::start:
 				{
-					std::copy_n(str.begin() + str.length() - length, length, buffer);
+					copy(str.get_data() + str.get_length() - length, buffer, length);
 					for (auto i = u32{ 0 }; i < ellipsize_dots; ++i) { buffer[i] = '.'; }
 					break;
 				}
@@ -98,16 +99,16 @@ namespace nes::app
 					auto const visible = length - ellipsize_dots;
 					auto const start = visible / 2;
 					auto const end = visible - start;
-					std::copy_n(str.begin(), start, buffer);
+					copy(str.get_data(), buffer, start);
 					for (auto i = u32{ 0 }; i < ellipsize_dots; ++i) { buffer[start + i] = '.'; }
-					std::copy_n(str.begin() + str.length() - end, end, buffer + start + ellipsize_dots);
+					copy(str.get_data() + str.get_length() - end, buffer + start + ellipsize_dots, end);
 					break;
 				}
 			}
 		}
 		else
 		{
-			std::copy_n(str.begin(), length, buffer);
+			copy(str.get_data(), buffer, length);
 		}
 
 		// Enforce alignment
@@ -132,10 +133,10 @@ namespace nes::app
 		if (c == color::transparent) { return; }
 
 		auto const resolved = resolve_color(c);
-		auto const x_stop = std::min(x + static_cast<i32>(width), static_cast<i32>(renderer::width));
-		auto const y_stop = std::min(y + static_cast<i32>(height), static_cast<i32>(renderer::height));
-		auto const x_start = std::max(x, 0);
-		auto const y_start = std::max(y, 0);
+		auto const x_stop = min(x + static_cast<i32>(width), static_cast<i32>(renderer::width));
+		auto const y_stop = min(y + static_cast<i32>(height), static_cast<i32>(renderer::height));
+		auto const x_start = max(x, 0);
+		auto const y_start = max(y, 0);
 		for (auto y_px = i32{ y_start * 8 }; y_px < y_stop * 8; ++y_px)
 		{
 			for (auto x_px = i32{ x_start * 8 }; x_px < x_stop * 8; ++x_px)
@@ -149,10 +150,10 @@ namespace nes::app
 	{
 		if (width <= 1 || height <= 1) { return; }
 
-		auto const x_last = std::min(x + static_cast<i32>(width), static_cast<i32>(renderer::width)) - 1;
-		auto const y_last = std::min(y + static_cast<i32>(height), static_cast<i32>(renderer::height)) - 1;
-		auto const x_start = std::max(x, 0);
-		auto const y_start = std::max(y, 0);
+		auto const x_last = min(x + static_cast<i32>(width), static_cast<i32>(renderer::width)) - 1;
+		auto const y_last = min(y + static_cast<i32>(height), static_cast<i32>(renderer::height)) - 1;
+		auto const x_start = max(x, 0);
+		auto const y_start = max(y, 0);
 		for (auto border_y = i32{ y_start }; border_y <= y_last; ++border_y)
 		{
 			for (auto border_x = i32{ x_start }; border_x <= x_last; ++border_x)

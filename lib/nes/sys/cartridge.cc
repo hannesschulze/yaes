@@ -1,6 +1,6 @@
 #include "nes/sys/cartridge.hh"
 #include "nes/common/status.hh"
-#include <algorithm>
+#include "nes/common/utils.hh"
 
 namespace nes::sys
 {
@@ -27,16 +27,16 @@ namespace nes::sys
 		prg_rom_size_ = h.get_prg_rom_banks() * prg_rom_bank_size;
 		if (data.get_length() < offset + prg_rom_size_) { return; }
 		if (prg_rom_size_ > max_prg_rom_size) { return; }
-		std::copy_n(&data[offset], prg_rom_size_, prg_rom_);
+		copy(&data[offset], prg_rom_, prg_rom_size_);
 
 		offset += prg_rom_size_;
 
 		chr_rom_size_ = h.get_chr_rom_banks() * chr_rom_bank_size;
 		if (data.get_length() < offset + chr_rom_size_) { return; }
 		if (chr_rom_size_ > max_chr_rom_size) { return; }
-		std::copy_n(&data[offset], chr_rom_size_, chr_rom_);
+		copy(&data[offset], chr_rom_, chr_rom_size_);
 
-		ram_size_ = std::max(h.get_ram_banks(), 1u) * ram_bank_size;
+		ram_size_ = max(h.get_ram_banks(), u32{ 1 }) * ram_bank_size;
 		if (ram_size_ > max_ram_size) { return; }
 
 		status_ = get_mapper().validate(*this);

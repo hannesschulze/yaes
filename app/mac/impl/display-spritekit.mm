@@ -22,8 +22,8 @@ namespace nes::app::mac
 
 	auto display_spritekit::switch_buffers() -> void
 	{
-		std::swap(buffer_back_, buffer_front_);
-		std::swap(bytes_back_, bytes_front_);
+		swap(buffer_back_, buffer_front_);
+		swap(bytes_back_, bytes_front_);
 
 		auto texture = [SKTexture textureWithData:buffer_front_ size:CGSizeMake(width, height) flipped:YES];
 		[texture setFilteringMode:SKTextureFilteringNearest];

@@ -2,6 +2,7 @@
 
 #include "nes/sys/types/cycle-count.hh"
 #include "nes/sys/types/address.hh"
+#include "nes/sys/types/snapshot.hh"
 #include "nes/common/status.hh"
 #include "nes/common/types.hh"
 
@@ -10,7 +11,6 @@ namespace nes::sys
 	class ppu;
 	class controller;
 	class cartridge;
-	struct snapshot;
 
 	class cpu
 	{
@@ -138,7 +138,9 @@ namespace nes::sys
 		auto operator=(cpu&&) -> cpu& = delete;
 
 		auto get_cycles() const -> cycle_count { return current_cycles_; }
+#ifdef NES_ENABLE_SNAPSHOTS
 		auto build_snapshot(snapshot&) -> void;
+#endif
 		auto stall_cycles(cycle_count) -> void;
 		auto trigger_nmi() -> void;
 		auto step() -> status;

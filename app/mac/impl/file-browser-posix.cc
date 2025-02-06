@@ -53,8 +53,8 @@ namespace nes::app::mac
 				return false;
 			}
 
-			auto const name = std::string_view{ ent->d_name };
-			if (name.length() > max_name_length) { continue; }
+			auto const name = string_view{ ent->d_name };
+			if (name.get_length() > max_name_length) { continue; }
 			if (name[0] == '.') { continue; }
 
 			auto type = entry_type{};
@@ -77,7 +77,7 @@ namespace nes::app::mac
 		return status::success;
 	}
 
-	auto file_browser_posix::navigate(std::string_view const item) -> status
+	auto file_browser_posix::navigate(string_view const item) -> status
 	{
 		auto new_path = path_;
 		if (auto const s = new_path.push(item); s != status::success) { return s; }
@@ -86,12 +86,12 @@ namespace nes::app::mac
 		return status::success;
 	}
 
-	auto file_browser_posix::load(std::string_view const item, span<u8> const buffer, u32* out_length) -> status
+	auto file_browser_posix::load(string_view const item, span<u8> const buffer, u32* out_length) -> status
 	{
 		auto file_path = path_;
 		if (auto const s = file_path.push(item); s != status::success) { return s; }
 
-		auto const file_path_str = std::string{ file_path.get_path() };
+		auto const file_path_str = std::string{ file_path.get_path().get_data(), file_path.get_path().get_length() };
 		auto const fd = open(file_path_str.c_str(), O_RDONLY);
 		if (fd == -1)
 		{
@@ -121,9 +121,9 @@ namespace nes::app::mac
 		return status::success;
 	}
 
-	auto file_browser_posix::reopen_directory(std::string_view const path) -> status
+	auto file_browser_posix::reopen_directory(string_view const path) -> status
 	{
-		auto const path_str = std::string{ path };
+		auto const path_str = std::string{ path.get_data(), path.get_length() };
 		auto const new_it = opendir(path_str.c_str());
 		if (!new_it)
 		{

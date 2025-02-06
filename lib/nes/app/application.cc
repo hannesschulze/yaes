@@ -46,9 +46,9 @@ namespace nes::app
 		display_.screen = &screen_title_;
 	}
 
-	auto application::frame(std::chrono::microseconds const elapsed_time) -> void
+	auto application::frame(u32 const elapsed_time_us) -> void
 	{
-		display_.fps_counter.frame(elapsed_time);
+		display_.fps_counter.frame(elapsed_time_us);
 
 		if (display_.popup)
 		{
@@ -89,7 +89,7 @@ namespace nes::app
 
 			// The scene is rendered by the console after the PPU requests a new frame (thus calling
 			// display_proxy::switch_buffers).
-			console_->step(elapsed_time);
+			console_->step(sys::cycle_count::from_microseconds(elapsed_time_us));
 
 			if (console_->get_status() != status::success)
 			{
@@ -171,7 +171,7 @@ namespace nes::app
 		}
 	}
 
-	auto application::show_error(std::string_view const message, status const error, action const& action) -> void
+	auto application::show_error(string_view const message, status const error, action const& action) -> void
 	{
 		screen_error_.set_message(message);
 		screen_error_.set_error(error);

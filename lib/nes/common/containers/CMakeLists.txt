@@ -9,4 +9,6 @@ target_sources(
 		path-view.cc
 		span.hh
 		string-builder.hh
-		string-builder.cc)
+		string-builder.cc
+		string-view.hh
+		string-view.cc)

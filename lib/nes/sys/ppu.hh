@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nes/sys/types/cycle-count.hh"
+#include "nes/sys/types/snapshot.hh"
 #include "nes/common/containers/span.hh"
 #include "nes/common/types.hh"
 
@@ -15,7 +16,6 @@ namespace nes::sys
 	class address;
 	class cpu;
 	class cartridge;
-	struct snapshot;
 
 	class ppu
 	{
@@ -239,7 +239,9 @@ namespace nes::sys
 		auto operator=(ppu&&) -> ppu& = delete;
 
 		auto get_cycles() const -> cycle_count { return current_cycles_; }
+#ifdef NES_ENABLE_SNAPSHOTS
 		auto build_snapshot(snapshot&) -> void;
+#endif
 		auto step() -> void;
 
 		// Memory access

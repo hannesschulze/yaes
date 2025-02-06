@@ -3,10 +3,10 @@
 
 namespace nes
 {
-	auto path_view::iterator::operator*() const -> std::string_view
+	auto path_view::iterator::operator*() const -> string_view
 	{
 		NES_ASSERT(current_ != nullptr && component_length_ > 0 && "invalid iterator");
-		return std::string_view{ current_, component_length_ };
+		return string_view{ current_, component_length_ };
 	}
 
 	auto path_view::iterator::operator++() -> iterator&
@@ -41,11 +41,11 @@ namespace nes
 
 	auto path_view::begin() const -> iterator
 	{
-		return ++iterator{ path_.data(), 0, static_cast<u32>(path_.size()) };
+		return ++iterator{ path_.get_data(), 0, path_.get_length() };
 	}
 
 	auto path_view::end() const -> iterator
 	{
-		return iterator{ path_.data() + path_.size(), 0, 0 };
+		return iterator{ path_.get_data() + path_.get_length(), 0, 0 };
 	}
 } // namespace nes

@@ -1,10 +1,11 @@
 #pragma once
 
 #include "nes/common/containers/span.hh"
+#include "nes/common/containers/string-view.hh"
 #include "nes/common/containers/path-view.hh"
 #include "nes/common/types.hh"
 #include "nes/common/status.hh"
-#include <string_view>
+#include "nes/common/utils.hh"
 
 namespace nes
 {
@@ -21,9 +22,9 @@ namespace nes
 		explicit path_builder(span<char>);
 
 		auto get_components() const -> path_view { return path_view{ get_path() }; }
-		auto get_path() const -> std::string_view { return std::string_view{ buffer_.get_data(), length_ }; }
+		auto get_path() const -> string_view { return string_view{ buffer_.get_data(), length_ }; }
 
-		auto push(std::string_view) -> status;
+		auto push(string_view) -> status;
 		auto pop() -> status;
 	};
 
@@ -42,13 +43,13 @@ namespace nes
 		path_buffer(path_buffer const& other)
 			: path_builder{ buffer_ }
 		{
-			std::copy_n(other.buffer_, Capacity, buffer_);
+			copy(other.buffer_, buffer_, Capacity);
 			length_ = other.length_;
 		}
 
 		auto operator=(path_buffer const& other)
 		{
-			std::copy_n(other.buffer_, Capacity, buffer_);
+			copy(other.buffer_, buffer_, Capacity);
 			length_ = other.length_;
 		}
 	};

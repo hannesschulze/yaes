@@ -13,7 +13,6 @@
 #include "nes/common/display.hh"
 #include "nes/common/fps-counter.hh"
 #include "nes/common/types.hh"
-#include <chrono>
 
 namespace nes::app
 {
@@ -71,14 +70,14 @@ namespace nes::app
 		auto operator=(application&&) -> application& = delete;
 
 		/// Request a new frame for the application.
-		auto frame(std::chrono::microseconds elapsed_time) -> void;
+		auto frame(u32 elapsed_time_us) -> void;
 
 		auto add_controller(input_device_controller& c) -> void { input_manager_.add_controller(c); }
 		auto remove_controller(input_device_controller& c) -> void { input_manager_.remove_controller(c); }
 
 	private:
 		auto handle_action(action const&) -> void;
-		auto show_error(std::string_view message, status error, action const& action = action::close_popup()) -> void;
+		auto show_error(string_view message, status error, action const& action = action::close_popup()) -> void;
 		auto go_to_screen(screen*) -> void;
 	};
 } // namespace nes::app

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nes/sys/types/cycle-count.hh"
+#include "nes/sys/types/snapshot.hh"
 #include "nes/sys/cartridge.hh"
 #include "nes/sys/controller.hh"
 #include "nes/sys/cpu.hh"
@@ -14,8 +15,6 @@ namespace nes
 
 namespace nes::sys
 {
-	struct snapshot;
-
 	/// The main console abstraction.
 	class nes
 	{
@@ -43,10 +42,11 @@ namespace nes::sys
 		auto ref_controller_2() -> controller& { return controller_2_; }
 
 		auto step() -> void;
-		auto step(std::chrono::microseconds delta) -> void;
 		auto step(cycle_count delta) -> void;
 		auto step_to_nmi() -> void;
 
+#ifdef NES_ENABLE_SNAPSHOTS
 		auto get_snapshot() -> snapshot;
+#endif
 	};
 } // namespace nes::sys

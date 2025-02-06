@@ -17,7 +17,7 @@ namespace nes::app::mac
 		~input_device_serial_controller() override;
 
 		auto is_reliable() const -> bool override;
-		auto get_name() const -> std::string_view override { return path_; }
+		auto get_name() const -> string_view override { return path_; }
 		auto get_index() const -> index override { return index_; }
 		auto set_index(index const v) -> void override { index_ = v; }
 		auto read_buttons() -> sys::button_mask override;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "nes/sys/types/button-mask.hh"
-#include <string_view>
+#include "nes/common/containers/string-view.hh"
 
 namespace nes::app
 {
@@ -20,7 +20,7 @@ namespace nes::app
 		virtual auto read_buttons() -> sys::button_mask = 0;
 
 		/// Human-readable name for the device.
-		virtual auto get_name() const -> std::string_view = 0;
+		virtual auto get_name() const -> string_view = 0;
 
 	protected:
 		explicit input_device() = default;

@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef NES_ENABLE_SNAPSHOTS
+
 #include "nes/sys/types/cycle-count.hh"
 #include "nes/common/types.hh"
 #include <vector>
@@ -61,3 +63,5 @@ namespace nes::sys
 
 	inline auto operator!=(snapshot const& a, snapshot const& b) -> bool { return !(a == b); }
 } // namespace nes::sys
+
+#endif

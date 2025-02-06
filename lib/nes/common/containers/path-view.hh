@@ -1,14 +1,14 @@
 #pragma once
 
+#include "nes/common/containers/string-view.hh"
 #include "nes/common/types.hh"
-#include <string_view>
 
 namespace nes
 {
 	/// Non-owning copy of a path, useful for iterating over its components.
 	class path_view
 	{
-		std::string_view path_;
+		string_view path_;
 
 	public:
 		/// An iterator for the path components.
@@ -24,7 +24,7 @@ namespace nes
 			auto operator==(iterator const& other) -> bool { return current_ == other.current_; }
 			auto operator!=(iterator const& other) -> bool { return current_ != other.current_; }
 
-			auto operator*() const -> std::string_view;
+			auto operator*() const -> string_view;
 			auto operator++() -> iterator&;
 			auto operator++(int) -> iterator;
 
@@ -38,12 +38,12 @@ namespace nes
 		};
 
 		explicit path_view() = default;
-		explicit path_view(std::string_view const path)
+		explicit path_view(string_view const path)
 			: path_{ path }
 		{
 		}
 
-		auto get_path() const -> std::string_view { return path_; }
+		auto get_path() const -> string_view { return path_; }
 
 		auto begin() const -> iterator;
 		auto end() const -> iterator;

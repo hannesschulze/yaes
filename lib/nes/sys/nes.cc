@@ -1,5 +1,4 @@
 #include "nes/sys/nes.hh"
-#include "nes/sys/types/snapshot.hh"
 
 namespace nes::sys
 {
@@ -10,11 +9,6 @@ namespace nes::sys
 		, cpu_{ ppu_, cartridge_, controller_1_, controller_2_ }
 		, status_{ cartridge_.get_status() }
 	{
-	}
-
-	auto nes::step(std::chrono::microseconds const delta) -> void
-	{
-		step(cycle_count::from_duration(delta));
 	}
 
 	auto nes::step() -> void
@@ -49,6 +43,7 @@ namespace nes::sys
 		}
 	}
 
+#ifdef NES_ENABLE_SNAPSHOTS
 	auto nes::get_snapshot() -> snapshot
 	{
 		auto res = snapshot{};
@@ -57,4 +52,5 @@ namespace nes::sys
 		ppu_.build_snapshot(res);
 		return res;
 	}
+#endif
 } // namespace nes::sys

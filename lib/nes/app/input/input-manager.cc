@@ -15,7 +15,7 @@ namespace nes::app
 				return res;
 			}
 
-			auto get_name() const -> std::string_view override { return "(None)"; }
+			auto get_name() const -> string_view override { return "(None)"; }
 			auto read_buttons() -> sys::button_mask override { return sys::button_mask{}; }
 		};
 	} // namespace

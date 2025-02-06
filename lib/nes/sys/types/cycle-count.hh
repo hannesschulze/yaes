@@ -1,7 +1,6 @@
 #pragma once
 
 #include "nes/common/types.hh"
-#include <chrono>
 
 namespace nes::sys
 {
@@ -34,9 +33,9 @@ namespace nes::sys
 			return cycle_count{ units };
 		}
 
-		static constexpr auto from_duration(std::chrono::microseconds const duration) -> cycle_count
+		static constexpr auto from_microseconds(u64 const microseconds) -> cycle_count
 		{
-			return from_units(static_cast<u64>(duration.count()) * second().get_units() / (1000 * 1000));
+			return from_units(microseconds * second().get_units() / (1000 * 1000));
 		}
 
 		static constexpr auto from_cpu(u64 const cpu_cycles) -> cycle_count
@@ -52,9 +51,9 @@ namespace nes::sys
 		/// Value in implementation-defined units.
 		constexpr auto get_units() const -> u64 { return units_; }
 
-		constexpr auto to_duration() const -> std::chrono::microseconds
+		constexpr auto to_microseconds() const -> u64
 		{
-			return std::chrono::microseconds{ get_units() * 1000 * 1000 / second().get_units() };
+			return get_units() * 1000 * 1000 / second().get_units();
 		}
 
 		constexpr auto to_cpu() const -> u64

@@ -5,6 +5,7 @@
 #import "impl/input-device-gc-gamepad.hh"
 #import "impl/input-device-serial-controller.hh"
 #import "nes/app/application.hh"
+#import <vector>
 #import <memory>
 #import <optional>
 
@@ -90,9 +91,9 @@ namespace
 {
     auto const lastTimestamp = _lastTimestamp.value_or(currentTime);
     _lastTimestamp = currentTime;
-    auto deltaMicroseconds = static_cast<nes::u64>((currentTime - lastTimestamp) * 1000. * 1000.);
-	deltaMicroseconds = std::min(deltaMicroseconds, nes::u64{ 50000 });
-    _app->frame(std::chrono::microseconds{ deltaMicroseconds });
+    auto deltaMicroseconds = static_cast<nes::u32>((currentTime - lastTimestamp) * 1000. * 1000.);
+	deltaMicroseconds = nes::min(deltaMicroseconds, nes::u32{ 50000 });
+    _app->frame(deltaMicroseconds);
 }
 
 - (void)handleKeyboardConnected:(NSNotification*)notification

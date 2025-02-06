@@ -16,7 +16,7 @@ namespace nes::app::mac
 
 		auto is_reliable() const -> bool override { return true; }
 		auto get_controller() const -> GCController* { return [profile_ controller]; }
-		auto get_name() const -> std::string_view override;
+		auto get_name() const -> string_view override;
 		auto get_index() const -> index override;
 		auto set_index(index) -> void override;
 		auto read_buttons() -> sys::button_mask override;

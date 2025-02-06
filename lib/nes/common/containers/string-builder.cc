@@ -16,7 +16,7 @@ namespace nes
 		return status::success;
 	}
 
-	auto string_builder::append_string(std::string_view const value) -> status
+	auto string_builder::append_string(string_view const value) -> status
 	{
 		auto copy = *this;
 		for (auto const c : value)
@@ -103,13 +103,13 @@ namespace nes
 		return append_string(value ? "true" : "false");
 	}
 
-	auto string_builder::append_format(std::string_view const fmt, format_arg const* args, u32 const arg_count) -> status
+	auto string_builder::append_format(string_view const fmt, format_arg const* args, u32 const arg_count) -> status
 	{
 		auto copy = *this;
 
 		// Go through the format string, inserting the arguments for the templates as necessary.
 		auto current_arg = u32{ 0 };
-		for (auto i = u32{ 0 }; i < fmt.length(); ++i)
+		for (auto i = u32{ 0 }; i < fmt.get_length(); ++i)
 		{
 			if (fmt[i] == '{')
 			{
@@ -122,10 +122,10 @@ namespace nes
 				else
 				{
 					// start of template
-					auto const params = &fmt[i]; // remember start position
+					auto const params_start = i; // remember start position
 					auto params_length = u32{ 0 };
 					// skip to the end of the template
-					while (fmt[i] && fmt[i] != '}')
+					while (i < fmt.get_length() && fmt[i] != '}')
 					{
 						params_length++;
 						i++;
@@ -137,7 +137,7 @@ namespace nes
 					}
 
 					// end of template
-					auto const p = std::string_view{ params, params_length };
+					auto const p = fmt.substring(params_start, params_length);
 					if (current_arg < arg_count)
 					{
 						if (auto const s = copy.append_format_arg(args[current_arg], p); s != status::success) { return s; }
@@ -182,11 +182,11 @@ namespace nes
 		return status::success;
 	}
 
-	auto string_builder::append_format_arg(format_arg const arg, std::string_view const params) -> status
+	auto string_builder::append_format_arg(format_arg const arg, string_view const params) -> status
 	{
 		auto const parse_params = [&]
 		{
-			if (!params.empty())
+			if (!params.is_empty())
 			{
 				return status::error_invalid_format_string;
 			}
@@ -196,7 +196,7 @@ namespace nes
 
 		auto const parse_params_integer = [&](number_format& out_format)
 		{
-			if (params.empty() || params == "d")
+			if (params.is_empty() || params == "d")
 			{
 				out_format = number_format::decimal;
 			}

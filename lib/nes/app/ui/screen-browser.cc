@@ -4,6 +4,7 @@
 #include "nes/app/graphics/tiles/icons.hh"
 #include "nes/app/input/input-device-keyboard.hh"
 #include "nes/common/containers/path-view.hh"
+#include "nes/common/utils.hh"
 
 namespace nes::app
 {
@@ -152,6 +153,6 @@ namespace nes::app
 		// Round up to get page count.
 		auto const page_count = (count + (page_size - 1)) / page_size;
 		// Always show at least one page.
-		selection_.set_page_count(std::max(u32{ 1 }, page_count));
+		selection_.set_page_count(max(u32{ 1 }, page_count));
 	}
 } // namespace nes::app

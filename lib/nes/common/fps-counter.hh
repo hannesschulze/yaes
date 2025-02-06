@@ -1,7 +1,6 @@
 #pragma once
 
 #include "nes/common/types.hh"
-#include <chrono>
 
 namespace nes
 {
@@ -17,7 +16,7 @@ namespace nes
 	public:
 		explicit fps_counter() = default;
 
-		auto frame(std::chrono::microseconds elapsed_time) -> void;
+		auto frame(u32 elapsed_time_us) -> void;
 		auto get_fps() const -> u32 { return buffered_fps_; }
 	};
 } // namespace nes

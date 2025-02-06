@@ -7,7 +7,7 @@ namespace nes::app::mac
 	{
 	}
 
-	auto input_device_gc_gamepad::get_name() const -> std::string_view
+	auto input_device_gc_gamepad::get_name() const -> string_view
 	{
 		return [[get_controller() vendorName] UTF8String];
 	}

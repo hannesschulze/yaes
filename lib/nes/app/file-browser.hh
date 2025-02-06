@@ -1,9 +1,10 @@
 #pragma once
 
 #include "nes/common/containers/span.hh"
+#include "nes/common/containers/string-view.hh"
 #include "nes/common/types.hh"
 #include "nes/common/status.hh"
-#include <string_view>
+#include "nes/common/utils.hh"
 
 namespace nes
 {
@@ -33,14 +34,14 @@ namespace nes::app
 		public:
 			explicit entry() = default;
 
-			explicit entry(entry_type const type, std::string_view const name)
+			explicit entry(entry_type const type, string_view const name)
 				: type_{ type }
 			{
-				std::copy_n(name.begin(), std::min(static_cast<u32>(name.length()), max_name_length), name_);
+				copy(name.get_data(), name_, min(name.get_length(), max_name_length));
 			}
 
 			auto get_type() const -> entry_type { return type_; }
-			auto get_name() const -> std::string_view { return name_; }
+			auto get_name() const -> string_view { return name_; }
 		};
 
 		virtual ~file_browser() = default;
@@ -63,10 +64,10 @@ namespace nes::app
 		virtual auto navigate_up() -> status = 0;
 
 		/// Change the current working directory to an item.
-		virtual auto navigate(std::string_view) -> status = 0;
+		virtual auto navigate(string_view) -> status = 0;
 
 		/// Load a file in the current working directory into memory.
-		virtual auto load(std::string_view, span<u8>, u32* out_length) -> status = 0;
+		virtual auto load(string_view, span<u8>, u32* out_length) -> status = 0;
 
 	protected:
 		explicit file_browser() = default;

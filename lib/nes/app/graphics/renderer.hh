@@ -3,8 +3,8 @@
 #include "nes/app/graphics/color.hh"
 #include "nes/app/graphics/text-attributes.hh"
 #include "nes/common/containers/string-builder.hh"
+#include "nes/common/containers/string-view.hh"
 #include "nes/common/types.hh"
-#include <string_view>
 
 namespace nes
 {
@@ -46,11 +46,11 @@ namespace nes::app
 		/// Render an image at the given tile coordinates.
 		auto render_image(i32 x, i32 y, image_view) -> void;
 		/// Render a string of text at the given tile coordinates (one tile per character).
-		auto render_text(i32 x, i32 y, std::string_view, color, text_attributes = text_attributes{}) -> u32;
+		auto render_text(i32 x, i32 y, string_view, color, text_attributes = text_attributes{}) -> u32;
 
 		template<typename... Args>
 		auto render_text_format(
-			i32 const x, i32 const y, color const c, text_attributes const attrs, std::string_view const fmt,
+			i32 const x, i32 const y, color const c, text_attributes const attrs, string_view const fmt,
 			Args... args) -> u32
 		{
 			string_buffer<width> buffer{};
@@ -60,7 +60,7 @@ namespace nes::app
 
 		template<typename... Args>
 		auto render_text_format(
-			i32 const x, i32 const y, color const c, std::string_view const fmt, Args... args) -> u32
+			i32 const x, i32 const y, color const c, string_view const fmt, Args... args) -> u32
 		{
 			return render_text_format(x, y, c, text_attributes{}, fmt, args...);
 		}

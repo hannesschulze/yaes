@@ -6,6 +6,7 @@
 #include "nes/common/display.hh"
 #include "nes/common/rgb.hh"
 #include "nes/common/debug.hh"
+#include "nes/common/utils.hh"
 
 namespace nes::sys
 {
@@ -16,11 +17,13 @@ namespace nes::sys
 	{
 	}
 
+#ifdef NES_ENABLE_SNAPSHOTS
 	auto ppu::build_snapshot(snapshot& snapshot) -> void
 	{
 		snapshot.vram = std::vector(std::begin(vram_), std::end(vram_));
 		snapshot.oam = std::vector(std::begin(oam_), std::end(oam_));
 	}
+#endif
 
 	auto ppu::step() -> void
 	{
@@ -291,7 +294,7 @@ namespace nes::sys
 		{
 			for (auto i = u32{ 0 }; i < tile_size / 2; ++i)
 			{
-				std::swap(res.colors[i], res.colors[tile_size - 1 - i]);
+				swap(res.colors[i], res.colors[tile_size - 1 - i]);
 			}
 		}
 
@@ -382,7 +385,7 @@ namespace nes::sys
 
 		if (addr % 0x4000 <= address{ 0x3EFF })
 		{
-			std::swap(res, ppudata_read_buffer_);
+			swap(res, ppudata_read_buffer_);
 		}
 		else
 		{

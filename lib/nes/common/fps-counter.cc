@@ -2,9 +2,9 @@
 
 namespace nes
 {
-	auto fps_counter::frame(std::chrono::microseconds const elapsed_time) -> void
+	auto fps_counter::frame(u32 const elapsed_time_us) -> void
 	{
-		if (elapsed_time.count() <= 0) { return; }
+		if (elapsed_time_us == 0) { return; }
 
 		if (buffer_position_ == 0)
 		{
@@ -22,8 +22,7 @@ namespace nes
 		}
 
 		// Add the frame time to the buffer, replacing any existing content in the ring buffer.
-		auto const frame_time = static_cast<u32>(elapsed_time.count());
-		frame_times_[buffer_position_] = frame_time;
+		frame_times_[buffer_position_] = elapsed_time_us;
 		buffer_position_ = (buffer_position_ + 1) % buffer_size;
 	}
 } // namespace nes

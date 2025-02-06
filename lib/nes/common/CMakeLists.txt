@@ -7,6 +7,7 @@ target_sources(
 		display.hh
 		status.hh
 		fps-counter.hh
-		fps-counter.cc)
+		fps-counter.cc
+		utils.hh)
 
 add_subdirectory(containers)

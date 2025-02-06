@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../common/status.hh"
-#include <string_view>
+#include "nes/common/containers/string-view.hh"
+#include "nes/common/status.hh"
 
 namespace nes::app
 {
@@ -25,8 +25,8 @@ namespace nes::app
 
 	private:
 		type type_{ type::none };
-		std::string_view file_name_;
-		std::string_view message_;
+		string_view file_name_;
+		string_view message_;
 		status error_{ status::success };
 
 	public:
@@ -40,14 +40,14 @@ namespace nes::app
 		static auto cancel_quit() -> action { return action{ type::cancel_quit }; }
 		static auto confirm_quit() -> action { return action{ type::confirm_quit }; }
 
-		static auto launch_game(std::string_view const file_name) -> action
+		static auto launch_game(string_view const file_name) -> action
 		{
 			auto res = action{ type::launch_game };
 			res.file_name_ = file_name;
 			return res;
 		}
 
-		static auto show_error(std::string_view const message, status const error) -> action
+		static auto show_error(string_view const message, status const error) -> action
 		{
 			auto res = action{ type::show_error };
 			res.message_ = message;
@@ -56,8 +56,8 @@ namespace nes::app
 		}
 
 		auto get_type() const -> type { return type_; }
-		auto get_file_name() const -> std::string_view { return file_name_; }
-		auto get_message() const -> std::string_view { return message_; }
+		auto get_file_name() const -> string_view { return file_name_; }
+		auto get_message() const -> string_view { return message_; }
 		auto get_error() const -> status { return error_; }
 
 	private:

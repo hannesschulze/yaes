@@ -7,7 +7,7 @@ namespace nes::app
 	auto screen_settings::selection_impl::render_item(
 		renderer& renderer, item const& item, i32 const x, i32 const y, u32 const width, color const c) const -> void
 	{
-		auto const render = [&](std::string_view const label, std::string_view const value)
+		auto const render = [&](string_view const label, string_view const value)
 		{
 			auto const label_length = renderer.render_text(x, y, label, c);
 			auto const value_attrs = text_attributes{}

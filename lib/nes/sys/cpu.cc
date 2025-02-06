@@ -15,6 +15,7 @@ namespace nes::sys
 		registers_.pc = read16(address{ 0xFFFC });
 	}
 
+#ifdef NES_ENABLE_SNAPSHOTS
 	auto cpu::build_snapshot(snapshot& snapshot) -> void
 	{
 		snapshot.cpu_cycle = current_cycles_;
@@ -33,6 +34,7 @@ namespace nes::sys
 		snapshot.registers.v = registers_.p.get_v();
 		snapshot.registers.n = registers_.p.get_n();
 	}
+#endif
 
 	auto cpu::stall_cycles(cycle_count const count) -> void
 	{
@@ -1236,7 +1238,7 @@ namespace nes::sys
 			}
 			case addressing_mode::relative:
 			{
-				auto const offset = static_cast<std::int8_t>(advance_pc8());
+				auto const offset = static_cast<i8>(advance_pc8());
 				auto const base = address{ registers_.pc };
 				addr = address{ static_cast<u16>(registers_.pc + offset) };
 				auto const page_crossing =
