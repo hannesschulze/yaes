@@ -1,8 +1,8 @@
 #pragma once
 
 #include "nes/sys/types/cycle-count.hh"
+#include "nes/common/containers/span.hh"
 #include "nes/common/types.hh"
-#include "nes/common/span.hh"
 
 namespace nes
 {

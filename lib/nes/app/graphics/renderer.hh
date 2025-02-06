@@ -1,9 +1,9 @@
 #pragma once
 
-#include "nes/common/types.hh"
 #include "nes/app/graphics/color.hh"
 #include "nes/app/graphics/text-attributes.hh"
-#include "nes/common/string-builder.hh"
+#include "nes/common/containers/string-builder.hh"
+#include "nes/common/types.hh"
 #include <string_view>
 
 namespace nes

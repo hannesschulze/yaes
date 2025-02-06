@@ -1,7 +1,7 @@
 #pragma once
 
 #include "nes/app/input/input-device.hh"
-#include "nes/common/list.hh"
+#include "nes/common/containers/list.hh"
 #include <string_view>
 
 namespace nes::app

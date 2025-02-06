@@ -1,0 +1,12 @@
+target_sources(
+	nes
+	PRIVATE
+		box.hh
+		list.hh
+		path-builder.hh
+		path-builder.cc
+		path-view.hh
+		path-view.cc
+		span.hh
+		string-builder.hh
+		string-builder.cc)

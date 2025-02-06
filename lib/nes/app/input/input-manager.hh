@@ -2,7 +2,7 @@
 
 #include "nes/app/input/input-device-keyboard.hh"
 #include "nes/app/input/input-device-controller.hh"
-#include "nes/common/list.hh"
+#include "nes/common/containers/list.hh"
 #include "nes/common/types.hh"
 
 namespace nes::app

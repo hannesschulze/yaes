@@ -4,14 +4,7 @@ target_sources(
 		types.hh
 		debug.hh
 		rgb.hh
-		list.hh
-		box.hh
 		display.hh
-		string-builder.hh
-		string-builder.cc
-		path-view.hh
-		path-view.cc
-		path-builder.hh
-		path-builder.cc
-		span.hh
 		status.hh)
+
+add_subdirectory(containers)

@@ -3,7 +3,7 @@
 #include "nes/app/graphics/color.hh"
 #include "nes/app/graphics/tiles/icons.hh"
 #include "nes/app/input/input-device-keyboard.hh"
-#include "nes/common/path-view.hh"
+#include "nes/common/containers/path-view.hh"
 
 namespace nes::app
 {

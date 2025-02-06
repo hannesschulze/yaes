@@ -5,7 +5,7 @@
 #include "nes/sys/controller.hh"
 #include "nes/sys/cpu.hh"
 #include "nes/sys/ppu.hh"
-#include "nes/common/span.hh"
+#include "nes/common/containers/span.hh"
 
 namespace nes
 {

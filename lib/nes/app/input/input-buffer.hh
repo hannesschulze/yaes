@@ -1,7 +1,7 @@
 #pragma once
 
 #include "nes/app/input/key.hh"
-#include "nes/common/list.hh"
+#include "nes/common/containers/list.hh"
 
 namespace nes::app
 {

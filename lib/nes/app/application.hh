@@ -7,7 +7,7 @@
 #include "nes/app/ui/screen-error.hh"
 #include "nes/app/ui/screen-confirm-quit.hh"
 #include "nes/sys/nes.hh"
-#include "nes/common/box.hh"
+#include "nes/common/containers/box.hh"
 #include "nes/common/display.hh"
 #include "nes/common/types.hh"
 #include <chrono>

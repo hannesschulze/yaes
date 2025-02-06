@@ -1,7 +1,7 @@
 #pragma once
 
 #include "nes/app/file-browser.hh"
-#include "nes/common/path-builder.hh"
+#include "nes/common/containers/path-builder.hh"
 #include <dirent.h>
 
 namespace nes::app::mac
