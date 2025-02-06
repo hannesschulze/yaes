@@ -13,6 +13,7 @@ namespace nes::app::mac
 		NSMutableData* buffer_front_;
 		NSMutableData* buffer_back_;
 		u8* bytes_back_;
+		u8* bytes_front_;
 
 	public:
 		explicit display_spritekit(SKSpriteNode* node);

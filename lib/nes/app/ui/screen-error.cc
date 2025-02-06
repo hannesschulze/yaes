@@ -12,8 +12,8 @@ namespace nes::app
 
 	auto screen_error::render(renderer& renderer) -> void
 	{
-		// TODO: Nicer box
-		renderer.render_rect(2, 9, 28, 5, color::background_secondary);
+		renderer.render_rect(2, 8, 28, 10, color::background_secondary);
+		renderer.render_border(2, 8, 28, 10, color::foreground_primary);
 
 		auto const attrs = text_attributes{}
 			.set_alignment(text_alignment::center)
@@ -21,6 +21,7 @@ namespace nes::app
 			.set_max_width(26);
 		renderer.render_text_format(16, 10, color::foreground_primary, attrs, "{}:", message_);
 		renderer.render_text(16, 12, to_string(error_), color::foreground_primary, attrs);
+		renderer.render_text(16, 15, "> OK <", color::accent_primary, attrs);
 	}
 
 	auto screen_error::process_events() -> action
@@ -29,7 +30,7 @@ namespace nes::app
 		{
 			if (event == input_event::key_down(key::enter))
 			{
-				return action::close_popup();
+				return action_;
 			}
 		}
 

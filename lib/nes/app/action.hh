@@ -17,6 +17,8 @@ namespace nes::app
 			go_to_settings,
 			go_to_help,
 			close_popup,
+			cancel_quit,
+			confirm_quit,
 			launch_game,
 			show_error,
 		};
@@ -35,6 +37,8 @@ namespace nes::app
 		static auto go_to_settings() -> action { return action{ type::go_to_settings }; }
 		static auto go_to_help() -> action { return action{ type::go_to_help }; }
 		static auto close_popup() -> action { return action{ type::close_popup }; }
+		static auto cancel_quit() -> action { return action{ type::cancel_quit }; }
+		static auto confirm_quit() -> action { return action{ type::confirm_quit }; }
 
 		static auto launch_game(std::string_view const file_name) -> action
 		{

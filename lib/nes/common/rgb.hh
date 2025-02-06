@@ -8,7 +8,7 @@ namespace nes
 	class rgb
 	{
 	public:
-		explicit rgb() = default;
+		rgb() = default;
 
 		explicit rgb(u8 const r, u8 const g, u8 const b)
 			: r{ r }

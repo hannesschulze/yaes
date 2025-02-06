@@ -37,6 +37,8 @@ namespace nes::app
 		auto operator=(renderer const&) -> renderer& = delete;
 		auto operator=(renderer&&) -> renderer& = delete;
 
+		auto get_display() const -> display& { return display_; }
+
 		/// Render a colored tile at the given tile coordinates.
 		auto render_image_tile(i32 x, i32 y, image_tile const&) -> void;
 		/// Render an alpha-only tile at the given tile coordinates with the given color.
@@ -66,6 +68,8 @@ namespace nes::app
 
 		/// Render a rectangle at the given tile coordinates with a given size (measured in tiles).
 		auto render_rect(i32 x, i32 y, u32 width, u32 height, color) -> void;
+		/// Render a border around a rectangle with the given size (measured in tiles).
+		auto render_border(i32 x, i32 y, u32 width, u32 height, color) -> void;
 		/// Completely fill the screen.
 		auto render_fill(color) -> void;
 

@@ -16,13 +16,14 @@ namespace nes::app::mac
 		, buffer_front_{ make_buffer() }
 		, buffer_back_{ make_buffer() }
 		, bytes_back_{ static_cast<u8*>([buffer_back_ mutableBytes]) }
+		, bytes_front_{ static_cast<u8*>([buffer_front_ mutableBytes]) }
 	{
 	}
 
 	auto display_spritekit::switch_buffers() -> void
 	{
 		std::swap(buffer_back_, buffer_front_);
-		bytes_back_ = static_cast<u8*>([buffer_back_ mutableBytes]);
+		std::swap(bytes_back_, bytes_front_);
 
 		auto texture = [SKTexture textureWithData:buffer_front_ size:CGSizeMake(width, height) flipped:YES];
 		[texture setFilteringMode:SKTextureFilteringNearest];
@@ -42,9 +43,9 @@ namespace nes::app::mac
 	{
 		auto const offset = (y * width + x) * 4;
 		auto res = rgb{};
-		res.r = bytes_back_[offset + 0];
-		res.g = bytes_back_[offset + 1];
-		res.b = bytes_back_[offset + 2];
+		res.r = bytes_front_[offset + 0];
+		res.g = bytes_front_[offset + 1];
+		res.b = bytes_front_[offset + 2];
 		return res;
 	}
 } // namespace nes::app::mac

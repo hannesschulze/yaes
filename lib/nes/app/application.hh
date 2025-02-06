@@ -3,7 +3,9 @@
 #include "nes/app/input/input-manager.hh"
 #include "nes/app/ui/screen-title.hh"
 #include "nes/app/ui/screen-browser.hh"
+#include "nes/app/ui/screen-freeze.hh"
 #include "nes/app/ui/screen-error.hh"
+#include "nes/app/ui/screen-confirm-quit.hh"
 #include "nes/sys/nes.hh"
 #include "nes/common/box.hh"
 #include "nes/common/display.hh"
@@ -47,7 +49,9 @@ namespace nes::app
 		box<sys::nes> console_{};
 		screen_title screen_title_;
 		screen_browser screen_browser_;
+		screen_freeze screen_freeze_;
 		screen_error screen_error_;
+		screen_confirm_quit screen_confirm_quit_;
 
 	public:
 		explicit application(display&, input_device_keyboard&, file_browser& file_browser);
@@ -64,7 +68,7 @@ namespace nes::app
 		auto remove_controller(input_device_controller& c) -> void { input_manager_.remove_controller(c); }
 
 	private:
-		auto handle_action(action) -> void;
-		auto show_error(std::string_view message, status error) -> void;
+		auto handle_action(action const&) -> void;
+		auto show_error(std::string_view message, status error, action const& action = action::close_popup()) -> void;
 	};
 } // namespace nes::app

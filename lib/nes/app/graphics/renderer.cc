@@ -5,6 +5,7 @@
 #include "nes/app/graphics/image-view.hh"
 #include "nes/app/graphics/text-attributes.hh"
 #include "nes/app/graphics/tiles/characters.hh"
+#include "nes/app/graphics/tiles/borders.hh"
 #include "nes/common/display.hh"
 
 namespace nes::app
@@ -125,11 +126,9 @@ namespace nes::app
 		}
 	}
 
-	auto renderer::render_rect(
-		i32 const x, i32 const y, u32 const width, u32 const height, color const c) -> void
+	auto renderer::render_rect(i32 const x, i32 const y, u32 const width, u32 const height, color const c) -> void
 	{
 		if (c == color::transparent) { return; }
-		if (x >= static_cast<i32>(renderer::width) || y >= static_cast<i32>(renderer::height)) { return; }
 
 		auto const resolved = resolve_color(c);
 		auto const x_stop = std::min(x + static_cast<i32>(width), static_cast<i32>(renderer::width));
@@ -144,6 +143,55 @@ namespace nes::app
 			}
 		}
 	}
+
+	auto renderer::render_border(i32 const x, i32 const y, u32 const width, u32 const height, color const c) -> void
+	{
+		if (width <= 1 || height <= 1) { return; }
+
+		auto const x_last = std::min(x + static_cast<i32>(width), static_cast<i32>(renderer::width)) - 1;
+		auto const y_last = std::min(y + static_cast<i32>(height), static_cast<i32>(renderer::height)) - 1;
+		auto const x_start = std::max(x, 0);
+		auto const y_start = std::max(y, 0);
+		for (auto border_y = i32{ y_start }; border_y <= y_last; ++border_y)
+		{
+			for (auto border_x = i32{ x_start }; border_x <= x_last; ++border_x)
+			{
+				if (border_x == x_start && border_y == y_start)
+				{
+					render_mask_tile(border_x, border_y, tiles::border_top_left, c);
+				}
+				else if (border_x == x_last && border_y == y_start)
+				{
+					render_mask_tile(border_x, border_y, tiles::border_top_right, c);
+				}
+				else if (border_x == x_last && border_y == y_last)
+				{
+					render_mask_tile(border_x, border_y, tiles::border_bottom_right, c);
+				}
+				else if (border_x == x_start && border_y == y_last)
+				{
+					render_mask_tile(border_x, border_y, tiles::border_bottom_left, c);
+				}
+				else if (border_x == x_start)
+				{
+					render_mask_tile(border_x, border_y, tiles::border_left, c);
+				}
+				else if (border_x == x_last)
+				{
+					render_mask_tile(border_x, border_y, tiles::border_right, c);
+				}
+				else if (border_y == y_start)
+				{
+					render_mask_tile(border_x, border_y, tiles::border_top, c);
+				}
+				else if (border_y == y_last)
+				{
+					render_mask_tile(border_x, border_y, tiles::border_bottom, c);
+				}
+			}
+		}
+	}
+
 
 	auto renderer::render_fill(color const c) -> void
 	{

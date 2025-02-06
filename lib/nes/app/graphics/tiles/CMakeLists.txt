@@ -74,6 +74,20 @@ nes_generate_tiles(
 
 nes_generate_tiles(
 	nes
+	borders
+	TYPE mask
+	FILES
+		border_top.png
+		border_top_left.png
+		border_top_right.png
+		border_left.png
+		border_right.png
+		border_bottom.png
+		border_bottom_left.png
+		border_bottom_right.png)
+
+nes_generate_tiles(
+	nes
 	banner
 	TYPE image
 	FILES banner.png)

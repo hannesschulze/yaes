@@ -4,7 +4,6 @@
 #include "nes/app/ui/screen.hh"
 #include "nes/app/graphics/renderer.hh"
 #include "nes/app/action.hh"
-#include <iostream>
 
 namespace nes::app
 {
@@ -32,6 +31,7 @@ namespace nes::app
 		, screen_title_{ keyboard }
 		, screen_browser_{ keyboard, file_browser }
 		, screen_error_{ keyboard }
+		, screen_confirm_quit_{ keyboard }
 	{
 		display_.screen = &screen_title_;
 	}
@@ -49,8 +49,29 @@ namespace nes::app
 			handle_action(a);
 		}
 
-		if (console_)
+		if (display_.screen)
 		{
+			// Directly let the scene render itself without rendering any gameplay (the scene is responsible for
+			// clearing the buffer).
+			display_.switch_buffers();
+		}
+		else if (console_)
+		{
+			// Handle escape key.
+			while (auto const event = input_manager_.get_keyboard().poll_event())
+			{
+				if (event == input_event::key_down(key::escape))
+				{
+					screen_freeze_.freeze(display_);
+					screen_confirm_quit_.set_confirm(false);
+					display_.screen = &screen_freeze_;
+					display_.popup = &screen_confirm_quit_;
+					display_.switch_buffers();
+					return;
+				}
+			}
+
+			// Forward current input state to the NES.
 			console_->ref_controller_1().set_pressed(input_manager_.get_input_1().read_buttons());
 			console_->ref_controller_2().set_pressed(input_manager_.get_input_2().read_buttons());
 
@@ -60,22 +81,15 @@ namespace nes::app
 
 			if (console_->get_status() != status::success)
 			{
-				// TODO: Present as error popup
-				std::cerr << "Invalid state: " << to_string(console_->get_status()) << std::endl;
-				std::abort();
+				screen_freeze_.freeze(display_);
+				display_.screen = &screen_freeze_;
+				show_error("Runtime error", console_->get_status(), action::go_to_browser());
+				console_.clear();
 			}
-
-			// TODO: Handle escape key
-		}
-		else
-		{
-			// Directly let the scene render itself without rendering any gameplay (the scene is responsible for
-			// clearing the buffer).
-			display_.switch_buffers();
 		}
 	}
 
-	auto application::handle_action(action const a) -> void
+	auto application::handle_action(action const& a) -> void
 	{
 		switch (a.get_type())
 		{
@@ -112,6 +126,19 @@ namespace nes::app
 				display_.popup = nullptr;
 				break;
 			}
+			case action::type::cancel_quit:
+			{
+				display_.popup = nullptr;
+				display_.screen = nullptr;
+				break;
+			}
+			case action::type::confirm_quit:
+			{
+				display_.popup = nullptr;
+				display_.screen = &screen_browser_;
+				console_.clear();
+				break;
+			}
 			case action::type::launch_game:
 			{
 				u8 buffer[sys::cartridge::max_file_size];
@@ -142,11 +169,11 @@ namespace nes::app
 		}
 	}
 
-	auto application::show_error(std::string_view const message, status const error) -> void
+	auto application::show_error(std::string_view const message, status const error, action const& action) -> void
 	{
 		screen_error_.set_message(message);
 		screen_error_.set_error(error);
+		screen_error_.set_action(action);
 		display_.popup = &screen_error_;
 	}
-
 } // namespace nes::app

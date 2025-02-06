@@ -7,5 +7,9 @@ target_sources(
 		screen-title.cc
 		screen-browser.hh
 		screen-browser.cc
+		screen-freeze.hh
+		screen-freeze.cc
 		screen-error.hh
-		screen-error.cc)
+		screen-error.cc
+		screen-confirm-quit.hh
+		screen-confirm-quit.cc)

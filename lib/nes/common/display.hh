@@ -25,7 +25,7 @@ namespace nes
 		virtual auto switch_buffers() -> void = 0;
 		/// Update the pixel at the given position in the back buffer.
 		virtual auto set(u32 x, u32 y, rgb value) -> void = 0;
-		/// Load the pixel value at the given position in the back buffer.
+		/// Load the pixel value at the given position in the front buffer.
 		virtual auto get(u32 x, u32 y) const -> rgb = 0;
 
 	protected:
