@@ -1,4 +1,5 @@
 #import "impl/display-spritekit.hh"
+#import "nes/common/utils.hh"
 
 namespace nes::app::mac
 {

@@ -22,7 +22,7 @@ namespace nes
 		auto get_span() const -> span<char const> { return data_; }
 		auto get_data() const -> char const* { return data_.get_data(); }
 		auto get_length() const -> u32 { return data_.get_length(); }
-		auto is_empty() const -> bool { return get_length() == 0; }
+		auto is_empty() const -> bool { return data_.is_empty(); }
 		auto begin() const -> iterator { return data_.begin(); }
 		auto end() const -> iterator { return data_.end(); }
 

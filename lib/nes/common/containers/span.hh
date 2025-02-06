@@ -65,6 +65,7 @@ namespace nes
 
 		auto get_data() const -> T* { return data_; }
 		auto get_length() const -> u32 { return length_; }
+		auto is_empty() const -> bool { return length_ == 0; }
 
 		auto begin() const -> iterator { return data_; }
 		auto end() const -> iterator { return data_ + length_; }
