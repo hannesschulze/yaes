@@ -7,6 +7,16 @@
 
 namespace nes::app
 {
+	auto application::display_proxy::get_front() const -> span<rgb, display::width * display::height>
+	{
+		return buffer_front_;
+	}
+
+	auto application::display_proxy::set(u32 const x, u32 const y, rgb const value) -> void {
+		buffer_back_[y * display::width + x] = value;
+		base.set(x, y, value);
+	}
+	
 	auto application::display_proxy::switch_buffers() -> void
 	{
 		auto r = renderer{ base };
@@ -30,6 +40,7 @@ namespace nes::app
 			r.render_text_format(32, 29, color::fixed_white, attrs, "{}", fps_counter.get_fps());
 		}
 
+		swap(buffer_front_, buffer_back_);
 		base.switch_buffers();
 	}
 
@@ -74,7 +85,7 @@ namespace nes::app
 			{
 				if (event == input_event::key_down(key::escape))
 				{
-					screen_freeze_.freeze(display_);
+					screen_freeze_.freeze(display_.get_front());
 					screen_confirm_quit_.set_confirm(false);
 					display_.screen = &screen_freeze_;
 					display_.popup = &screen_confirm_quit_;
@@ -93,7 +104,7 @@ namespace nes::app
 
 			if (console_->get_status() != status::success)
 			{
-				screen_freeze_.freeze(display_);
+				screen_freeze_.freeze(display_.get_front());
 				display_.screen = &screen_freeze_;
 				show_error("Runtime error", console_->get_status(), action::go_to_browser());
 				console_.clear();

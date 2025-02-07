@@ -3,15 +3,9 @@
 
 namespace nes::app
 {
-	auto screen_freeze::freeze(display const& disp) -> void
+	auto screen_freeze::freeze(span<rgb, display::width * display::height> front_buffer) -> void
 	{
-		for (auto y = u32{ 0 }; y < display::height; ++y)
-		{
-			for (auto x = u32{ 0 }; x < display::width; ++x)
-			{
-				frozen_data_[y * display::width + x] = disp.get(x, y);
-			}
-		}
+		copy(front_buffer.get_data(), frozen_data_, front_buffer.get_length());
 	}
 
 	auto screen_freeze::render(renderer& renderer) -> void

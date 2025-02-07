@@ -20,6 +20,6 @@ namespace nes::app
 		auto process_events() -> action override;
 
 		/// Update the image shown to the back buffer of the given display.
-		auto freeze(display const&) -> void;
+		auto freeze(span<rgb, display::width * display::height> front_buffer) -> void;
 	};
 } // namespace nes::app

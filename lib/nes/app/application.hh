@@ -31,6 +31,9 @@ namespace nes::app
 		class display_proxy final : public display
 		{
 			preferences& preferences_;
+			rgb buffers_[2][display::width * display::height]{};
+			span<rgb, display::width * display::height> buffer_front_ = buffers_[0];
+			span<rgb, display::width * display::height> buffer_back_ = buffers_[1];
 
 		public:
 			fps_counter fps_counter;
@@ -44,8 +47,9 @@ namespace nes::app
 			{
 			}
 
-			auto get(u32 const x, u32 const y) const -> rgb override { return base.get(x, y); }
-			auto set(u32 const x, u32 const y, rgb const value) -> void override { base.set(x, y, value); }
+			auto set(u32 const x, u32 const y, rgb const value) -> void override;
+			auto get_front() const -> span<rgb, display::width * display::height>;
+
 			auto switch_buffers() -> void override;
 		};
 
