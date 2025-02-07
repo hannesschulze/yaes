@@ -36,3 +36,14 @@ namespace nes
 		b = tmp;
 	}
 } // namespace nes
+
+#ifdef NES_HAS_STDLIB
+
+#include <new>
+
+#else
+
+// Placement new is an API-defined operator for some reason!?
+inline void* operator new(decltype(sizeof(int)), void* ptr) { return ptr; }
+
+#endif

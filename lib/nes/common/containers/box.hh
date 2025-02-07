@@ -3,7 +3,6 @@
 #include "nes/common/types.hh"
 #include "nes/common/debug.hh"
 #include "nes/common/utils.hh"
-#include <new>
 
 namespace nes
 {

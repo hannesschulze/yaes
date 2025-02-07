@@ -21,7 +21,11 @@
 
 #else
 
+#ifdef NES_HAS_STDLIB
 #include <cassert>
+#else
+#include "debug/assert.h"
+#endif
 
 #define NES_ASSERT(...) \
 	assert(__VA_ARGS__)

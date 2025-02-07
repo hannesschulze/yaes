@@ -11,5 +11,6 @@ endif()
 if(NES_ENABLE_SNAPSHOTS)
 	target_compile_definitions(nes PUBLIC NES_ENABLE_SNAPSHOTS)
 endif()
+target_compile_definitions(nes PUBLIC NES_HAS_STDLIB)
 
 add_subdirectory(nes)

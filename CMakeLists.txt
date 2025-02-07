@@ -16,8 +16,6 @@ target_compile_options(nes_options
     INTERFACE
         -Wall
         -Wextra
-        -Wno-changes-meaning # fuck off, gcc
-        -Wno-unused-function # fr
         -Wnon-virtual-dtor
         -Wcast-align
         -Wunused

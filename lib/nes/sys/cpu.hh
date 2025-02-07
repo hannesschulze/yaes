@@ -293,7 +293,8 @@ namespace nes::sys
 #define DEFINE_CYCLE_COUNT(name) \
 	template<addressing_mode Mode> static auto name##_cycle_count() -> cycle_count;
 #define DEFINE_CYCLE_COUNT_INSTANCE(name, mode, value) \
-	template<> auto name##_cycle_count<addressing_mode::mode>() -> cycle_count { return cycle_count::from_cpu(value); }
+	template<> \
+	[[maybe_unused]] auto name##_cycle_count<addressing_mode::mode>() -> cycle_count { return cycle_count::from_cpu(value); }
 
 		DEFINE_CYCLE_COUNT(jump)
 		DEFINE_CYCLE_COUNT_INSTANCE(jump, absolute, 3)

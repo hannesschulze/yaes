@@ -3,7 +3,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-int main(int argc, char** argv)
+int main()
 {
     auto app = [NSApplication sharedApplication];
     [app setActivationPolicy:NSApplicationActivationPolicyRegular];
