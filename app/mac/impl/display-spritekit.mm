@@ -39,14 +39,4 @@ namespace nes::app::mac
 		bytes_back_[offset + 2] = value.b;
 		bytes_back_[offset + 3] = 255;
 	}
-
-	auto display_spritekit::get(u32 const x, u32 const y) const -> rgb
-	{
-		auto const offset = (y * width + x) * 4;
-		auto res = rgb{};
-		res.r = bytes_front_[offset + 0];
-		res.g = bytes_front_[offset + 1];
-		res.b = bytes_front_[offset + 2];
-		return res;
-	}
 } // namespace nes::app::mac

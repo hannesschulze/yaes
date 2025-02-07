@@ -3,6 +3,7 @@
 
 #import <Cocoa/Cocoa.h>
 
+
 int main()
 {
     auto app = [NSApplication sharedApplication];
