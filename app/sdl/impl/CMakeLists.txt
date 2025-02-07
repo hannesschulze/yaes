@@ -1,0 +1,9 @@
+target_sources(
+	nes_app_sdl
+	PRIVATE
+		display-sdl.hh
+		display-sdl.cc
+		input-device-keyboard-sdl.hh
+		input-device-keyboard-sdl.cc
+		file-browser-posix.hh
+		file-browser-posix.cc)

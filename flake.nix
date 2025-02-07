@@ -16,7 +16,7 @@
       let
         pkgs = import nixpkgs { inherit system; };
         shell = pkgs.mkShell {
-          packages = with pkgs; [ cmake gcc binutils gdb gnumake valgrind clang-tools ];
+          packages = with pkgs; [ cmake sdl3 gcc binutils gdb gnumake valgrind clang-tools ];
 		  hardeningDisable = [ "fortify" ];
         };
       in

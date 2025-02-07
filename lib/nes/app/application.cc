@@ -12,7 +12,8 @@ namespace nes::app
 		return buffer_front_;
 	}
 
-	auto application::display_proxy::set(u32 const x, u32 const y, rgb const value) -> void {
+	auto application::display_proxy::set(u32 const x, u32 const y, rgb const value) -> void
+	{
 		buffer_back_[y * display::width + x] = value;
 		base.set(x, y, value);
 	}
