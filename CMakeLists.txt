@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.30)
 project(
     nes
-    LANGUAGES CXX OBJCXX OBJC
+    LANGUAGES CXX
     VERSION 1.0)
 
 option(NES_ENABLE_SANITIZER_ADDRESS "Enable address sanitizer." OFF)

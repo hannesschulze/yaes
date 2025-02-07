@@ -6,6 +6,8 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstdint>
+#include <unistd.h>
+#include <fcntl.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -215,6 +217,27 @@ namespace
 
 		return status::ok;
 	}
+
+	auto write_file(std::string_view const filename, std::string_view const content) -> status
+	{
+		auto const filename_str = std::string{ filename };
+
+		auto const fd = open(filename_str.c_str(), O_TRUNC | O_WRONLY | O_CREAT, 0644);
+		if (fd == -1)
+		{
+			perror("open");
+			return status::invalid;
+		}
+
+		if (write(fd, content.data(), content.length()) == -1)
+		{
+			perror("write");
+			return status::invalid;
+		}
+
+		close(fd);
+		return status::ok;
+	}
 } // namespace
 
 int main(int const argc, char** const argv)
@@ -285,13 +308,8 @@ int main(int const argc, char** const argv)
 
 	source << "} // namespace nes::app::tiles\n";
 
-	auto header_file = std::ofstream{ std::string{ output_header } };
-	header_file << header.str();
-	header_file.flush();
-
-	auto source_file = std::ofstream{ std::string{ output_source } };
-	source_file << source.str();
-	source_file.flush();
+	if (write_file(output_header, header.str()) != status::ok) { return EXIT_FAILURE; }
+	if (write_file(output_source, source.str()) != status::ok) { return EXIT_FAILURE; }
 
 	return EXIT_SUCCESS;
 }

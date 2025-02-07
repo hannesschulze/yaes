@@ -217,10 +217,10 @@ namespace nes::sys
 		tile_row next_background_{};
 		struct
 		{
-			tile tile{ 0 };
-			palette palette{ 0 };
-			u8 bitplane_0{ 0 };
-			u8 bitplane_1{ 0 };
+			tile background_tile{ 0 };
+			palette background_palette{ 0 };
+			u8 pattern_bitplane_0{ 0 };
+			u8 pattern_bitplane_1{ 0 };
 		} fetch_cycle_{}; // Data populated during the fetch cycle.
 		evaluated_sprite sprites_[8]{}; // Evaluated sprites.
 		u32 sprite_count_{ 0 }; // Number of evaluated sprites in sprites_.

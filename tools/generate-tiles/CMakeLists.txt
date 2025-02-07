@@ -20,7 +20,7 @@ function(nes_generate_tiles TARGET_NAME NAME)
 	set(CODEGEN_DIR "${CODEGEN_BASE}/nes/app/graphics/tiles")
 	set(CODEGEN_SOURCE "${CODEGEN_DIR}/${NAME}.cc")
 	set(CODEGEN_HEADER "${CODEGEN_DIR}/${NAME}.hh")
-	file(MAKE_DIRECTORY "${RESOURCES_INCLUDE_DIR}")
+	file(MAKE_DIRECTORY "${CODEGEN_DIR}")
 
 	add_custom_command(
 		OUTPUT "${CODEGEN_SOURCE}" "${CODEGEN_HEADER}"

@@ -36,10 +36,10 @@ namespace nes::app
 			span<rgb, display::width * display::height> buffer_back_ = buffers_[1];
 
 		public:
-			fps_counter fps_counter;
+			fps_counter fps;
 			display& base;
-			screen* popup{ nullptr };
-			screen* screen{ nullptr };
+			screen* visible_popup{ nullptr };
+			screen* visible_screen{ nullptr };
 
 			explicit display_proxy(preferences& preferences, display& base)
 				: preferences_{ preferences }

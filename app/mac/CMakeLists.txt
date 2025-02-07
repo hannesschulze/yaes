@@ -1,3 +1,5 @@
+enable_language(OBJC OBJCXX)
+
 add_executable(nes_app_mac)
 
 find_library(FRAMEWORK_Cocoa Cocoa REQUIRED)

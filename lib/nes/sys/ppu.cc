@@ -74,7 +74,7 @@ namespace nes::sys
 					case 1:
 					{
 						// Load the tile pattern for the background from the name table.
-						fetch_cycle_.tile = tile{ read8(address{ 0x2000 } + internal_.v.get_tile_address()) };
+						fetch_cycle_.background_tile = tile{ read8(address{ 0x2000 } + internal_.v.get_tile_address()) };
 						break;
 					}
 					case 3:
@@ -88,15 +88,15 @@ namespace nes::sys
 						auto const shift =
 							((internal_.v.get_coarse_y() & 0b00010u) << 1) |
 							((internal_.v.get_coarse_x() & 0b00010u) << 0);
-						fetch_cycle_.palette = static_cast<palette>((read8(addr) >> shift) & 0b11);
+						fetch_cycle_.background_palette = static_cast<palette>((read8(addr) >> shift) & 0b11);
 						break;
 					}
 					case 5:
 					{
 						// Load bitplane 0 for the background tile's pattern.
-						fetch_cycle_.bitplane_0 = get_tile_bitplane(
+						fetch_cycle_.pattern_bitplane_0 = get_tile_bitplane(
 							control_.get_background_pattern_table(),
-							fetch_cycle_.tile,
+							fetch_cycle_.background_tile,
 							internal_.v.get_fine_y(),
 							bitplane::_0);
 						break;
@@ -104,9 +104,9 @@ namespace nes::sys
 					case 7:
 					{
 						// Load bitplane 1 for the background tile's pattern.
-						fetch_cycle_.bitplane_1 = get_tile_bitplane(
+						fetch_cycle_.pattern_bitplane_1 = get_tile_bitplane(
 							control_.get_background_pattern_table(),
-							fetch_cycle_.tile,
+							fetch_cycle_.background_tile,
 							internal_.v.get_fine_y(),
 							bitplane::_1);
 						break;
@@ -116,7 +116,7 @@ namespace nes::sys
 						// Fetch cycle done -> build the tile row for the background.
 						current_background_ = next_background_;
 						next_background_ = get_tile_row(
-							fetch_cycle_.palette, fetch_cycle_.bitplane_0, fetch_cycle_.bitplane_1);
+							fetch_cycle_.background_palette, fetch_cycle_.pattern_bitplane_0, fetch_cycle_.pattern_bitplane_1);
 						break;
 					}
 					default:

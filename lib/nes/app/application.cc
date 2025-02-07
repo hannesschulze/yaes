@@ -16,19 +16,19 @@ namespace nes::app
 		buffer_back_[y * display::width + x] = value;
 		base.set(x, y, value);
 	}
-	
+
 	auto application::display_proxy::switch_buffers() -> void
 	{
 		auto r = renderer{ base };
 
-		if (screen)
+		if (visible_screen)
 		{
-			screen->render(r);
+			visible_screen->render(r);
 		}
 
-		if (popup)
+		if (visible_popup)
 		{
-			popup->render(r);
+			visible_popup->render(r);
 		}
 
 		if (preferences_.get_fps_counter())
@@ -37,7 +37,7 @@ namespace nes::app
 			auto const attrs = text_attributes{}
 				.set_max_width(2)
 				.set_alignment(text_alignment::right);
-			r.render_text_format(32, 29, color::fixed_white, attrs, "{}", fps_counter.get_fps());
+			r.render_text_format(32, 29, color::fixed_white, attrs, "{}", fps.get_fps());
 		}
 
 		swap(buffer_front_, buffer_back_);
@@ -54,25 +54,25 @@ namespace nes::app
 		, screen_error_{ keyboard }
 		, screen_confirm_quit_{ keyboard }
 	{
-		display_.screen = &screen_title_;
+		display_.visible_screen = &screen_title_;
 	}
 
 	auto application::frame(u32 const elapsed_time_us) -> void
 	{
-		display_.fps_counter.frame(elapsed_time_us);
+		display_.fps.frame(elapsed_time_us);
 
-		if (display_.popup)
+		if (display_.visible_popup)
 		{
-			auto const a = display_.popup->process_events();
+			auto const a = display_.visible_popup->process_events();
 			handle_action(a);
 		}
-		else if (display_.screen)
+		else if (display_.visible_screen)
 		{
-			auto const a = display_.screen->process_events();
+			auto const a = display_.visible_screen->process_events();
 			handle_action(a);
 		}
 
-		if (display_.screen)
+		if (display_.visible_screen)
 		{
 			// Directly let the scene render itself without rendering any gameplay (the scene is responsible for
 			// clearing the buffer).
@@ -87,8 +87,8 @@ namespace nes::app
 				{
 					screen_freeze_.freeze(display_.get_front());
 					screen_confirm_quit_.set_confirm(false);
-					display_.screen = &screen_freeze_;
-					display_.popup = &screen_confirm_quit_;
+					display_.visible_screen = &screen_freeze_;
+					display_.visible_popup = &screen_confirm_quit_;
 					display_.switch_buffers();
 					return;
 				}
@@ -105,7 +105,7 @@ namespace nes::app
 			if (console_->get_status() != status::success)
 			{
 				screen_freeze_.freeze(display_.get_front());
-				display_.screen = &screen_freeze_;
+				display_.visible_screen = &screen_freeze_;
 				show_error("Runtime error", console_->get_status(), action::go_to_browser());
 				console_.clear();
 			}
@@ -143,13 +143,13 @@ namespace nes::app
 			}
 			case action::type::close_popup:
 			{
-				display_.popup = nullptr;
+				display_.visible_popup = nullptr;
 				break;
 			}
 			case action::type::cancel_quit:
 			{
-				display_.popup = nullptr;
-				display_.screen = nullptr;
+				display_.visible_popup = nullptr;
+				display_.visible_screen = nullptr;
 				break;
 			}
 			case action::type::launch_game:
@@ -170,8 +170,8 @@ namespace nes::app
 					break;
 				}
 
-				display_.screen = nullptr;
-				display_.popup = nullptr;
+				display_.visible_screen = nullptr;
+				display_.visible_popup = nullptr;
 				break;
 			}
 			case action::type::show_error:
@@ -187,13 +187,13 @@ namespace nes::app
 		screen_error_.set_message(message);
 		screen_error_.set_error(error);
 		screen_error_.set_action(action);
-		display_.popup = &screen_error_;
+		display_.visible_popup = &screen_error_;
 	}
 
 	auto application::go_to_screen(screen* screen) -> void
 	{
 		console_.clear();
-		display_.screen = screen;
-		display_.popup = nullptr;
+		display_.visible_screen = screen;
+		display_.visible_popup = nullptr;
 	}
 } // namespace nes::app
