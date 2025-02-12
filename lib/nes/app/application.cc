@@ -4,6 +4,8 @@
 #include "nes/app/ui/screen.hh"
 #include "nes/app/graphics/renderer.hh"
 #include "nes/app/action.hh"
+#include "nes/app/crypto/aes256.hh"
+#include "nes/app/crypto/sha256.hh"
 
 namespace nes::app
 {
@@ -54,6 +56,7 @@ namespace nes::app
 		, screen_settings_{ input_manager_, preferences_ }
 		, screen_error_{ keyboard }
 		, screen_confirm_quit_{ keyboard }
+		, screen_prompt_key_{ keyboard }
 	{
 		display_.visible_screen = &screen_title_;
 	}
@@ -153,6 +156,12 @@ namespace nes::app
 				display_.visible_screen = nullptr;
 				break;
 			}
+			case action::type::prompt_key:
+			{
+				screen_prompt_key_.reset(a.get_file_name());
+				display_.visible_popup = &screen_prompt_key_;
+				break;
+			}
 			case action::type::launch_game:
 			{
 				u8 buffer[sys::cartridge::max_file_size];
@@ -161,6 +170,13 @@ namespace nes::app
 				{
 					show_error("Unable to open file", s);
 					break;
+				}
+
+				if (!a.get_key().is_empty())
+				{
+					auto const key = span{ reinterpret_cast<u8 const*>(a.get_key().get_data()), a.get_key().get_length() };
+					auto const key_hash = sha256::hash(key);
+					aes256::decrypt(span{ buffer, length }, key_hash.get_data());
 				}
 
 				console_.emplace(display_, span<u8 const>{ buffer, length });

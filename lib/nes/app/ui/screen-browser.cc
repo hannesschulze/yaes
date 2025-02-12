@@ -111,6 +111,14 @@ namespace nes::app
 					return action::go_to_title();
 				}
 			}
+			else if (event == input_event::key_down(key::letter_d))
+			{
+				auto const selected = selection_.get_selected();
+				if (selected && selected->entry.get_type() == file_browser::entry_type::file)
+				{
+					return action::prompt_key(selected->entry.get_name());
+				}
+			}
 			else if (event == input_event::key_down(key::enter))
 			{
 				auto const selected = selection_.get_selected();

@@ -10,3 +10,4 @@ target_sources(
 add_subdirectory(input)
 add_subdirectory(graphics)
 add_subdirectory(ui)
+add_subdirectory(crypto)

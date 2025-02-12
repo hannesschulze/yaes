@@ -14,4 +14,6 @@ target_sources(
 		screen-error.hh
 		screen-error.cc
 		screen-confirm-quit.hh
-		screen-confirm-quit.cc)
+		screen-confirm-quit.cc
+		screen-prompt-key.hh
+		screen-prompt-key.cc)

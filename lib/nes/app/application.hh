@@ -7,6 +7,7 @@
 #include "nes/app/ui/screen-freeze.hh"
 #include "nes/app/ui/screen-error.hh"
 #include "nes/app/ui/screen-confirm-quit.hh"
+#include "nes/app/ui/screen-prompt-key.hh"
 #include "nes/app/preferences.hh"
 #include "nes/sys/nes.hh"
 #include "nes/common/containers/box.hh"
@@ -64,6 +65,7 @@ namespace nes::app
 		screen_freeze screen_freeze_;
 		screen_error screen_error_;
 		screen_confirm_quit screen_confirm_quit_;
+		screen_prompt_key screen_prompt_key_;
 
 	public:
 		explicit application(display&, input_device_keyboard&, file_browser&);

@@ -12,3 +12,5 @@ if(SDL3_FOUND)
 else()
 	message(STATUS "SDL3 port disabled.")
 endif()
+
+add_subdirectory(encrypt)

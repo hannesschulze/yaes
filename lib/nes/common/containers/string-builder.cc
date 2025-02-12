@@ -253,4 +253,17 @@ namespace nes
 
 		return status::error_invalid_format_string;
 	}
+
+	auto string_builder::remove_last() -> status
+	{
+		if (length_ == 0) { return status::error_buffer_overflow; }
+
+		length_ -= 1;
+		return status::success;
+	}
+
+	auto string_builder::clear() -> void
+	{
+		length_ = 0;
+	}
 } // namespace nes

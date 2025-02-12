@@ -92,6 +92,9 @@ namespace nes
 			return append_format(fmt, arg_wrappers, arg_count);
 		}
 
+		auto remove_last() -> status;
+		auto clear() -> void;
+
 	private:
 		auto append_format(string_view fmt, format_arg const* args, u32 arg_count) -> status;
 		auto append_format_arg(format_arg, string_view params) -> status;
