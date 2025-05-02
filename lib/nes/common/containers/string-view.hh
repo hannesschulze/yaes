@@ -5,6 +5,12 @@
 
 namespace nes
 {
+	enum class case_sensitive
+	{
+		yes,
+		no,
+	};
+
 	/// Non-owning view into a (not necessarily null-terminated) string.
 	class string_view
 	{
@@ -30,9 +36,12 @@ namespace nes
 
 		auto get_first() const -> char;
 		auto get_last() const -> char;
+		auto compare(string_view, case_sensitive = case_sensitive::yes) const -> bool;
 		auto contains(char) const -> bool;
 		auto substring(u32 first) const -> string_view;
 		auto substring(u32 first, u32 length) const -> string_view;
+		auto has_prefix(string_view, case_sensitive = case_sensitive::yes) const -> bool;
+		auto has_suffix(string_view, case_sensitive = case_sensitive::yes) const -> bool;
 	};
 
 	auto operator==(string_view, string_view) -> bool;

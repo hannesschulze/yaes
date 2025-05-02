@@ -191,6 +191,10 @@ namespace nes::app
 				display_.visible_popup = nullptr;
 				break;
 			}
+			case action::type::view_file:
+			{
+				break;
+			}
 			case action::type::show_error:
 			{
 				show_error(a.get_message(), a.get_error());

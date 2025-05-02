@@ -13,6 +13,7 @@ namespace nes
 		error_buffer_overflow,
 		error_invalid_path,
 		error_invalid_format_string,
+		error_unknown_file_type,
 	};
 
 	constexpr auto to_string(status const status) -> char const*
@@ -35,6 +36,8 @@ namespace nes
 				return "Invalid path";
 			case status::error_invalid_format_string:
 				return "Invalid format string";
+			case status::error_unknown_file_type:
+				return "Unknown file type";
 		}
 
 		return "(invalid)";

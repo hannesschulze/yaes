@@ -15,6 +15,16 @@ namespace nes
 			}
 			return res;
 		}
+
+		auto to_uppercase(char const c) -> char
+		{
+			if (c >= 'a' && c <= 'z')
+			{
+				return static_cast<char>(c - 'a' + 'A');
+			}
+
+			return c;
+		}
 	} // namespace
 
 	string_view::string_view(span<char const> const data)
@@ -44,6 +54,28 @@ namespace nes
 		return data_[data_.get_length() - 1];
 	}
 
+	auto string_view::compare(string_view const other, case_sensitive const sensitive) const -> bool
+	{
+		if (get_length() != other.get_length()) { return false; }
+
+		for (auto i = u32{ 0 }; i < get_length(); ++i)
+		{
+			auto const a = (*this)[i];
+			auto const b = other[i];
+
+			if (sensitive == case_sensitive::yes)
+			{
+				if (a != b) { return false; }
+			}
+			else
+			{
+				if (to_uppercase(a) != to_uppercase(b)) { return false; }
+			}
+		}
+
+		return true;
+	}
+
 	auto string_view::contains(char const needle) const -> bool
 	{
 		for (const auto c : *this)
@@ -63,19 +95,25 @@ namespace nes
 		return string_view{ data_.subspan(first, length) };
 	}
 
+	auto string_view::has_prefix(string_view const prefix, case_sensitive const case_sensitive) const -> bool
+	{
+		if (prefix.get_length() > get_length()) { return false; }
+		return substring(0, prefix.get_length()).compare(prefix, case_sensitive);
+	}
+
+	auto string_view::has_suffix(string_view const suffix, case_sensitive const case_sensitive) const -> bool
+	{
+		if (suffix.get_length() > get_length()) { return false; }
+		return substring(get_length() - suffix.get_length()).compare(suffix, case_sensitive);
+	}
+
 	auto operator==(string_view const lhs, string_view const rhs) -> bool
 	{
-		if (lhs.get_length() != rhs.get_length()) { return false; }
-
-		for (auto i = u32{ 0 }; i < lhs.get_length(); ++i)
-		{
-			if (lhs[i] != rhs[i]) { return false; }
-		}
-
-		return true;
+		return lhs.compare(rhs);
 	}
+
 	auto operator!=(string_view const lhs, string_view const rhs) -> bool
 	{
-		return !(lhs == rhs);
+		return !lhs.compare(rhs);
 	}
 } // namespace nes

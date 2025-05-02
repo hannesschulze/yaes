@@ -8,6 +8,29 @@
 
 namespace nes::app
 {
+	namespace
+	{
+		auto default_file_action(string_view const file_name) -> action
+		{
+			if (file_name.has_suffix(".nes"))
+			{
+				return action::launch_game(file_name);
+			}
+			else if (file_name.has_suffix(".aes"))
+			{
+				return action::prompt_key(file_name);
+			}
+			else if (file_name.has_suffix(".txt"))
+			{
+				return action::view_file(file_name);
+			}
+			else
+			{
+				return action::show_error("Unable to open file", status::error_unknown_file_type);
+			}
+		}
+	} // namespace
+
 	auto screen_browser::selection_impl::render_item(
 		renderer& renderer, item const& item, i32 const x, i32 const y, u32 const width, color const c) const -> void
 	{
@@ -111,14 +134,6 @@ namespace nes::app
 					return action::go_to_title();
 				}
 			}
-			else if (event == input_event::key_down(key::letter_d))
-			{
-				auto const selected = selection_.get_selected();
-				if (selected && selected->entry.get_type() == file_browser::entry_type::file)
-				{
-					return action::prompt_key(selected->entry.get_name());
-				}
-			}
 			else if (event == input_event::key_down(key::enter))
 			{
 				auto const selected = selection_.get_selected();
@@ -144,7 +159,7 @@ namespace nes::app
 					}
 					else if (selected->entry.get_type() == file_browser::entry_type::file)
 					{
-						return action::launch_game(selected->entry.get_name());
+						return default_file_action(selected->entry.get_name());
 					}
 				}
 			}

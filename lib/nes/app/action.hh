@@ -2,6 +2,7 @@
 
 #include "nes/common/containers/string-view.hh"
 #include "nes/common/status.hh"
+#include <cstdio>
 
 namespace nes::app
 {
@@ -22,6 +23,7 @@ namespace nes::app
 			launch_game,
 			show_error,
 			prompt_key,
+			view_file,
 		};
 
 	private:
@@ -61,6 +63,13 @@ namespace nes::app
 		static auto prompt_key(string_view const file_name) -> action
 		{
 			auto res = action{ type::prompt_key };
+			res.file_name_ = file_name;
+			return res;
+		}
+
+		static auto view_file(string_view const file_name) -> action
+		{
+			auto res = action{ type::view_file };
 			res.file_name_ = file_name;
 			return res;
 		}
