@@ -14,3 +14,4 @@ else()
 endif()
 
 add_subdirectory(encrypt)
+add_subdirectory(controller)
