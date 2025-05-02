@@ -1,6 +1,5 @@
 #include "nes/app/application.hh"
 #include "nes/app/input/input-device-keyboard.hh"
-#include "nes/app/input/input-device-controller.hh"
 #include "nes/app/ui/screen.hh"
 #include "nes/app/graphics/renderer.hh"
 #include "nes/app/action.hh"
@@ -57,6 +56,7 @@ namespace nes::app
 		, screen_error_{ keyboard }
 		, screen_confirm_quit_{ keyboard }
 		, screen_prompt_key_{ keyboard }
+		, screen_file_viewer_{ keyboard, file_browser }
 	{
 		display_.visible_screen = &screen_title_;
 	}
@@ -193,6 +193,14 @@ namespace nes::app
 			}
 			case action::type::view_file:
 			{
+				if (auto const s = screen_file_viewer_.load(a.get_file_name()); s != status::success)
+				{
+					show_error("Unable to open file", s);
+				}
+				else
+				{
+					display_.visible_popup = &screen_file_viewer_;
+				}
 				break;
 			}
 			case action::type::show_error:

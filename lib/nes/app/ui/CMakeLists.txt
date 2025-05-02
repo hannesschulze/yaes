@@ -16,4 +16,6 @@ target_sources(
 		screen-confirm-quit.hh
 		screen-confirm-quit.cc
 		screen-prompt-key.hh
-		screen-prompt-key.cc)
+		screen-prompt-key.cc
+		screen-file-viewer.hh
+		screen-file-viewer.cc)

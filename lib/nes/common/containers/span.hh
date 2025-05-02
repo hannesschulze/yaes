@@ -85,6 +85,12 @@ namespace nes
 			return span<T, OtherLength>{ data_ + first, OtherLength, {} };
 		}
 
+		template<typename U>
+		auto unsafe_bitcast() const -> span<U>
+		{
+			return span<U>{ reinterpret_cast<U*>(data_), static_cast<u32>(length_ / sizeof(U)) };
+		}
+
 		auto operator[](u32 const index) const -> T&
 		{
 			NES_ASSERT(index < get_length() && "index out of bounds");
