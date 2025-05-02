@@ -4,6 +4,7 @@
 #include "nes/app/graphics/tiles/icons.hh"
 #include "nes/app/input/input-device-keyboard.hh"
 #include "nes/common/containers/path-view.hh"
+#include "nes/common/containers/string-view.hh"
 #include "nes/common/utils.hh"
 
 namespace nes::app
@@ -12,15 +13,15 @@ namespace nes::app
 	{
 		auto default_file_action(string_view const file_name) -> action
 		{
-			if (file_name.has_suffix(".nes"))
+			if (file_name.has_suffix(".nes", case_sensitive::no))
 			{
 				return action::launch_game(file_name);
 			}
-			else if (file_name.has_suffix(".aes"))
+			else if (file_name.has_suffix(".aes", case_sensitive::no))
 			{
 				return action::prompt_key(file_name);
 			}
-			else if (file_name.has_suffix(".txt"))
+			else if (file_name.has_suffix(".txt", case_sensitive::no))
 			{
 				return action::view_file(file_name);
 			}
@@ -29,16 +30,32 @@ namespace nes::app
 				return action::show_error("Unable to open file", status::error_unknown_file_type);
 			}
 		}
+
+		auto default_entry_icon(file_browser::entry const& entry) -> mask_tile
+		{
+			switch (entry.get_type())
+			{
+				case file_browser::entry_type::directory:
+					return tiles::icon_directory;
+				case file_browser::entry_type::file:
+					if (entry.get_name().has_suffix(".nes", case_sensitive::no) ||
+						entry.get_name().has_suffix(".nes", case_sensitive::no))
+					{
+						return tiles::icon_cartridge;
+					}
+					else
+					{
+						return tiles::icon_document;
+					}
+			}
+			return tiles::icon_document;
+		}
 	} // namespace
 
 	auto screen_browser::selection_impl::render_item(
 		renderer& renderer, item const& item, i32 const x, i32 const y, u32 const width, color const c) const -> void
 	{
-		switch (item.entry.get_type())
-		{
-			case file_browser::entry_type::file: renderer.render_mask_tile(x, y, tiles::icon_cartridge, c); break;
-			case file_browser::entry_type::directory: renderer.render_mask_tile(x, y, tiles::icon_directory, c); break;
-		}
+		renderer.render_mask_tile(x, y, default_entry_icon(item.entry), c);
 
 		renderer.render_text(x + 2, y, item.entry.get_name(), c, text_attributes{}
 			.set_ellipsize_mode(ellipsize_mode::end)

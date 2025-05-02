@@ -77,7 +77,8 @@ nes_generate_tiles(
 	TYPE mask
 	FILES
 		icon_directory.png
-		icon_cartridge.png)
+		icon_cartridge.png
+		icon_document.png)
 
 nes_generate_tiles(
 	nes
