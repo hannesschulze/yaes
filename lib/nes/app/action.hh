@@ -2,7 +2,6 @@
 
 #include "nes/common/containers/string-view.hh"
 #include "nes/common/status.hh"
-#include <cstdio>
 
 namespace nes::app
 {
