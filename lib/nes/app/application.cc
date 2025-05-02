@@ -1,5 +1,6 @@
 #include "nes/app/application.hh"
 #include "nes/app/input/input-device-keyboard.hh"
+#include "nes/app/input/input-device-controller.hh"
 #include "nes/app/ui/screen.hh"
 #include "nes/app/graphics/renderer.hh"
 #include "nes/app/action.hh"
@@ -53,6 +54,7 @@ namespace nes::app
 		, screen_title_{ keyboard }
 		, screen_browser_{ keyboard, file_browser }
 		, screen_settings_{ input_manager_, preferences_ }
+		, screen_help_{ input_manager_ }
 		, screen_error_{ keyboard }
 		, screen_confirm_quit_{ keyboard }
 		, screen_prompt_key_{ keyboard }
@@ -142,7 +144,7 @@ namespace nes::app
 			}
 			case action::type::go_to_help:
 			{
-				// TODO
+				go_to_screen(&screen_help_);
 				break;
 			}
 			case action::type::close_popup:

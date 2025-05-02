@@ -4,6 +4,7 @@
 #include "nes/app/ui/screen-title.hh"
 #include "nes/app/ui/screen-browser.hh"
 #include "nes/app/ui/screen-settings.hh"
+#include "nes/app/ui/screen-help.hh"
 #include "nes/app/ui/screen-freeze.hh"
 #include "nes/app/ui/screen-error.hh"
 #include "nes/app/ui/screen-confirm-quit.hh"
@@ -63,6 +64,7 @@ namespace nes::app
 		screen_title screen_title_;
 		screen_browser screen_browser_;
 		screen_settings screen_settings_;
+		screen_help screen_help_;
 		screen_freeze screen_freeze_;
 		screen_error screen_error_;
 		screen_confirm_quit screen_confirm_quit_;
