@@ -18,4 +18,6 @@ target_sources(
 		screen-prompt-key.hh
 		screen-prompt-key.cc
 		screen-file-viewer.hh
-		screen-file-viewer.cc)
+		screen-file-viewer.cc
+		screen-help.hh
+		screen-help.cc)
